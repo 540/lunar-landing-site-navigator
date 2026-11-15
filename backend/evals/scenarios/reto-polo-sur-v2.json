@@ -1,0 +1,44 @@
+{
+  "name": "reto-polo-sur-v2",
+  "description": "BENCHMARK v2 (corrige el v1 tras la revisión de pesos). Misma misión: 14 días en el entorno del polo sur, alunizaje 10-ene-2027 con retrasos posibles al 24-ene y 7-feb, juzgada por la PEOR FECHA REAL. Cambios: (1) la Tierra cuenta para comunicación solo si su CENTRO está a ≥2° sobre el horizonte (supuesto de margen de antena; no hay valor publicado), (2) pesos sin doble conteo energía 0,7 / comunicación 0,3, (3) peor fecha real en vez de mínimo métrica a métrica, (4) periodo = muestras reales. Para competir solo se puede cambiar region, search o points.",
+  "region": {
+    "latMin": -90,
+    "latMax": -60,
+    "lonMin": -180,
+    "lonMax": 180
+  },
+  "dates": [
+    "2027-01-10",
+    "2027-01-24",
+    "2027-02-07"
+  ],
+  "missionDays": 14,
+  "stepMinutes": 60,
+  "mode": "limb",
+  "aggregate": "worst",
+  "weights": {
+    "energy": 0.7,
+    "comm": 0.3
+  },
+  "constraints": {
+    "minEnergy": 0.4,
+    "minEarthFraction": 0.3,
+    "maxLongestNightH": 200
+  },
+  "search": {
+    "spacingKm": 30,
+    "maxIterations": 6,
+    "keepTop": 5,
+    "minSpacingKm": 0.5,
+    "stopDelta": 0.01,
+    "patience": 2
+  },
+  "baselines": [
+    "shackleton-rim",
+    "im2-alunizaje",
+    "im1",
+    "chandrayaan3"
+  ],
+  "earthMode": "center",
+  "earthMinElevationDeg": 2
+}

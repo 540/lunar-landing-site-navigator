@@ -1,0 +1,82 @@
+/* Layout of the motion lab page only. Nothing here is meant to reach the views. */
+.lab { max-width: 1240px; margin: 0 auto; padding: 28px 20px 80px; display: grid; gap: 24px; }
+.lab-intro { display: grid; gap: 10px; max-width: 78ch; }
+.lab-intro p { color: var(--color-text-muted); font-size: 0.95rem; }
+.lab-rules { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 4px; color: var(--color-text-muted); }
+.lab-rules b { color: var(--color-text); font-weight: 600; }
+
+.lab-demo { padding: 24px; gap: 20px; }
+.lab-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: start; gap: 12px 24px; }
+.lab-head > div:first-child { display: grid; gap: 6px; flex: 1 1 420px; max-width: 80ch; }
+.lab-title { font-size: 1.4rem; text-transform: none; letter-spacing: -0.005em; color: var(--color-text); font-weight: 600; }
+.lab-why { color: var(--color-text-muted); }
+.lab-note { font-size: 0.8rem; color: var(--color-text-muted); border-left: 2px solid var(--color-border); padding-left: 10px; }
+.lab-timeline { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.lab-timeline .play { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--color-border); background: var(--color-surface-raised); cursor: pointer; }
+.lab-timeline .legend { margin-left: auto; }
+.badge.motion-stamp { display: inline-block; }
+
+/* 1. Search */
+.lab-search { display: grid; grid-template-columns: minmax(0, 290px) minmax(260px, 380px) minmax(0, 1fr); gap: 28px; align-items: center; }
+.lab-controls { display: grid; gap: 14px; align-self: start; }
+#d1-clock { width: 100%; aspect-ratio: 1; cursor: grab; touch-action: none; }
+#d1-clock:active { cursor: grabbing; }
+.lab-result { display: grid; gap: 6px; min-width: 0; }
+.lab-result-body { display: grid; gap: 6px; }
+.lab-result-body.is-pending { visibility: hidden; }
+.lab-result-body .figures { margin-top: 10px; }
+.lab .featured { margin: 6px 0 2px; }
+@media (max-width: 1100px) { .lab-search { grid-template-columns: minmax(0, 1fr); } #d1-clock { max-width: 400px; justify-self: center; } }
+
+/* 2. Sky */
+#d2-sky { background: var(--color-sunken-deep); border-radius: 8px; }
+.lab-band { width: 100%; height: 34px; display: block; cursor: ew-resize; touch-action: none; border-radius: 6px; }
+
+/* 3. Map */
+.lab-map { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 28px; align-items: center; }
+#d3-map { width: 100%; aspect-ratio: 1; cursor: crosshair; }
+.lab-map-side { display: grid; gap: 14px; align-content: center; }
+@media (max-width: 800px) { .lab-map { grid-template-columns: minmax(0, 1fr); } }
+
+/* 4. Top 3 */
+.lab-score { height: 4px; border-radius: 2px; background: var(--color-border); overflow: hidden; }
+.lab-score i { display: block; height: 100%; background: var(--color-text); border-radius: 2px; transition: width var(--motion-slow) var(--ease-out); }
+
+/* 5. Sweep */
+.lab-readout { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-height: 2.4em; }
+.lab-sweep-inner { position: relative; width: max-content; padding: 4px 4px 6px; }
+.lab-column { position: absolute; left: 0; top: 0; width: 15px; border: 2px solid var(--color-text); border-radius: 5px; pointer-events: none; transition: transform var(--motion-medium) var(--ease-out); }
+.lab-column.ghost { border-color: var(--color-text-muted); opacity: 0.5; transition-duration: var(--motion-fast); }
+#d5-table .cell.current { outline: 0; }
+
+/* 6. Deviation */
+.lab-deviation { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 28px; align-items: center; }
+#d6-ring { width: 100%; background: var(--color-sunken); border-radius: 8px; }
+.lab-deviation-side { display: grid; gap: 12px; max-width: 46ch; }
+.lab-big { font-family: var(--font-display); font-size: 1.5rem; }
+.lab-before { display: grid; gap: 6px; border-top: 1px solid var(--color-border); padding-top: 12px; }
+.lab-ring { fill: none; stroke: var(--color-text-muted); stroke-width: 1; transition: r var(--motion-medium) var(--ease-out); }
+.lab-probe { transform-box: fill-box; transform-origin: center; stroke: var(--color-sunken); stroke-width: 2; transition: fill var(--motion-medium) var(--ease-standard), cx var(--motion-medium) var(--ease-out), cy var(--motion-medium) var(--ease-out); }
+.lab-svg-label { font: 10px var(--font-data); fill: var(--color-text-muted); }
+@media (max-width: 800px) { .lab-deviation { grid-template-columns: minmax(0, 1fr); } #d6-ring { max-width: 300px; } }
+
+/* 7. View change */
+.lab-view { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 8px; padding: 20px; min-height: 250px; display: grid; align-content: start; gap: 14px; }
+.lab-cards { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.lab-card-head { align-items: start; }
+.lab-cards h3, #d4-cards h3 { font-size: 1.02rem; }
+.lab-card-head .landing { font-family: var(--font-data); font-size: var(--text-xs); color: var(--color-text); }
+.lab-view .btn { justify-self: start; }
+@media (max-width: 800px) { .lab-cards { grid-template-columns: minmax(0, 1fr); } }
+
+/* 8. Micro */
+.lab-micro { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 18px; }
+.lab-micro-field { width: 150px; }
+.lab-pill-button { cursor: pointer; }
+
+/* Integration table */
+.lab-table-wrap { overflow-x: auto; }
+.lab-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+.lab-table th, .lab-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--color-border); vertical-align: top; }
+.lab-table th { font-size: 0.72rem; color: var(--color-text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+code { font-family: var(--font-data); font-size: 0.92em; }

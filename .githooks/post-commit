@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Tras cada commit en main que cambia el producto, publica una release en segundo plano.
+# Para saltarlo en un commit concreto: SIN_RELEASE=1 git commit ...
+RAIZ="$(git rev-parse --show-toplevel)"
+exec "$RAIZ/release/auto.sh" post-commit

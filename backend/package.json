@@ -1,0 +1,37 @@
+{
+  "name": "lunar-navigator-backend",
+  "version": "0.1.0",
+  "description": "Motor de cálculo (efemérides Sol/Tierra desde la superficie lunar, relieve, búsqueda) y evals; la API está en data/",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node --test",
+    "typecheck": "tsc -p .",
+    "fixture": "node scripts/fetch-horizons-fixture.ts",
+    "fixture:dsn": "node scripts/fetch-dsn-fixture.ts",
+    "eval": "node evals/run.ts",
+    "eval:compare": "node evals/compare.ts",
+    "eval:metrics": "node evals/metrics.ts",
+    "eval:golden": "node evals/golden.ts check",
+    "eval:golden:update": "node evals/golden.ts update",
+    "eval:rescore": "node evals/rescore.ts",
+    "eval:competition": "node evals/competition.ts",
+    "validate": "node validation/validate.ts",
+    "validate:view": "node validation/validate.ts --view",
+    "validate:fixtures": "node validation/fetch-fixtures.ts",
+    "bench": "node scripts/bench-engine.ts"
+  },
+  "type": "module",
+  "engines": {
+    "node": "26.13.x"
+  },
+  "dependencies": {
+    "astronomy-engine": "^2.1.19"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "geotiff": "3.0.5",
+    "typescript": "7.0.2"
+  }
+}

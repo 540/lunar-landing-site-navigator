@@ -1,0 +1,5 @@
+runs/
+evals.db
+evals.db-*
+competiciones/
+competitions/

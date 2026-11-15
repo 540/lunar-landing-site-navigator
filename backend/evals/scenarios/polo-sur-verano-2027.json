@@ -1,0 +1,14 @@
+{
+  "name": "polo-sur-verano-2027",
+  "description": "Misión de 14 días en el polo sur con alunizaje previsto en enero de 2027 y posibles retrasos de 2 y 4 semanas. Se exige que el sitio funcione en el PEOR de los tres casos.",
+  "region": { "latMin": -90, "latMax": -84, "lonMin": -180, "lonMax": 180 },
+  "dates": ["2027-01-10", "2027-01-24", "2027-02-07"],
+  "missionDays": 14,
+  "stepMinutes": 60,
+  "mode": "limb",
+  "aggregate": "worst",
+  "weights": { "energy": 0.35, "comm": 0.25, "both": 0.3, "night": 0.1 },
+  "constraints": { "minEnergy": 0.8, "minEarthFraction": 0.3, "maxLongestNightH": 24 },
+  "search": { "spacingKm": 20, "maxIterations": 6, "keepTop": 5, "minSpacingKm": 0.5, "stopDelta": 0.01, "patience": 2 },
+  "baselines": ["shackleton-rim", "im2-alunizaje", "im1", "chandrayaan3"]
+}

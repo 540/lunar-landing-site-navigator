@@ -1,0 +1,128 @@
+{
+  "scenario": "polo-sur-verano-2027",
+  "resultHash": "27c0d310a501857d",
+  "scenarioHash": "154471e7b7d904f5",
+  "generatedWith": {
+    "node": "26.13.0",
+    "astronomyEngine": "2.1.19"
+  },
+  "best": {
+    "lat": -84,
+    "lon": -3.16682,
+    "score": 52.504,
+    "breakdown": {
+      "energy": 16.27,
+      "comm": 20.48,
+      "both": 10.95,
+      "night": 4.81
+    },
+    "feasible": false,
+    "violations": [
+      "energy=0.651 (>= 0.8) [2027-01-10]",
+      "longestNightH=113 (<= 24) [2027-01-10]",
+      "energy=0.465 (>= 0.8) [2027-01-24]",
+      "longestNightH=175 (<= 24) [2027-01-24]",
+      "energy=0.49 (>= 0.8) [2027-02-07]",
+      "longestNightH=167 (<= 24) [2027-02-07]"
+    ],
+    "worstDate": "2027-01-24",
+    "metrics": {
+      "energy": 0.4649,
+      "sunFraction": 0.4807,
+      "earthFraction": 0.819,
+      "bothFraction": 0.365,
+      "longestNightH": 175,
+      "longestNoEarthH": 61,
+      "longestBothH": 123
+    },
+    "perDate": [
+      {
+        "date": "2027-01-10",
+        "periodH": 337,
+        "score": 74.355,
+        "feasible": false,
+        "violations": [
+          "energy=0.651 (>= 0.8)",
+          "longestNightH=113 (<= 24)"
+        ],
+        "energy": 0.6505,
+        "sunFraction": 0.6647,
+        "earthFraction": 1,
+        "bothFraction": 0.6647,
+        "longestNightH": 113,
+        "longestNoEarthH": 0,
+        "longestBothH": 224
+      },
+      {
+        "date": "2027-01-24",
+        "periodH": 337,
+        "score": 52.504,
+        "feasible": false,
+        "violations": [
+          "energy=0.465 (>= 0.8)",
+          "longestNightH=175 (<= 24)"
+        ],
+        "energy": 0.4649,
+        "sunFraction": 0.4807,
+        "earthFraction": 0.819,
+        "bothFraction": 0.365,
+        "longestNightH": 175,
+        "longestNoEarthH": 61,
+        "longestBothH": 123
+      },
+      {
+        "date": "2027-02-07",
+        "periodH": 337,
+        "score": 62.316,
+        "feasible": false,
+        "violations": [
+          "energy=0.49 (>= 0.8)",
+          "longestNightH=167 (<= 24)"
+        ],
+        "energy": 0.4896,
+        "sunFraction": 0.5045,
+        "earthFraction": 1,
+        "bothFraction": 0.5045,
+        "longestNightH": 167,
+        "longestNoEarthH": 0,
+        "longestBothH": 170
+      }
+    ],
+    "iteration": 2
+  },
+  "top": [
+    {
+      "lat": -84,
+      "lon": -3.16682,
+      "score": 52.504,
+      "breakdown": {
+        "energy": 16.27,
+        "comm": 20.48,
+        "both": 10.95,
+        "night": 4.81
+      },
+      "feasible": false,
+      "violations": [
+        "energy=0.651 (>= 0.8) [2027-01-10]",
+        "longestNightH=113 (<= 24) [2027-01-10]",
+        "energy=0.465 (>= 0.8) [2027-01-24]",
+        "longestNightH=175 (<= 24) [2027-01-24]",
+        "energy=0.49 (>= 0.8) [2027-02-07]",
+        "longestNightH=167 (<= 24) [2027-02-07]"
+      ],
+      "worstDate": "2027-01-24",
+      "metrics": {
+        "energy": 0.4649,
+        "sunFraction": 0.4807,
+        "earthFraction": 0.819,
+        "bothFraction": 0.365,
+        "longestNightH": 175,
+        "longestNoEarthH": 61,
+        "longestBothH": 123
+      },
+      "iteration": 2
+    }
+  ],
+  "totalEvaluated": 467,
+  "iterations": 4
+}

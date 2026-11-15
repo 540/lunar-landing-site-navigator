@@ -1,0 +1,138 @@
+{
+    "site": {
+        "id": "apollo11",
+        "name": "Apollo 11",
+        "region": "Mare Tranquillitatis",
+        "program": "Apollo",
+        "latDeg": 0.67408,
+        "lonDeg": 23.47297,
+        "heightKm": 0,
+        "coordinatesVerified": true,
+        "custom": false,
+        "horizonModel": "sphere"
+    },
+    "start": "2027-01-01T00:00:00.000Z",
+    "end": "2027-07-01T00:00:00.000Z",
+    "mode": "full",
+    "sun": {
+        "summary": {
+            "count": 6,
+            "totalHours": 2123.359,
+            "fractionOfTime": 0.4888,
+            "longestWindowHours": 354.737
+        },
+        "windows": [
+            {
+                "start": "2027-01-13T07:23:02.959Z",
+                "end": "2027-01-28T02:07:14.619Z",
+                "durationHours": 354.737,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-02-11T21:49:24.990Z",
+                "end": "2027-02-26T16:20:02.783Z",
+                "durationHours": 354.51,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-03-13T11:38:35.479Z",
+                "end": "2027-03-28T05:46:12.510Z",
+                "durationHours": 354.127,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-04-12T00:35:33.545Z",
+                "end": "2027-04-26T18:16:37.998Z",
+                "durationHours": 353.685,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-05-11T12:38:35.479Z",
+                "end": "2027-05-26T05:55:40.283Z",
+                "durationHours": 353.285,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-06-09T23:58:18.486Z",
+                "end": "2027-06-24T16:59:14.736Z",
+                "durationHours": 353.016,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            }
+        ]
+    },
+    "earth": {
+        "summary": {
+            "count": 1,
+            "totalHours": 4344,
+            "fractionOfTime": 1,
+            "longestWindowHours": 4344
+        },
+        "windows": [
+            {
+                "start": "2027-01-01T00:00:00.000Z",
+                "end": "2027-07-01T00:00:00.000Z",
+                "durationHours": 4344,
+                "startsBeforeRange": true,
+                "endsAfterRange": true
+            }
+        ]
+    },
+    "sunAndEarth": {
+        "summary": {
+            "count": 6,
+            "totalHours": 2123.359,
+            "fractionOfTime": 0.4888,
+            "longestWindowHours": 354.737
+        },
+        "windows": [
+            {
+                "start": "2027-01-13T07:23:02.959Z",
+                "end": "2027-01-28T02:07:14.619Z",
+                "durationHours": 354.737,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-02-11T21:49:24.990Z",
+                "end": "2027-02-26T16:20:02.783Z",
+                "durationHours": 354.51,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-03-13T11:38:35.479Z",
+                "end": "2027-03-28T05:46:12.510Z",
+                "durationHours": 354.127,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-04-12T00:35:33.545Z",
+                "end": "2027-04-26T18:16:37.998Z",
+                "durationHours": 353.685,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-05-11T12:38:35.479Z",
+                "end": "2027-05-26T05:55:40.283Z",
+                "durationHours": 353.285,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-06-09T23:58:18.486Z",
+                "end": "2027-06-24T16:59:14.736Z",
+                "durationHours": 353.016,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            }
+        ]
+    }
+}

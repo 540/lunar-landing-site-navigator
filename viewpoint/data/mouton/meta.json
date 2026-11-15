@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "id": "mouton",
+  "name": {
+    "es": "Mons Mouton (zona de IM-2)",
+    "en": "Mons Mouton (IM-2 area)"
+  },
+  "center": {
+    "lat": -84.6,
+    "lon": 31
+  },
+  "extentKm": 40,
+  "grid": {
+    "cols": 257,
+    "rows": 257,
+    "stepKm": 0.15625
+  },
+  "units": {
+    "horizontal": "km",
+    "vertical": "km"
+  },
+  "heights": {
+    "file": "terrain-lod0.bin",
+    "encoding": "uint16-le",
+    "unit": "km",
+    "scale": 0.000058168,
+    "offset": 2.958594
+  },
+  "source": {
+    "type": "lola",
+    "products": [
+      "LDEM_80S_20MPP_ADJ@160m"
+    ],
+    "demVersion": "lola-b4686a47469d",
+    "citation": "LOLA LDEM (PGDA/GSFC), Barker et al. 2023"
+  },
+  "sceneFrame": {
+    "projection": "orthographic",
+    "radiusKm": 1737.4,
+    "centerLat": -84.6,
+    "centerLon": 31,
+    "axes": {
+      "x": "east",
+      "y": "up",
+      "z": "south"
+    }
+  },
+  "far": {
+    "file": "terrain-far.bin",
+    "extentKm": 300,
+    "grid": {
+      "cols": 257,
+      "rows": 257,
+      "stepKm": 1.171875
+    },
+    "heights": {
+      "encoding": "uint16-le",
+      "unit": "km",
+      "scale": 0.000362062,
+      "offset": -16.900888
+    }
+  }
+}

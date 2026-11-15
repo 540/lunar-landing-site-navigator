@@ -1,0 +1,17 @@
+/* "Fuentes de datos" view: one table per group of sources. */
+.sources { display: grid; gap: 18px; }
+/* The tables and status badges are design system components (UI.table, UI.badge). */
+
+/* "Cómo sabemos que es correcto": measured errors, where each figure comes from and how to reproduce it. */
+.sources code { font-family: var(--font-data); font-size: 0.92em; background: var(--color-sunken); border-radius: var(--radius-sm); padding: 1px var(--space-1); }
+.validation { display: grid; gap: var(--space-4); }
+.validation h4 { font-size: var(--text-xs); color: var(--color-text-muted); font-weight: var(--weight-medium); text-transform: uppercase; letter-spacing: 0.05em; }
+.validation p, .validation__limits { max-width: 95ch; }
+.validation__warning { border-left: 3px solid var(--color-warn); background: var(--color-warn-soft); border-radius: var(--radius-sm); padding: var(--space-3) var(--space-4); }
+.validation__warning b { color: var(--color-warn); }
+.validation__figure { font-family: var(--font-data); white-space: nowrap; }
+.data-table td small,
+.validation__control td small { display: block; color: var(--color-text-muted); }
+.validation__figure small { display: block; font-family: var(--font-body); white-space: normal; color: var(--color-text-muted); }
+.validation td code { white-space: nowrap; }
+.validation__limits { display: grid; gap: var(--space-1); padding-left: var(--space-5); }

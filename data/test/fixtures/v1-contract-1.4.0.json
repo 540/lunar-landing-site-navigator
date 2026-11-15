@@ -1,0 +1,13 @@
+{
+  "/v1/sites": "fc7c5bf17572bb3bfb77735ea132239a03e6905cb5046effaee581f2469f8908",
+  "/v1/sun-earth?site=shackleton-rim&date=2027-01-15T00:00:00Z": "0c9736dccc8b51d9c969f1f9bf9a02d339197a43dd7e776686e8bd7e255db567",
+  "/v1/sun-earth?lat=-89.5&lon=0&date=2027-01-15&mode=center": "22f3e2e61fa430c3f6e4b5f675f996f3243196e332321e19b545f8b3c4b37326",
+  "/v1/sun-earth?site=apollo11&date=2027-06-01T12:00:00Z&terrain=1": "2aa4f373b1eee2089a33fdeab8870c86d10290a737ab3f190f8b123a65d383fe",
+  "/v1/windows?site=shackleton-rim&start=2027-01-01&end=2027-03-01&mode=center": "d1059a7ea7ddce8760d383c772f95a76c06520181badfc9b3d721c3b99a9c8ac",
+  "/v1/windows?lat=-65.31485&lon=-3.05572&start=2027-01-24&end=2027-02-07&fullNight=1&battery=1": "185a5c58ad8e96856387347dcb756d92aa2dd49ed31f063bc10039baf5f71da8",
+  "/v1/track?site=im1&start=2027-01-01&end=2027-01-03&step=30m": "11acb90d6193b8852a125906ef267754e299b02c60341b13be64d78bb349e92d",
+  "/v1/horizon?site=shackleton-rim": "a7fdc8b222d3532ab6efc63a859c2b9acf62bfff713840ccb7d432eaa9bcbcc5",
+  "/v1/rank?sites=all&start=2027-01-01&days=30": "156d6bcca9bcde54948a0273e39fb1ff2bbdfef7e8905a51a3a90d3e339e2731",
+  "/v1/rank?sites=shackleton-rim,im1&start=2027-01-24&days=14&panel=horizontal&fullNight=1&battery=1": "1b4729c1f39a5430a94c6edc03029dccc769f355b826e7faa5830f15c052811e",
+  "/v1/rank?sites=-65.31485:-3.05572,apollo11&start=2027-03-01&days=14&mode=full&terrain=1": "c392a6cabf9f6f5140ed61bf17a53944bf0ec21a47e05c67f0e35afac1561a79"
+}

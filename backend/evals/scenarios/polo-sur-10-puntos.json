@@ -1,0 +1,23 @@
+{
+  "name": "polo-sur-10-puntos",
+  "description": "Comparación de 10 puntos concretos (sitios del catálogo + mejores encontrados por búsquedas anteriores) para la misión de 14 días del verano austral de 2027, exigiendo que aguanten el peor de los tres retrasos.",
+  "points": [
+    "shackleton-rim",
+    "im2-alunizaje",
+    "im1",
+    "chandrayaan3",
+    { "lat": -90, "lon": 0, "name": "Polo sur exacto" },
+    { "lat": -89.0, "lon": -138.46, "name": "Junto a Shackleton (búsqueda)" },
+    { "lat": -88.7527, "lon": 4.9681, "name": "Mejor búsqueda dic-2026" },
+    { "lat": -84.0, "lon": -3.1609, "name": "Mejor eval región -84" },
+    { "lat": -82.8387, "lon": -5.7143, "name": "Mejor eval región ampliada" },
+    { "lat": -79.6631, "lon": 59.6751, "name": "Mejor eval media de fechas" }
+  ],
+  "dates": ["2027-01-10", "2027-01-24", "2027-02-07"],
+  "missionDays": 14,
+  "stepMinutes": 60,
+  "mode": "limb",
+  "aggregate": "worst",
+  "weights": { "energy": 0.35, "comm": 0.25, "both": 0.3, "night": 0.1 },
+  "constraints": { "minEnergy": 0.4, "minEarthFraction": 0.3, "maxLongestNightH": 200 }
+}

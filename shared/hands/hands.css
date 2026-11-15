@@ -1,0 +1,29 @@
+/* Hand control (pointer.js): the camera preview, the pointer and the outline of the control it is over.
+   --hand is its colour; a screen can move the preview with --hands-top and --hands-right, or with its own rules. */
+:root { --hand: #c4b0ff; }
+.handcam { position: fixed; top: var(--hands-top, 18px); right: var(--hands-right, max(16px, env(safe-area-inset-right, 0px))); z-index: 2147483000; width: 288px; display: flex; flex-direction: column; gap: 6px; padding: 6px; background: rgba(12,15,19,.86); border: 1px solid rgba(160,175,190,.22); border-radius: 12px; backdrop-filter: blur(12px); box-shadow: 0 10px 40px rgba(0,0,0,.55); font: 400 13px/1.3 Inter, system-ui, sans-serif; color: #aeb6bf; pointer-events: none; transition: border-color .15s ease; }
+.handcam[hidden] { display: none; }
+.handcam p { margin: 0; padding: 0 2px 2px; text-wrap: balance; }
+.handview { position: relative; aspect-ratio: 4/3; border-radius: 8px; overflow: hidden; background: #000; }
+.handview video { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.handview canvas { display: block; width: 100%; height: 100%; transform: scaleX(-1); }
+.handdot { position: absolute; left: 0; top: 0; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; border: 2px solid var(--hand); box-shadow: 0 0 0 1px rgba(0,0,0,.5); opacity: 0; }
+.handdot.on { opacity: 1; }
+.handdot.grab { background: var(--hand); }
+.handcam.grab { border-color: var(--hand); }
+.handcam.grab p, .handcam.err p { color: #eceef0; }
+.handcam.err .handview { display: none; }
+.handcam.err p { padding: 4px; }
+.handcur { position: fixed; left: 0; top: 0; z-index: 2147483001; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; border: 2px solid var(--hand); background: color-mix(in srgb, var(--hand) 12%, transparent); box-shadow: 0 0 0 1px rgba(0,0,0,.55), 0 0 14px color-mix(in srgb, var(--hand) 50%, transparent); pointer-events: none; opacity: 0; transition: opacity .2s, width .12s, height .12s, margin .12s, background-color .12s; }
+.handcur.on { opacity: 1; }
+.handcur.hot { width: 46px; height: 46px; margin: -23px 0 0 -23px; border-color: #fff; }
+.handcur.press { width: 20px; height: 20px; margin: -10px 0 0 -10px; background: var(--hand); }
+.handcur.click { background: #fff; border-color: #fff; box-shadow: 0 0 0 10px color-mix(in srgb, var(--hand) 35%, transparent); }
+.handdiag { margin: 0; padding: 4px; font: 400 11px/1.35 ui-monospace, Menlo, monospace; color: #eceef0; white-space: pre-wrap; }
+.hand-hover { outline: 2px solid var(--hand) !important; outline-offset: 2px; }
+@media (max-width: 1100px) { .handcam { width: 208px; font-size: 12px; } }
+@media (max-width: 700px) {
+  .handcam { width: 136px; font-size: 11px; }
+  .handcam.err { width: 160px; }
+}
+@media (prefers-reduced-motion: reduce) { .handcam, .handcur { transition: none; } }

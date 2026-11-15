@@ -1,0 +1,1194 @@
+"""
+API GraphQL del Lunar Landing Site Navigator (desde 1.11.0). Usa el mismo motor que la API REST v1 y da los mismos
+valores: los nombres de los campos son los de la v1, con las unidades en el nombre (`Deg`, `Km`, `Hours`, `Minutes`, `M`)
+o fracciones 0–1. Cada campo de un sitio se calcula solo si se pide. Los valores de los enums son los de la v1
+(`limb`, `mask`, `slopeAboveMax`…), salvo `vertical_rotating` y `not_viable`, que en la v1 son `vertical-rotating` y
+`not-viable`: GraphQL no admite guiones.
+"""
+schema {
+  query: Query
+}
+
+"""
+Fecha y hora en UTC, ISO 8601 estricto como en la v1: `AAAA-MM-DD`, opcionalmente con hora (`Thh:mm`, `Thh:mm:ss`,
+`Thh:mm:ss.sss`) y zona (`Z`, `±hh:mm`). Sin zona, UTC. Años de 1900 a 2100.
+"""
+scalar DateTime
+
+type Query {
+  "Versión de la API (la misma que `apiVersion` de /v1/health y `info.version` del OpenAPI)."
+  apiVersion: String!
+
+  "Estado del servidor y del relieve que tiene (como /v1/health; desde 1.17.0)."
+  health: Health
+
+  "Regiones predefinidas de `search` (como /v1/regions; desde 1.17.0)."
+  regions: [Region!]!
+
+  """
+  Sitios del catálogo (los de /v1/sites). `ids` se queda con esos sitios, en ese orden. `withTerrainMask: true`, solo
+  los que tienen máscaras de horizonte precalculadas (`terrainMaskHeightsM`); `false`, solo los que no.
+  """
+  sites(ids: [ID!], withTerrainMask: Boolean): [Site!]!
+
+  """
+  Un sitio: del catálogo con `id`, o cualquier punto con `lat` y `lon` (grados; longitud este positiva, se aceptan 0–360)
+  y `heightKm` opcional (solo geometría, como en la v1). Indica `id` o `lat` y `lon`, no los dos.
+  """
+  site(id: ID, lat: Float, lon: Float, heightKm: Float): Site
+
+  """
+  Ranking de sitios para una misión de `days` días desde `from` (como /v1/rank). `sites`: ids del catálogo o pares
+  `lat:lon`, hasta 10; sin `sites`, todo el catálogo. `slope` añade la pendiente de cada sitio y, con `maxSlopeDeg`, deja
+  fuera los que no la cumplen (`slope.excluded`).
+  """
+  rank(
+    sites: [ID!]
+    from: DateTime
+    days: Float
+    mode: Mode
+    scoring: ScoringInput
+    constraints: ConstraintsInput
+    terrain: TerrainInput
+    night: NightInput
+    battery: BatteryInput
+    panel: PanelOrientation
+    slope: SlopeInput
+    earthMinElevationDeg: Float
+    "Criterio de visibilidad de la Tierra (v1: `earthMode`); por defecto, el de `mode`. Desde 1.17.0."
+    earthMode: Mode
+    "Paso de muestreo en minutos, de 15 a 360 (v1: `step`; 60 por defecto). Desde 1.17.0."
+    stepMinutes: Int
+  ): Rank
+
+  """
+  Búsqueda en malla con refinamiento (como /v1/search; desde 1.17.0): evalúa una malla de puntos cada `spacingKm` en la
+  región (`region`, una de `regions`, o `latMin`, `latMax`, `lonMin` y `lonMax`), refina alrededor de los mejores y
+  devuelve los `top` mejores separados al menos `minSeparationKm`. Con relieve usa el modo rápido por defecto
+  (`terrain.resolution`, como `terrainResolution` en la v1). `cells: true` añade todos los puntos evaluados (`cells`).
+  Una búsqueda grande puede pasar del coste máximo de una consulta: entonces, `POST /v1/search/jobs`.
+  """
+  search(
+    region: ID
+    latMin: Float
+    latMax: Float
+    lonMin: Float
+    lonMax: Float
+    spacingKm: Float
+    refineLevels: Int
+    refineTop: Int
+    top: Int
+    minSeparationKm: Float
+    from: DateTime
+    days: Float
+    mode: Mode
+    earthMode: Mode
+    stepMinutes: Int
+    cells: Boolean
+    scoring: ScoringInput
+    terrain: TerrainInput
+    night: NightInput
+    battery: BatteryInput
+    panel: PanelOrientation
+    slope: SlopeInput
+    earthMinElevationDeg: Float
+  ): Search
+
+  """
+  Varios sitios × varias fechas de alunizaje en una sola consulta: el mismo barrido de `landingDates` para cada sitio
+  (hasta 10, ids o `lat:lon`), una matriz fecha × sitio y un resumen por sitio. Las efemérides se calculan una vez para
+  todos los sitios.
+  """
+  compare(sites: [ID!]!, landingDates: LandingDatesInput): Comparison
+
+  """
+  Mejores aterrizajes de una ventana (como /v1/best-landings, desde 1.15.0): para cada sitio (hasta 10, ids o `lat:lon`)
+  prueba un aterrizaje cada 12 h entre `from` y `to` (120 días como máximo) con las reglas de la misión del planificador
+  (los mismos que la interfaz), se queda con el mejor según `priority` y ordena los sitios. `missionDays` (10 por
+  defecto, de 0,5 a 30), `batteryHours` (12 por defecto) y `minEarthPct` (60 por defecto) son los requisitos de la
+  misión; `maxEarthGapHours`, el corte de Tierra más largo admitido. `mode` vale `full` por defecto (las reglas cuentan
+  el disco entero).
+  """
+  bestLandings(
+    sites: [ID!]!
+    from: DateTime!
+    to: DateTime!
+    missionDays: Float
+    batteryHours: Float
+    minEarthPct: Float
+    maxEarthGapHours: Float
+    priority: Priority
+    mode: Mode
+    terrain: TerrainInput
+  ): BestLandings
+
+  """
+  Mapa de luz con relieve (como /v1/light-map, desde 1.14.0): parte del periodo con el Sol y con la Tierra en cada punto
+  de una malla de `spacingKm` en un disco de `radiusKm` (60 por defecto, 200 como máximo) alrededor de un centro: un sitio
+  del catálogo (`site`), unas coordenadas (`lat` y `lon`) o, sin ninguno, el polo sur. Periodo de `days` días (10 por
+  defecto, 30 como máximo) desde `from` (ahora por defecto). Siempre con el relieve LOLA en modo rápido; las alturas, de
+  0 a 100 m (`panelHeightM` y `antennaHeightM` valen `observerHeightM`, 2 m, por defecto). Como mucho 2000 puntos.
+  """
+  lightMap(
+    site: ID
+    lat: Float
+    lon: Float
+    "Solo geometría, con `lat` y `lon`, como en la v1 (desde 1.17.0)."
+    heightKm: Float
+    radiusKm: Float
+    spacingKm: Float
+    from: DateTime
+    days: Float
+    mode: Mode
+    observerHeightM: Float
+    panelHeightM: Float
+    antennaHeightM: Float
+  ): LightMap
+}
+
+"Prioridad con la que `bestLandings` elige el mejor aterrizaje de cada sitio (las de la interfaz)."
+enum Priority {
+  "Más margen de energía (por defecto)."
+  energy
+  "Más comunicación con la Tierra."
+  comms
+  "Aterrizar antes."
+  early
+  "Aguantar retrasos."
+  delays
+}
+
+"Veredicto de un aterrizaje con las reglas de la misión."
+enum Verdict {
+  viable
+  marginal
+  "En la v1, `not-viable`."
+  not_viable
+}
+
+"Cuándo cuenta un disco (Sol o Tierra) como visible."
+enum Mode {
+  "Asoma alguna parte del disco (por defecto)."
+  limb
+  "El centro del disco está sobre el horizonte."
+  center
+  "El disco entero está sobre el horizonte."
+  full
+}
+
+"Orientación del panel solar para `meanSunDiskFraction`."
+enum PanelOrientation {
+  "Sigue al Sol (incidencia normal, factor 1). Por defecto."
+  tracking
+  "Vertical y girando en acimut (factor cos(el)); en la v1, `vertical-rotating`."
+  vertical_rotating
+  "Horizontal (factor max(0, sin(el)))."
+  horizontal
+}
+
+"Resolución del relieve LOLA."
+enum TerrainResolution {
+  "Máscara de 720 acimuts y horizonte híbrido (rayo directo cerca del horizonte). Es la única de la v1."
+  precise
+  "Más rápida y menos fina; sin horizonte híbrido por defecto. Solo en GraphQL."
+  fast
+}
+
+"Modelo de horizonte usado."
+enum HorizonModel {
+  "Luna esférica: horizonte a 0°."
+  sphere
+  "Máscara de relieve LOLA."
+  mask
+}
+
+"De dónde sale la máscara de relieve."
+enum TerrainSource {
+  catalog
+  dem
+}
+
+"Código estable de un aviso (los mensajes pueden cambiar)."
+enum WarningCode {
+  unknown_parameter
+  unused_parameter
+  ignored_parameter
+  duplicate_parameter
+  duplicate_site
+  smooth_moon_polar
+  night_truncated
+  outside_validated_dates
+  height_no_horizon_dip
+  low_observer_height
+  "Desde 1.13.0: se pidió relieve, pero el horizonte es el de la Luna lisa (sin DEM ni máscara del catálogo para ese punto)."
+  terrain_not_applied
+  "Desde 1.23.0: con relieve, un punto al sur de 85°S, donde la fracción de tiempo con Sol o con Tierra puede desviarse de los mapas de PGDA en decenas de puntos porcentuales."
+  deep_polar_uncertainty
+}
+
+"Nombre de una restricción (los de `ConstraintsInput`)."
+enum ConstraintName {
+  minMeanSunDiskFraction
+  minSunTimeFraction
+  minEarthTimeFraction
+  minSunAndEarthTimeFraction
+  maxLongestNightHours
+  maxLongestEarthOutageHours
+  minLongestSunAndEarthHours
+  maxBatteryKg
+}
+
+"Noche con la que se dimensiona la batería."
+enum NightMetric {
+  longestNightFullHours
+  longestNightHours
+}
+
+"Por qué un sitio queda fuera del ranking con `maxSlopeDeg`."
+enum ExclusionReason {
+  slopeAboveMax
+  slopeUnknown
+  "Pendiente sin certificar (medida en una base mayor que la pedida); solo con `uncertified: exclude`."
+  slopeUncertified
+}
+
+"""
+Qué hace `maxSlopeDeg` con una pendiente sin certificar (subestimada: el DEM no resuelve la base pedida y se midió en
+una mayor). `exclude` (por defecto) la deja fuera del ranking; `keep` la mantiene, con `meetsMaxSlope: null`.
+"""
+enum SlopeUncertified {
+  exclude
+  keep
+}
+
+"""
+Relieve LOLA (en la v1, `terrain=1` y sus parámetros). Sin este input, Luna esférica (horizonte a 0°). Alturas de 0 a
+100 m sobre el suelo; `panelHeightM` (Sol) y `antennaHeightM` (Tierra) valen `observerHeightM` (2 m) por defecto.
+"""
+input TerrainInput {
+  "false: sin relieve (como no pasar el input). Por defecto, true."
+  enabled: Boolean = true
+  "Por defecto, `precise` (la de la v1); en `search`, `fast` (como `terrainResolution` en la v1)."
+  resolution: TerrainResolution
+  observerHeightM: Float
+  panelHeightM: Float
+  antennaHeightM: Float
+  "Horizonte híbrido (v1: `horizonRefine`). false lo desactiva."
+  refine: Boolean
+  "Umbral del horizonte híbrido en grados, 0–2 (v1: `horizonRefineDeg`; 0,1 por defecto en modo preciso)."
+  refineDeg: Float
+}
+
+"Pesos de la puntuación (se normalizan para sumar 1; por defecto 0,7 y 0,3, como en la v1)."
+input ScoringInput {
+  "Peso de la energía (v1: `weightMeanSunDiskFraction`)."
+  meanSunDiskFraction: Float
+  "Peso de la comunicación (v1: `weightEarthTimeFraction`)."
+  earthTimeFraction: Float
+  "Desde 1.17.0 (v1: `weightSunAndEarthTimeFraction`). 0 por defecto, como los siguientes."
+  sunAndEarthTimeFraction: Float
+  "Desde 1.17.0 (v1: `weightShortNights`)."
+  shortNights: Float
+  "Desde 1.17.0 (v1: `weightSunTimeFraction`)."
+  sunTimeFraction: Float
+  "Desde 1.17.0 (v1: `weightShortEarthOutages`)."
+  shortEarthOutages: Float
+  "Desde 1.17.0 (v1: `weightLongestSunAndEarth`)."
+  longestSunAndEarth: Float
+}
+
+"Restricciones (los mismos nombres que la v1). No cambian el orden: cada resultado dice si las cumple."
+input ConstraintsInput {
+  minMeanSunDiskFraction: Float
+  minSunTimeFraction: Float
+  minEarthTimeFraction: Float
+  minSunAndEarthTimeFraction: Float
+  maxLongestNightHours: Float
+  maxLongestEarthOutageHours: Float
+  minLongestSunAndEarthHours: Float
+  "Activa la batería con sus valores por defecto si no va `battery`."
+  maxBatteryKg: Float
+}
+
+"Noche (v1: `nightMinSunFraction` y `fullNight`)."
+input NightInput {
+  "De noche si la fracción visible del disco solar es menor que este valor (0–1). 0 por defecto: de noche si no se ve el Sol según `mode`."
+  minSunFraction: Float
+  "Mide entera la noche más larga que toca el periodo (hasta 30 días a cada lado)."
+  fullNight: Boolean
+}
+
+"Batería que pasa la noche más larga (v1: `battery`, `survivalLoadW`, `batteryWhPerKg`, `batteryDoD`)."
+input BatteryInput {
+  "false la apaga aunque lleve valores. Por defecto, true."
+  enabled: Boolean = true
+  "Consumo de supervivencia (W; 100 por defecto)."
+  survivalLoadW: Float
+  "Energía específica del pack (Wh/kg; 200 por defecto)."
+  whPerKg: Float
+  "Profundidad de descarga (0–1; 0,9 por defecto)."
+  depthOfDischarge: Float
+}
+
+"Pendiente del terreno en `rank` (v1: `slope`, `slopeBaselineM`, `maxSlopeDeg`)."
+input SlopeInput {
+  "Base en metros (diámetro del círculo; 100 por defecto, el requisito de Artemis III)."
+  baselineM: Float
+  "Pendiente máxima: deja fuera del ranking los sitios que no la cumplen o están fuera del DEM."
+  maxSlopeDeg: Float
+  "Pendientes sin certificar con `maxSlopeDeg`: fuera del ranking (`exclude`, por defecto) o dentro, marcadas (`keep`)."
+  uncertified: SlopeUncertified
+}
+
+"""
+Pendiente de un sitio en `sunEarth`, `windows` y `landingDates` (v1: `slope`, `slopeBaselineM`, `maxSlopeDeg`; desde
+1.17.0). Con el input, la respuesta lleva `slope` (la de `Site.slope`).
+"""
+input SiteSlopeInput {
+  "Base en metros (diámetro del círculo; 100 por defecto)."
+  baselineM: Float
+  "Pendiente máxima: `slope.meetsMaxSlope` dice si la cumple (no filtra nada)."
+  maxSlopeDeg: Float
+}
+
+"Barrido de fechas de alunizaje (los argumentos de `Site.landingDates`), para `compare`."
+input LandingDatesInput {
+  from: DateTime
+  to: DateTime
+  dateStepHours: Int
+  missionDays: Float
+  mode: Mode
+  scoring: ScoringInput
+  constraints: ConstraintsInput
+  terrain: TerrainInput
+  night: NightInput
+  battery: BatteryInput
+  panel: PanelOrientation
+  minScore: Float
+  top: Int
+  earthMinElevationDeg: Float
+  earthMode: Mode
+  slope: SiteSlopeInput
+}
+
+"Algo que se pidió y se ignoró, o un límite de las cifras (como `warnings` en la v1)."
+type Warning {
+  code: WarningCode!
+  "Argumento al que se refiere, con el nombre de GraphQL (`terrain.observerHeightM`, `night.fullNight`…)."
+  parameter: String
+  message: String!
+}
+
+"Datos de un sitio tal como los da cada resultado (`site` en la v1)."
+type SiteInfo {
+  id: ID!
+  name: String!
+  region: String
+  program: String
+  latDeg: Float!
+  lonDeg: Float!
+  heightKm: Float!
+  coordinatesVerified: Boolean!
+  custom: Boolean!
+  "`mask` si ese cálculo usó una máscara de relieve."
+  horizonModel: HorizonModel!
+}
+
+"""
+Un sitio. Los campos con argumentos se calculan solo si se piden; dentro de una consulta, la máscara y la muestra de
+efemérides de un sitio se calculan una vez para todos sus campos.
+"""
+type Site {
+  "Id del catálogo, o `custom:lat,lon` para unas coordenadas."
+  id: ID!
+  name: String!
+  region: String
+  program: String
+  latDeg: Float!
+  lonDeg: Float!
+  heightKm: Float!
+  coordinatesVerified: Boolean!
+  custom: Boolean!
+  "Siempre `sphere` aquí (como en /v1/sites); cada cálculo dice el suyo en `site.horizonModel`."
+  horizonModel: HorizonModel!
+  "Alturas del observador (m) con máscara precalculada (solo sitios del catálogo que las tienen)."
+  terrainMaskHeightsM: [Float!]
+
+  "Pendiente del terreno con el DEM LOLA (la de /v1/sun-earth con `slope=1`). Barata."
+  slope(baselineM: Float, maxSlopeDeg: Float): Slope
+
+  "Perfil del horizonte con relieve, observador a `heightM` metros (2 por defecto); como /v1/horizon."
+  horizon(
+    heightM: Float
+    "true: añade `relief`, las alturas del terreno LOLA alrededor del sitio, para dibujarlo en 3D (v1: `relief=1`). Desde 1.19.0."
+    relief: Boolean
+    "Radio que cubre `relief`, en km (30 por defecto); darlo equivale a `relief: true`. Desde 1.19.0."
+    reliefRadiusKm: Float
+  ): Horizon
+
+  "Sol y Tierra en un instante (`at`, ahora por defecto) con el próximo orto y ocaso; como /v1/sun-earth."
+  sunEarth(at: DateTime, mode: Mode, terrain: TerrainInput, earthMinElevationDeg: Float, slope: SiteSlopeInput): SunEarth
+
+  "Azimut y elevación paso a paso entre `from` y `to` (10 días por defecto, 400 como máximo; 3000 puntos); como /v1/track."
+  track(from: DateTime, to: DateTime, stepMinutes: Float, terrain: TerrainInput): Track
+
+  "Ventanas de visibilidad entre `from` y `to` (30 días por defecto, 366 como máximo), noche y batería; como /v1/windows."
+  windows(
+    from: DateTime
+    to: DateTime
+    mode: Mode
+    terrain: TerrainInput
+    night: NightInput
+    battery: BatteryInput
+    earthMinElevationDeg: Float
+    slope: SiteSlopeInput
+    "true: añade los ortos y ocasos del Sol y de la Tierra dentro del intervalo (`events`; v1: `events=1`). Desde 1.17.0."
+    events: Boolean
+    "Banda de robustez del horizonte, en grados (0–5; 0 por defecto): añade `horizonBand`. Desde 1.18.0."
+    horizonBandDeg: Float
+    "true: modo DSN, añade `earthDsn` y `dsn` (v1: `dsn=1`). Desde 1.24.0."
+    dsn: Boolean
+  ): Windows
+
+  """
+  Barrido de fechas de alunizaje: cada fecha de `from` a `to` (un año por defecto, 400 días como máximo) cada
+  `dateStepHours` (24 por defecto) es una misión de `missionDays` días (14 por defecto); como /v1/landing-dates. Pide
+  solo `stats`, `best` o `goodWindows` si no necesitas toda la serie `dates`.
+  """
+  landingDates(
+    from: DateTime
+    to: DateTime
+    dateStepHours: Int
+    missionDays: Float
+    mode: Mode
+    scoring: ScoringInput
+    constraints: ConstraintsInput
+    terrain: TerrainInput
+    night: NightInput
+    battery: BatteryInput
+    panel: PanelOrientation
+    minScore: Float
+    "Fechas en `best` y `worst` (10 por defecto, 50 como máximo)."
+    top: Int
+    earthMinElevationDeg: Float
+    "Criterio de visibilidad de la Tierra (v1: `earthMode`); por defecto, el de `mode`. Desde 1.17.0."
+    earthMode: Mode
+    slope: SiteSlopeInput
+  ): LandingDates
+}
+
+"Sol o Tierra en un instante."
+type Body {
+  azimuthDeg: Float!
+  elevationDeg: Float!
+  angularRadiusDeg: Float!
+  distanceKm: Float!
+  horizonElevationDeg: Float!
+  visible: Boolean!
+  visibleFraction: Float!
+  nextRise: DateTime
+  nextSet: DateTime
+  hoursToNextRise: Float
+  hoursToNextSet: Float
+}
+
+"Relieve aplicado (solo con `terrain`)."
+type Terrain {
+  observerHeightM: Float!
+  panelHeightM: Float
+  antennaHeightM: Float
+  applied: Boolean!
+  source: TerrainSource
+  demVersion: String
+  horizonRefineDeg: Float
+  note: String!
+}
+
+"""
+Pendiente del terreno: plano ajustado en un círculo de diámetro `slopeBaselineM`, del producto LDRM de PGDA (bases de
+100, 400 y 800 m, hasta 80°S) si el servidor lo tiene o del DEM LOLA.
+"""
+type Slope {
+  slopeDeg: Float
+  slopeBaselineM: Float
+  requestedBaselineM: Float!
+  demResolutionM: Float
+  underestimated: Boolean!
+  roughnessM: Float
+  "De dónde sale: `pgda-ldrm-100m` (producto oficial de PGDA), `dem-20m`, `dem-160m`, `dem-240m`… null sin pendiente."
+  source: String
+  "Solo con `maxSlopeDeg`; null si no se sabe (punto fuera del DEM) o si está sin certificar (`underestimated`): nunca true entonces."
+  meetsMaxSlope: Boolean
+  "Solo cuando `meetsMaxSlope` es null: por qué («sin certificar: la base real es de 477 m…»)."
+  meetsMaxSlopeReason: String
+  "Explicación (en la pendiente de un sitio; null en cada resultado de `rank`)."
+  note: String
+}
+
+type SunEarth {
+  site: SiteInfo!
+  date: DateTime!
+  mode: Mode!
+  lookaheadDays: Int!
+  sun: Body!
+  earth: Body!
+  sunAndEarthVisible: Boolean!
+  earthMinElevationDeg: Float
+  terrain: Terrain
+  "Solo con `slope` (desde 1.17.0)."
+  slope: Slope
+  warnings: [Warning!]!
+}
+
+type Window {
+  start: DateTime!
+  end: DateTime!
+  durationHours: Float!
+  startsBeforeRange: Boolean!
+  endsAfterRange: Boolean!
+}
+
+type WindowSummary {
+  count: Int!
+  totalHours: Float!
+  fractionOfTime: Float!
+  longestWindowHours: Float!
+}
+
+type WindowSet {
+  summary: WindowSummary!
+  windows: [Window!]!
+  "Ortos y ocasos dentro del intervalo; solo con `events: true`, en `sun` y `earth` (desde 1.17.0)."
+  events: [VisibilityEvent!]
+}
+
+"Tipo de evento de visibilidad."
+enum EventType {
+  rise
+  set
+}
+
+"Un orto o un ocaso."
+type VisibilityEvent {
+  type: EventType!
+  time: DateTime!
+}
+
+type WindowsNight {
+  minSunFraction: Float!
+  sampleStepMinutes: Float!
+  longestNightHours: Float!
+  longestNightFullHours: Float
+  extensionLimitDays: Float
+  "true si la noche real llega al límite de búsqueda: `longestNightFullHours` es solo un mínimo."
+  nightTruncated: Boolean
+}
+
+type WindowsBattery {
+  survivalLoadW: Float!
+  whPerKg: Float!
+  depthOfDischarge: Float!
+  nightMetric: NightMetric!
+  nightHours: Float!
+  batteryKWh: Float!
+  batteryKg: Float!
+  note: String!
+}
+
+type Windows {
+  site: SiteInfo!
+  start: DateTime!
+  end: DateTime!
+  mode: Mode!
+  sun: WindowSet!
+  earth: WindowSet!
+  sunAndEarth: WindowSet!
+  earthMinElevationDeg: Float
+  terrain: Terrain
+  night: WindowsNight
+  battery: WindowsBattery
+  "Solo con `slope` (desde 1.17.0)."
+  slope: Slope
+  "Solo con `horizonBandDeg` > 0 (desde 1.18.0)."
+  horizonBand: HorizonBand
+  "Solo con `dsn: true` (desde 1.24.0): la Tierra visible desde el sitio y la Luna por encima de `dsn.minElevationDeg` en al menos una estación de la DSN."
+  earthDsn: WindowSet
+  "Solo con `dsn: true` (desde 1.24.0)."
+  dsn: WindowsDsn
+  warnings: [Warning!]!
+}
+
+"Complejo de la Deep Space Network."
+enum DsnStationId {
+  goldstone
+  madrid
+  canberra
+}
+
+"Antena de referencia (70 m) de un complejo de la DSN, en coordenadas geodésicas WGS84."
+type DsnStation {
+  id: DsnStationId!
+  name: String!
+  antenna: String!
+  lat: Float!
+  lon: Float!
+  heightM: Float!
+}
+
+"Modo DSN de `windows`: las estaciones y la elevación mínima detrás de `earthDsn`."
+type WindowsDsn {
+  minElevationDeg: Float!
+  "true mientras la elevación mínima sea un supuesto de partida sin fuente oficial."
+  minElevationAssumed: Boolean!
+  stations: [DsnStation!]!
+  note: String!
+}
+
+"Valor mínimo y máximo de una cifra entre el horizonte nominal, el subido y el bajado."
+type BandRange {
+  min: Float!
+  max: Float!
+}
+
+"Rango de las cifras del resumen de un astro (o de los dos a la vez) en la banda del horizonte."
+type BandSummaryRange {
+  totalHours: BandRange!
+  fractionOfTime: BandRange!
+  longestWindowHours: BandRange!
+}
+
+type HorizonBandRange {
+  sun: BandSummaryRange!
+  earth: BandSummaryRange!
+  sunAndEarth: BandSummaryRange!
+  "Solo si la respuesta lleva `night`."
+  longestNightHours: BandRange
+  "Solo con `fullNight`."
+  longestNightFullHours: BandRange
+}
+
+type HorizonBandWindows {
+  sun: WindowSet!
+  earth: WindowSet!
+  sunAndEarth: WindowSet!
+}
+
+"Banda de robustez del horizonte (desde 1.18.0): las ventanas con el horizonte subido y bajado `deg` grados y el rango de cada cifra. Análisis de sensibilidad, no intervalo de confianza."
+type HorizonBand {
+  deg: Float!
+  range: HorizonBandRange!
+  raised: HorizonBandWindows!
+  lowered: HorizonBandWindows!
+  note: String!
+}
+
+type TrackBody {
+  azimuthDeg: [Float!]!
+  elevationDeg: [Float!]!
+  horizonElevationDeg: [Float!]!
+  visibleFraction: [Float!]!
+  "Radio aparente del disco, en grados (desde 1.22.0). `elevationDeg − horizonElevationDeg − angularRadiusDeg` es el margen del borde inferior: el disco entero se ve si es positivo (criterio `full`)."
+  angularRadiusDeg: [Float!]!
+}
+
+type Track {
+  site: SiteInfo!
+  start: DateTime!
+  end: DateTime!
+  stepMinutes: Float!
+  times: [DateTime!]!
+  sun: TrackBody!
+  earth: TrackBody!
+  terrain: Terrain
+  warnings: [Warning!]!
+}
+
+type Horizon {
+  site: SiteInfo!
+  azimuthStepDeg: Float!
+  elevationDeg: [Float!]!
+  groundHeightM: Float
+  "Solo con `relief` o `reliefRadiusKm` (desde 1.19.0); null si el servidor no tiene el DEM LOLA en el punto."
+  relief: HorizonRelief
+  terrain: Terrain!
+  warnings: [Warning!]!
+}
+
+"Alturas del terreno LOLA alrededor del sitio: `heightsM[j][k]` a `distancesM[j]` metros en el azimut `k · azimuthStepDeg` (null sin dato)."
+type HorizonRelief {
+  radiusKm: Float!
+  azimuthStepDeg: Float!
+  groundHeightM: Float!
+  distancesM: [Float!]!
+  heightsM: [[Float]!]!
+}
+
+"Pesos normalizados de la puntuación (suman 1)."
+type ScoreWeights {
+  meanSunDiskFraction: Float!
+  earthTimeFraction: Float!
+  sunAndEarthTimeFraction: Float!
+  shortNights: Float!
+  sunTimeFraction: Float!
+  shortEarthOutages: Float!
+  longestSunAndEarth: Float!
+}
+
+"Restricciones pedidas (solo las que se dieron)."
+type Constraints {
+  minMeanSunDiskFraction: Float
+  minSunTimeFraction: Float
+  minEarthTimeFraction: Float
+  minSunAndEarthTimeFraction: Float
+  maxLongestNightHours: Float
+  maxLongestEarthOutageHours: Float
+  minLongestSunAndEarthHours: Float
+  maxBatteryKg: Float
+}
+
+"Métricas de un periodo (una misión)."
+type Metrics {
+  meanSunDiskFraction: Float!
+  sunTimeFraction: Float!
+  earthTimeFraction: Float!
+  sunAndEarthTimeFraction: Float!
+  longestNightHours: Float!
+  longestEarthOutageHours: Float!
+  longestSunAndEarthHours: Float!
+  longestNightFullHours: Float
+  "true si la noche real llega al límite de búsqueda: `longestNightFullHours` y la batería son solo un mínimo."
+  nightTruncated: Boolean
+  batteryKWh: Float
+  batteryKg: Float
+}
+
+type RankNight {
+  minSunFraction: Float!
+  fullNight: Boolean!
+  extensionLimitDays: Float
+}
+
+type RankBattery {
+  survivalLoadW: Float!
+  whPerKg: Float!
+  depthOfDischarge: Float!
+  nightMetric: NightMetric!
+  note: String!
+}
+
+type Panel {
+  orientation: PanelOrientation!
+  factor: String!
+  note: String!
+}
+
+type RankExcluded {
+  siteId: ID!
+  reason: ExclusionReason!
+  slopeDeg: Float
+}
+
+type RankSlope {
+  baselineM: Float!
+  maxSlopeDeg: Float
+  "Solo con `maxSlopeDeg`: qué se ha hecho con las pendientes sin certificar."
+  uncertified: SlopeUncertified
+  excludedSiteIds: [ID!]
+  excluded: [RankExcluded!]
+  note: String!
+}
+
+type RankResult {
+  rank: Int!
+  siteId: ID!
+  name: String!
+  latDeg: Float!
+  lonDeg: Float!
+  score: Float!
+  meetsConstraints: Boolean
+  violatedConstraints: [ConstraintName!]
+  horizonModel: HorizonModel
+  metrics: Metrics!
+  slope: Slope
+}
+
+type Rank {
+  start: DateTime!
+  end: DateTime!
+  days: Float!
+  mode: Mode!
+  "Solo cuando `earthMode` es distinto de `mode` (desde 1.17.0)."
+  earthMode: Mode
+  sampleStepMinutes: Float!
+  scoreWeights: ScoreWeights!
+  constraints: Constraints
+  earthMinElevationDeg: Float
+  results: [RankResult!]!
+  terrain: Terrain
+  night: RankNight
+  battery: RankBattery
+  panel: Panel
+  slope: RankSlope
+  note: String!
+  warnings: [Warning!]!
+}
+
+"Una fecha de alunizaje: la misión que empieza en `date`."
+type LandingDate {
+  "Puesto por puntuación (solo en `best` y `worst`)."
+  rank: Int
+  date: DateTime!
+  score: Float!
+  meetsConstraints: Boolean
+  violatedConstraints: [ConstraintName!]
+  sunVisibleAtLanding: Boolean!
+  hoursToSunChange: Float
+  metrics: Metrics!
+}
+
+type LandingWindow {
+  start: DateTime!
+  end: DateTime!
+  durationDays: Float!
+  dateCount: Int!
+  bestDate: DateTime!
+  bestScore: Float!
+}
+
+type RangeStats {
+  min: Float!
+  mean: Float!
+  max: Float!
+}
+
+type LandingStats {
+  dateCount: Int!
+  score: RangeStats!
+  meanSunDiskFraction: RangeStats!
+  meetsConstraintsFraction: Float
+  goodFraction: Float!
+}
+
+type GoodCriterion {
+  constraints: Boolean!
+  minScore: Float
+  relativeToBest: Float
+}
+
+type LandingDates {
+  site: SiteInfo!
+  start: DateTime!
+  end: DateTime!
+  dateStepHours: Int!
+  missionDays: Float!
+  sampleStepMinutes: Float!
+  mode: Mode!
+  "Solo cuando `earthMode` es distinto de `mode` (desde 1.17.0)."
+  earthMode: Mode
+  scoreWeights: ScoreWeights!
+  constraints: Constraints
+  earthMinElevationDeg: Float
+  goodCriterion: GoodCriterion!
+  stats: LandingStats!
+  best: [LandingDate!]!
+  worst: [LandingDate!]!
+  goodWindows: [LandingWindow!]!
+  "Todas las fechas candidatas, en orden cronológico (lo más pesado de la respuesta: pídelo solo si lo usas)."
+  dates: [LandingDate!]!
+  terrain: Terrain
+  night: RankNight
+  battery: RankBattery
+  panel: Panel
+  "Solo con `slope` (desde 1.17.0)."
+  slope: Slope
+  note: String!
+  warnings: [Warning!]!
+}
+
+"Resultado de `compare`."
+type Comparison {
+  siteCount: Int!
+  "Fechas candidatas de cada sitio (las mismas para todos)."
+  dateCount: Int!
+  "Sitios × fechas evaluados."
+  cellCount: Int!
+  "El barrido de cada sitio, en el orden pedido."
+  sites: [SiteLandingDates!]!
+  "Una fila por fecha candidata, con la puntuación de cada sitio."
+  matrix: [ComparisonRow!]!
+  "Sitios ordenados por su mejor puntuación."
+  ranking: [ComparisonSiteSummary!]!
+  warnings: [Warning!]!
+}
+
+type SiteLandingDates {
+  "El sitio, con todos sus campos (se pueden pedir más cálculos de cada uno)."
+  site: Site!
+  landingDates: LandingDates!
+}
+
+type ComparisonRow {
+  date: DateTime!
+  "Sitio con la mejor puntuación en esa fecha (el primero pedido si empatan)."
+  bestSiteId: ID!
+  cells: [ComparisonCell!]!
+}
+
+type ComparisonCell {
+  siteId: ID!
+  score: Float!
+  meetsConstraints: Boolean
+  violatedConstraints: [ConstraintName!]
+  sunVisibleAtLanding: Boolean!
+  hoursToSunChange: Float
+  metrics: Metrics!
+}
+
+type ComparisonSiteSummary {
+  rank: Int!
+  siteId: ID!
+  name: String!
+  bestDate: DateTime!
+  bestScore: Float!
+  meanScore: Float!
+  goodFraction: Float!
+  meetsConstraintsFraction: Float
+}
+
+"Requisitos de la misión de `bestLandings` (los pedidos o sus valores por defecto)."
+type Mission {
+  days: Float!
+  batteryHours: Float!
+  minEarthPct: Float!
+  "Solo si se pidió."
+  maxEarthGapHours: Float
+}
+
+"Una regla de la misión aplicada a un aterrizaje: si se cumple y por qué."
+type RuleCheck {
+  rule: String!
+  "null: no se puede certificar (hoy, una pendiente medida con un DEM más grueso que la base pedida)."
+  ok: Boolean
+  value: String!
+}
+
+"Parte de la puntuación de cada criterio (0–1)."
+type ScoreParts {
+  energy: Float!
+  comms: Float!
+  early: Float!
+  delays: Float!
+}
+
+"Métricas del mejor aterrizaje de un sitio (las de las reglas de la misión)."
+type LandingMetrics {
+  sunAtLanding: Boolean!
+  earthAtLanding: Boolean!
+  longestShadowHours: Float!
+  longestEarthOutageHours: Float!
+  sunTimeFraction: Float!
+  earthTimeFraction: Float!
+  sunAndEarthTimeFraction: Float!
+  sunlightAfterLandingHours: Float!
+  earthAfterLandingHours: Float!
+}
+
+"Margen ante retrasos del mejor aterrizaje."
+type Robustness {
+  "Días que se puede retrasar el aterrizaje sin dejar de ser viable (medido cada 6 h hasta 15 días)."
+  maxDelayDays: Float!
+  "Siguiente aterrizaje viable cuando se acaba esa racha; null si no lo hay."
+  nextWindow: DateTime
+}
+
+"Un aterrizaje probado de la ventana."
+type TestedLanding {
+  landing: DateTime!
+  verdict: Verdict!
+  reason: String!
+  "Aterrizajes seguidos (cada 12 h) que siguen siendo viables desde este."
+  streak: Int!
+}
+
+"El mejor aterrizaje de un sitio en la ventana."
+type BestLanding {
+  rank: Int!
+  siteId: ID!
+  name: String!
+  latDeg: Float!
+  lonDeg: Float!
+  "Solo con `terrain`."
+  horizonModel: HorizonModel
+  landing: DateTime!
+  verdict: Verdict!
+  reason: String!
+  reasons: [String!]!
+  trace: [RuleCheck!]!
+  "Puntuación de 0 a 100."
+  score: Float!
+  scoreParts: ScoreParts!
+  "null si no hay datos de visibilidad para toda la misión."
+  metrics: LandingMetrics
+  robustness: Robustness!
+  "Aterrizajes viables de la ventana."
+  viableInWindow: Int!
+  "Cada aterrizaje probado de la ventana, en orden cronológico."
+  landings: [TestedLanding!]!
+}
+
+"Resultado de `bestLandings`."
+type BestLandings {
+  start: DateTime!
+  end: DateTime!
+  mission: Mission!
+  priority: Priority!
+  mode: Mode!
+  "Horas entre dos aterrizajes probados."
+  stepHours: Float!
+  "Aterrizajes probados (sitios × fechas)."
+  tested: Int!
+  "El mejor aterrizaje de cada sitio, ordenados por puntuación."
+  options: [BestLanding!]!
+  terrain: Terrain
+  warnings: [Warning!]!
+}
+
+"Centro del mapa de luz."
+type LatLon {
+  latDeg: Float!
+  lonDeg: Float!
+}
+
+"""
+Puntos del mapa de luz en columnas: el valor de cada punto va en la misma posición de cada lista (de norte a sur). En un
+polo, «norte» es el meridiano 0° y «este», el 90°E.
+"""
+type LightMapPoints {
+  latDeg: [Float!]!
+  lonDeg: [Float!]!
+  "Kilómetros al este del centro."
+  xKm: [Float!]!
+  "Kilómetros al norte del centro."
+  yKm: [Float!]!
+  sunTimeFraction: [Float!]!
+  earthTimeFraction: [Float!]!
+  longestNightHours: [Float!]!
+  "true si el punto tiene horizonte con relieve (dentro del DEM)."
+  withTerrain: [Boolean!]!
+}
+
+"Resultado de `lightMap`."
+type LightMap {
+  centre: LatLon!
+  radiusKm: Float!
+  spacingKm: Float!
+  start: DateTime!
+  end: DateTime!
+  mode: Mode!
+  "Número de puntos."
+  count: Int!
+  points: LightMapPoints!
+  terrain: Terrain!
+  warnings: [Warning!]!
+}
+
+"Relieve del servidor (como `terrain` de /v1/health)."
+type HealthTerrain {
+  dem: Boolean!
+  demVersion: String
+  slopeProducts: Boolean!
+  slopeProductBaselinesM: [Float!]!
+  catalogMaskSiteIds: [ID!]!
+}
+
+"Estado del servidor (como /v1/health). No se cachea."
+type Health {
+  status: String!
+  apiVersion: String!
+  uptimeSeconds: Int!
+  terrain: HealthTerrain
+  warnings: [Warning!]!
+}
+
+"Región predefinida de `search` (como /v1/regions)."
+type Region {
+  id: ID!
+  latMinDeg: Float!
+  latMaxDeg: Float!
+  lonMinDeg: Float!
+  lonMaxDeg: Float!
+}
+
+"Región de una búsqueda: `preset` es el id de `regions` si se usó uno."
+type SearchRegion {
+  preset: ID
+  latMinDeg: Float!
+  latMaxDeg: Float!
+  lonMinDeg: Float!
+  lonMaxDeg: Float!
+}
+
+"Un nivel de la búsqueda (0: la malla inicial; los siguientes, el refinamiento)."
+type SearchLevel {
+  level: Int!
+  spacingKm: Float!
+  evaluated: Int!
+}
+
+type SearchResult {
+  rank: Int!
+  latDeg: Float!
+  lonDeg: Float!
+  score: Float!
+  refineLevel: Int!
+  horizonModel: HorizonModel
+  metrics: Metrics!
+  slope: Slope
+}
+
+"Un punto evaluado de la búsqueda (`cells: true`)."
+type SearchCell {
+  latDeg: Float!
+  lonDeg: Float!
+  score: Float!
+  refineLevel: Int!
+  horizonModel: HorizonModel
+  metrics: Metrics!
+  slope: Slope
+}
+
+type SearchSlope {
+  baselineM: Float!
+  maxSlopeDeg: Float
+  uncertified: SlopeUncertified
+  "Puntos que deja fuera `maxSlopeDeg`."
+  excludedCount: Int
+  note: String!
+}
+
+type Search {
+  region: SearchRegion!
+  start: DateTime!
+  end: DateTime!
+  days: Float!
+  mode: Mode!
+  earthMode: Mode
+  sampleStepMinutes: Float!
+  spacingKm: Float!
+  levels: [SearchLevel!]!
+  evaluated: Int!
+  minSeparationKm: Float!
+  scoreWeights: ScoreWeights!
+  earthMinElevationDeg: Float
+  results: [SearchResult!]!
+  "Solo con `cells: true`: todos los puntos evaluados, de mejor a peor."
+  cells: [SearchCell!]
+  terrain: Terrain
+  terrainResolution: TerrainResolution
+  night: RankNight
+  battery: RankBattery
+  panel: Panel
+  slope: SearchSlope
+  note: String!
+  warnings: [Warning!]!
+}

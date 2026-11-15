@@ -1,0 +1,74 @@
+/* Motion layer (proposal). Tried out in motion/index.html before it reaches the views.
+   1. Tokens: durations and easings. When adopted, they move to the :root of styles/base.css.
+   2. Transitions for the design system components (.btn, .option…).
+   3. .motion-* utilities: enter, stamp, flash, cell cascade, stroke.
+   4. Reduced motion: every change becomes instant.
+
+   Rule: motion explains a state change (what changed, where it came from, where it goes).
+   Nothing loops for decoration. */
+
+:root {
+  /* 1. Tokens */
+  --motion-instant: 90ms;   /* press feedback */
+  --motion-fast: 160ms;     /* hover, focus, colour change */
+  --motion-medium: 280ms;   /* an element changes place or state */
+  --motion-slow: 480ms;     /* a new block enters */
+  --motion-scene: 700ms;    /* a whole sequence (the search) */
+  --motion-stagger: 45ms;   /* delay between items of the same entrance */
+
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);   /* changes state on screen */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);       /* enters and settles: the default */
+  --ease-in: cubic-bezier(0.5, 0, 0.9, 0.3);       /* leaves */
+  --ease-spring: linear(0, 0.009, 0.035 2.1%, 0.141 4.4%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%, 0.974 53.8%, 0.975 57.1%, 0.997 69.8%, 1.003 76.9%, 1.004 83.8%, 1);
+}
+
+/* 2. Existing components */
+.btn, .option, .selectable, .segmented button, .player__play, .lab-timeline .play, .tabs a,
+.field input:not([type="range"]), .field select {
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-fast) var(--ease-standard),
+    transform var(--motion-instant) var(--ease-standard);
+}
+.btn:active, .option:active, .player__play:active, .lab-timeline .play:active { transform: scale(0.97); }
+.field input:not([type="range"]):focus, .field select:focus { border-color: var(--color-earth); }
+.badge, .figure > b, .metric > b { transition: color var(--motion-medium) var(--ease-standard), background-color var(--motion-medium) var(--ease-standard); }
+
+/* 3. Utilities */
+
+/* A block enters. style="--i: n" staggers it inside a group. */
+@keyframes motion-enter { from { opacity: 0; transform: translateY(8px); } }
+.motion-enter { animation: motion-enter var(--motion-slow) var(--ease-out) both; animation-delay: calc(var(--i, 0) * var(--motion-stagger)); }
+
+/* Stamp: a verdict or a point appears. One bounce. */
+@keyframes motion-stamp { from { opacity: 0; transform: scale(0.6); } }
+.motion-stamp { animation: motion-stamp var(--motion-slow) var(--ease-spring) both; animation-delay: calc(var(--i, 0) * var(--motion-stagger)); }
+
+/* Flash: the verdict changed. One ring in the element's own colour. */
+@keyframes motion-flash {
+  from { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 55%, transparent); }
+  to { box-shadow: 0 0 0 10px color-mix(in srgb, currentColor 0%, transparent); }
+}
+.motion-flash { animation: motion-flash 650ms var(--ease-out); }
+
+/* Cascade for table cells. --col is the column and --row the row. */
+@keyframes motion-cell { from { opacity: 0; transform: scaleY(0.2); } }
+.motion-cell { transform-origin: bottom; animation: motion-cell var(--motion-medium) var(--ease-out) both; animation-delay: calc(var(--col, 0) * 8ms + var(--row, 0) * 28ms); }
+
+/* Stroke: an SVG line draws itself (needs pathLength="1" on the element). */
+@keyframes motion-stroke { from { stroke-dashoffset: 1; } }
+.motion-stroke { stroke-dasharray: 1; animation: motion-stroke var(--motion-scene) var(--ease-out) both; }
+
+/* View change (View Transitions): short cross-fade, shared elements travel. */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: var(--motion-medium); }
+::view-transition-group(*) { animation-duration: var(--motion-slow); animation-timing-function: var(--ease-out); }
+
+/* 4. Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
+/* Same effect by hand (the lab switch). */
+:root[data-motion="off"] *, :root[data-motion="off"] *::before, :root[data-motion="off"] *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; }

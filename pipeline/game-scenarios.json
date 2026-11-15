@@ -1,0 +1,38 @@
+[
+  {
+    "id": "procedural-shackleton",
+    "name": { "es": "Shackleton procedural", "en": "Procedural Shackleton" },
+    "siteId": "shackleton-rim",
+    "source": "procedural",
+    "seed": 11,
+    "start": { "x": 24, "y": 31 },
+    "pad": { "x": 34, "y": 11 },
+    "startRule": { "search": ["2027-01-01T00:00:00.000Z", "2028-01-01T00:00:00.000Z"], "sunMinEl": 0.5 },
+    "candidates": { "dateStepH": 24, "padKm": [4, 7], "earthRise": [0.25, 0.75], "edge": 2, "batteryMargin": { "beg": [10, 100], "mid": [5, 100], "exp": [5, 100] }, "timeMargin": { "beg": [24, 170], "mid": [12, 96], "exp": [6, 72] }, "dates": 3, "starts": 2, "pads": 2 }
+  },
+  {
+    "id": "lola-shackleton",
+    "name": { "es": "Cresta de Shackleton", "en": "Shackleton ridge" },
+    "siteId": "shackleton-rim",
+    "source": "lola",
+    "startUtc": "2027-10-04T00:00:00.000Z",
+    "start": { "x": 11, "y": 2 },
+    "pad": { "x": 11, "y": 30 },
+    "positionsNote": "Fecha, salida y plataforma: el mejor candidato de pipeline/game-candidates.mjs (J9.3) con la regla de los paquetes de #293; se puede afinar con más fechas y salidas.",
+    "startRule": { "search": ["2027-01-01T00:00:00.000Z", "2028-01-01T00:00:00.000Z"], "sunMinEl": 0.5 },
+    "candidates": { "dateStepH": 24, "padKm": [4, 7], "earthRise": [0.25, 0.75], "edge": 2, "batteryMargin": { "beg": [10, 100], "mid": [5, 100], "exp": [5, 100] }, "timeMargin": { "beg": [24, 170], "mid": [12, 96], "exp": [6, 72] }, "dates": 3, "starts": 2, "pads": 2 }
+  },
+  {
+    "id": "lola-mouton",
+    "name": { "es": "Mons Mouton", "en": "Mons Mouton" },
+    "siteId": "im2-objetivo",
+    "source": "lola",
+    "startUtc": "2027-07-11T12:00:00.000Z",
+    "start": { "x": 15, "y": 34 },
+    "pad": { "x": 8, "y": 16 },
+    "positionsNote": "Fecha, salida y plataforma de la maqueta del mapa de épicas, validadas por el resolutor. Con los niveles comunes los tres sobraban de tiempo (la búsqueda de J9.3 no daba candidato con 11 fechas y la plataforma a 4-13 km); por eso Mouton acorta el día límite de cada nivel (#313).",
+    "levels": { "beg": { "deadline": 192 }, "mid": { "deadline": 168 }, "exp": { "deadline": 144 } },
+    "startRule": { "search": ["2027-01-01T00:00:00.000Z", "2028-01-01T00:00:00.000Z"], "sunMinEl": 0.5 },
+    "candidates": { "dateStepH": 24, "padKm": [4, 7], "earthRise": [0.25, 0.75], "edge": 2, "batteryMargin": { "beg": [10, 100], "mid": [5, 100], "exp": [5, 100] }, "timeMargin": { "beg": [24, 170], "mid": [12, 96], "exp": [6, 72] }, "dates": 3, "starts": 2, "pads": 2 }
+  }
+]

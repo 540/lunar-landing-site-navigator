@@ -1,0 +1,470 @@
+{
+  "generatedBy": "cd data && npm run validation-summary -- --write",
+  "horizons": {
+    "direction": {
+      "sourceUrl": "https://ssd.jpl.nasa.gov/horizons/",
+      "reference": "JPL Horizons, DE441, center coord@301 (MEAN_ME, 1737.4 km sphere), apparent az/el without refraction",
+      "fetchedAt": "2026-11-13",
+      "from": "2026-01-01",
+      "to": "2030-12-31",
+      "sites": 5,
+      "series": 10,
+      "points": 20030,
+      "rmsDeg": 0.002,
+      "maxDeg": 0.0047,
+      "worst": {
+        "site": "east-limb",
+        "body": "sun"
+      },
+      "budgetDeg": {
+        "max": 0.006,
+        "rms": 0.0025
+      }
+    },
+    "events": {
+      "sourceUrl": "https://ssd.jpl.nasa.gov/horizons/",
+      "reference": "JPL Horizons, DE441, center coord@301 (MEAN_ME, 1737.4 km sphere), zero crossings of elevation + k·radius",
+      "fetchedAt": "2026-11-13",
+      "from": "2026-01-02",
+      "to": "2030-12-31",
+      "modes": [
+        "limb",
+        "center",
+        "full"
+      ],
+      "budgetDeg": 0.006,
+      "groups": [
+        {
+          "band": "low",
+          "body": "sun",
+          "sites": [
+            "apollo11",
+            "apollo12",
+            "apollo14",
+            "apollo15",
+            "apollo16",
+            "apollo17",
+            "blueghost1",
+            "chandrayaan3",
+            "slim",
+            "change4",
+            "change6"
+          ],
+          "minAbsLat": 0.67,
+          "maxAbsLat": 69.37,
+          "events": 4080,
+          "missing": 0,
+          "extra": 0,
+          "medianSeconds": 10,
+          "p99Seconds": 36,
+          "maxSeconds": 46,
+          "worstSite": "chandrayaan3",
+          "maxEquivalentDeg": 0.0047
+        },
+        {
+          "band": "low",
+          "body": "earth",
+          "sites": [
+            "apollo11",
+            "apollo12",
+            "apollo14",
+            "apollo15",
+            "apollo16",
+            "apollo17",
+            "blueghost1",
+            "chandrayaan3",
+            "slim",
+            "change4",
+            "change6"
+          ],
+          "minAbsLat": 0.67,
+          "maxAbsLat": 69.37,
+          "events": 0,
+          "missing": 0,
+          "extra": 0
+        },
+        {
+          "band": "near-polar",
+          "body": "sun",
+          "sites": [
+            "im1",
+            "im2-objetivo",
+            "im2-alunizaje"
+          ],
+          "minAbsLat": 80.13,
+          "maxAbsLat": 84.79,
+          "events": 1113,
+          "missing": 0,
+          "extra": 0,
+          "medianSeconds": 46,
+          "p99Seconds": 148,
+          "maxSeconds": 157,
+          "worstSite": "im2-objetivo",
+          "maxEquivalentDeg": 0.0026
+        },
+        {
+          "band": "near-polar",
+          "body": "earth",
+          "sites": [
+            "im1",
+            "im2-objetivo",
+            "im2-alunizaje"
+          ],
+          "minAbsLat": 80.13,
+          "maxAbsLat": 84.79,
+          "events": 804,
+          "missing": 0,
+          "extra": 0,
+          "medianSeconds": 46,
+          "p99Seconds": 257,
+          "maxSeconds": 271,
+          "worstSite": "im2-objetivo",
+          "maxEquivalentDeg": 0.0037
+        },
+        {
+          "band": "polar",
+          "body": "sun",
+          "sites": [
+            "shackleton-rim"
+          ],
+          "minAbsLat": 89.45,
+          "maxAbsLat": 89.45,
+          "events": 91,
+          "missing": 0,
+          "extra": 0,
+          "medianSeconds": 666,
+          "p99Seconds": 4169,
+          "maxSeconds": 4169,
+          "worstSite": "shackleton-rim",
+          "maxEquivalentDeg": 0.0021
+        },
+        {
+          "band": "polar",
+          "body": "earth",
+          "sites": [
+            "shackleton-rim"
+          ],
+          "minAbsLat": 89.45,
+          "maxAbsLat": 89.45,
+          "events": 402,
+          "missing": 0,
+          "extra": 0,
+          "medianSeconds": 51,
+          "p99Seconds": 226,
+          "maxSeconds": 245,
+          "worstSite": "shackleton-rim",
+          "maxEquivalentDeg": 0.0039
+        }
+      ]
+    }
+  },
+  "pgda": {
+    "slope": {
+      "sourceUrl": "https://pgda.gsfc.nasa.gov/products/90",
+      "product": "LDRM_80S_50MPP_ADJ_SLP_100M/400M/800M",
+      "comparison": "2026-11",
+      "window100m": {
+        "points": 240,
+        "rms": 0.68,
+        "bias": 0.09,
+        "maxAbs": 3.73
+      },
+      "window400m": {
+        "points": 240,
+        "rms": 0.28,
+        "bias": 0.06,
+        "maxAbs": 1.67
+      },
+      "cap800m": {
+        "points": 93,
+        "rms": 0.14,
+        "bias": -0.01,
+        "maxAbs": 0.54
+      }
+    },
+    "illumination": {
+      "sourceUrl": "http://imbrium.mit.edu/EXTRAS/ILLUMINATION/",
+      "product": "AVGVISIB_65S_240M_201608, Mazarico et al. 2011",
+      "comparison": "2026-11",
+      "sunFraction": {
+        "points": 59,
+        "rms": 1.08,
+        "bias": -0.4,
+        "maxAbs": 3.94
+      }
+    },
+    "permanentShadow": {
+      "sourceUrl": "https://pgda.gsfc.nasa.gov/products/90",
+      "product": "LPSR_80S_20MPP_ADJ",
+      "comparison": "2026-11",
+      "outside": {
+        "points": 16,
+        "agree": 16
+      },
+      "inside": {
+        "points": 6,
+        "agree": 6
+      }
+    }
+  },
+  "knownDiscrepancies": [
+    {
+      "what": "Fracción de tiempo con la Tierra, antena a 2 m, 18,6 años desde 2010-01-01; 49 puntos al sur de 85°S (el producto de 60 m difiere del de 240 m 6,8 pp RMS)",
+      "metric": "earthFraction",
+      "subject": "antenna",
+      "heightM": 2,
+      "where": {
+        "southOfDeg": 85
+      },
+      "period": {
+        "from": "2010-01-01",
+        "years": 18.6
+      },
+      "reference": {
+        "name": "PGDA AVGVISIB_85S_060M_201608_EARTH",
+        "table": null,
+        "url": "http://imbrium.mit.edu/EXTRAS/ILLUMINATION/IMG/AVGVISIB_85S_060M_201608_EARTH.IMG",
+        "detail": "V1.05, 60 m"
+      },
+      "unit": "pp",
+      "points": 49,
+      "bias": 2.89,
+      "rms": 7.2,
+      "maxAbs": 32.67,
+      "issue": 85,
+      "note": {
+        "kind": "productGap",
+        "resolutionM": 60,
+        "otherResolutionM": 240,
+        "rms": 6.8
+      }
+    },
+    {
+      "what": "Fracción de tiempo con la Tierra, antena a 0 m, 18,6 años desde 2010-01-01; 49 puntos al sur de 85°S (el producto de 60 m difiere del de 240 m 6,8 pp RMS)",
+      "metric": "earthFraction",
+      "subject": "antenna",
+      "heightM": 0,
+      "where": {
+        "southOfDeg": 85
+      },
+      "period": {
+        "from": "2010-01-01",
+        "years": 18.6
+      },
+      "reference": {
+        "name": "PGDA AVGVISIB_85S_060M_201608_EARTH",
+        "table": null,
+        "url": "http://imbrium.mit.edu/EXTRAS/ILLUMINATION/IMG/AVGVISIB_85S_060M_201608_EARTH.IMG",
+        "detail": "V1.05, 60 m"
+      },
+      "unit": "pp",
+      "points": 49,
+      "bias": 1.78,
+      "rms": 6.15,
+      "maxAbs": 32.64,
+      "issue": 85,
+      "note": {
+        "kind": "productGap",
+        "resolutionM": 60,
+        "otherResolutionM": 240,
+        "rms": 6.8
+      }
+    },
+    {
+      "what": "Fracción de tiempo con Sol, panel a 2 m, 18,6 años desde 2010-01-01; 49 puntos al sur de 85°S (el producto de 60 m difiere del de 240 m 6,3 pp RMS)",
+      "metric": "sunFraction",
+      "subject": "panel",
+      "heightM": 2,
+      "where": {
+        "southOfDeg": 85
+      },
+      "period": {
+        "from": "2010-01-01",
+        "years": 18.6
+      },
+      "reference": {
+        "name": "PGDA AVGVISIB_85S_060M_201608",
+        "table": null,
+        "url": "http://imbrium.mit.edu/EXTRAS/ILLUMINATION/IMG/AVGVISIB_85S_060M_201608.IMG",
+        "detail": "V1.05, 60 m"
+      },
+      "unit": "pp",
+      "points": 49,
+      "bias": 2.47,
+      "rms": 7.5,
+      "maxAbs": 47.28,
+      "issue": 85,
+      "note": {
+        "kind": "productGap",
+        "resolutionM": 60,
+        "otherResolutionM": 240,
+        "rms": 6.3
+      }
+    },
+    {
+      "what": "Fracción de tiempo con Sol, panel a 0 m, 18,6 años desde 2010-01-01; 49 puntos al sur de 85°S (el producto de 60 m difiere del de 240 m 6,3 pp RMS)",
+      "metric": "sunFraction",
+      "subject": "panel",
+      "heightM": 0,
+      "where": {
+        "southOfDeg": 85
+      },
+      "period": {
+        "from": "2010-01-01",
+        "years": 18.6
+      },
+      "reference": {
+        "name": "PGDA AVGVISIB_85S_060M_201608",
+        "table": null,
+        "url": "http://imbrium.mit.edu/EXTRAS/ILLUMINATION/IMG/AVGVISIB_85S_060M_201608.IMG",
+        "detail": "V1.05, 60 m"
+      },
+      "unit": "pp",
+      "points": 49,
+      "bias": 1.17,
+      "rms": 3.91,
+      "maxAbs": 18.38,
+      "issue": 85,
+      "note": {
+        "kind": "productGap",
+        "resolutionM": 60,
+        "otherResolutionM": 240,
+        "rms": 6.3
+      }
+    },
+    {
+      "what": "Sombra continua más larga en S2 (−89,7815°, −155,30°), observador a 2 m, 2017–2037. La fila coincide con la tabla 2 del artículo (204,70°E: 82,1 %, 89,8 %, 65 h); no es sensibilidad a la posición, la medición está en `backend/README.md`",
+      "metric": "longestShadow",
+      "subject": "observer",
+      "heightM": 2,
+      "where": {
+        "sites": [
+          "S2"
+        ],
+        "lat": -89.7815,
+        "lon": -155.3
+      },
+      "period": {
+        "from": "2017",
+        "to": "2037"
+      },
+      "reference": {
+        "name": "Gläser et al. 2018",
+        "table": 2,
+        "url": "https://ntrs.nasa.gov/api/citations/20170007365/downloads/20170007365.pdf",
+        "detail": "LOLA 20 m"
+      },
+      "unit": "h",
+      "points": 1,
+      "bias": 34.4,
+      "rms": 34.4,
+      "maxAbs": 34.4,
+      "issue": 85
+    },
+    {
+      "what": "% del tiempo con Sol, observador a 0 m, en la coordenada publicada (redondeada: a ras de suelo el resultado cambia decenas de puntos en metros, rango a ±10 m en el estado), 2017–2037; C1, C2 y S",
+      "metric": "sunFraction",
+      "subject": "observer",
+      "heightM": 0,
+      "where": {
+        "sites": [
+          "C1",
+          "C2",
+          "S"
+        ]
+      },
+      "period": {
+        "from": "2017",
+        "to": "2037"
+      },
+      "reference": {
+        "name": "Gläser et al. 2018",
+        "table": 1,
+        "url": "https://ntrs.nasa.gov/api/citations/20170007365/downloads/20170007365.pdf",
+        "detail": "LOLA 20 m"
+      },
+      "unit": "pp",
+      "points": 3,
+      "bias": -18.34,
+      "rms": 20.65,
+      "maxAbs": 29.35,
+      "issue": 86,
+      "note": {
+        "kind": "nearGround",
+        "radiusM": 10,
+        "minPercent": 41,
+        "maxPercent": 84.6
+      }
+    },
+    {
+      "what": "Iluminación media, observador a 0 m, en la coordenada publicada (redondeada: a ras de suelo el resultado cambia decenas de puntos en metros, rango a ±10 m en el estado), 2017–2037; C1, C2 y S",
+      "metric": "meanIllumination",
+      "subject": "observer",
+      "heightM": 0,
+      "where": {
+        "sites": [
+          "C1",
+          "C2",
+          "S"
+        ]
+      },
+      "period": {
+        "from": "2017",
+        "to": "2037"
+      },
+      "reference": {
+        "name": "Gläser et al. 2018",
+        "table": 1,
+        "url": "https://ntrs.nasa.gov/api/citations/20170007365/downloads/20170007365.pdf",
+        "detail": "LOLA 20 m"
+      },
+      "unit": "pp",
+      "points": 3,
+      "bias": -19.75,
+      "rms": 22.12,
+      "maxAbs": 31.38,
+      "issue": 86,
+      "note": {
+        "kind": "nearGround",
+        "radiusM": 10,
+        "minPercent": 41,
+        "maxPercent": 84.6
+      }
+    },
+    {
+      "what": "Sombra continua más larga, observador a 0 m, en la coordenada publicada (redondeada: a ras de suelo el resultado cambia decenas de puntos en metros, rango a ±10 m en el estado), 2017–2037; C1, C2 y S",
+      "metric": "longestShadow",
+      "subject": "observer",
+      "heightM": 0,
+      "where": {
+        "sites": [
+          "C1",
+          "C2",
+          "S"
+        ]
+      },
+      "period": {
+        "from": "2017",
+        "to": "2037"
+      },
+      "reference": {
+        "name": "Gläser et al. 2018",
+        "table": 1,
+        "url": "https://ntrs.nasa.gov/api/citations/20170007365/downloads/20170007365.pdf",
+        "detail": "LOLA 20 m"
+      },
+      "unit": "h",
+      "points": 3,
+      "bias": 343.3,
+      "rms": 398.8,
+      "maxAbs": 536,
+      "issue": 86,
+      "note": {
+        "kind": "nearGround",
+        "radiusM": 10,
+        "minPercent": 41,
+        "maxPercent": 84.6
+      }
+    }
+  ]
+}

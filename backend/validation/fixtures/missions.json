@@ -1,0 +1,355 @@
+{
+ "description": "Datos oficiales de misiones reales, transcritos a mano. coordinates: coordenadas publicadas (NSSDC para Apollo, LROC/ASU para el resto) y tolerancia en metros según su precisión (Apollo: 50 m, lo que difieren entre sí las compilaciones de NSSDC y LROC; 4 decimales: 5 m; 2 decimales: la mitad de la última cifra, ~155 m en latitud; Chang'e 6: ±30 m declarados). facts: hechos fechados de las misiones. apollo: instantes de las misiones Apollo con la elevación del Sol de la tabla «Working on the Moon» del ALSJ (calculada en 2008; null en el orto) y la de JPL Horizons (DE441, `node validation/fetch-fixtures.ts --horizons`).",
+ "coordinates": {
+  "columns": [
+   "id",
+   "lat",
+   "lon",
+   "source",
+   "tolM"
+  ],
+  "rows": [
+   [
+    "apollo11",
+    0.67416,
+    23.47314,
+    "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html",
+    50
+   ],
+   [
+    "apollo12",
+    -3.0128,
+    -23.4219,
+    "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html",
+    50
+   ],
+   [
+    "apollo14",
+    -3.64589,
+    -17.47194,
+    "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html",
+    50
+   ],
+   [
+    "apollo15",
+    26.13239,
+    3.6333,
+    "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html",
+    50
+   ],
+   [
+    "apollo16",
+    -8.9734,
+    15.5011,
+    "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html",
+    50
+   ],
+   [
+    "apollo17",
+    20.1911,
+    30.7723,
+    "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html",
+    50
+   ],
+   [
+    "im1",
+    -80.13,
+    1.44,
+    "https://lroc.im-ldi.com/images/1360",
+    155
+   ],
+   [
+    "im2-objetivo",
+    -84.78,
+    29.13,
+    "https://lroc.im-ldi.com/images/1401",
+    155
+   ],
+   [
+    "im2-alunizaje",
+    -84.7906,
+    29.1957,
+    "https://lroc.im-ldi.com/images/1408",
+    5
+   ],
+   [
+    "blueghost1",
+    18.5623,
+    61.8103,
+    "https://lroc.im-ldi.com/images/1407",
+    5
+   ],
+   [
+    "chandrayaan3",
+    -69.3741,
+    32.32,
+    "https://lroc.im-ldi.com/images/1314",
+    55
+   ],
+   [
+    "slim",
+    -13.316,
+    25.251,
+    "https://lroc.im-ldi.com/images/1358",
+    5
+   ],
+   [
+    "change4",
+    -45.4561,
+    177.5885,
+    "https://lroc.im-ldi.com/images/1100",
+    5
+   ],
+   [
+    "change6",
+    -41.6385,
+    -153.9852,
+    "https://lroc.im-ldi.com/images/1374",
+    30
+   ]
+  ]
+ },
+ "facts": {
+  "blueghost1": {
+   "landing": "2025-03-02T08:34:00Z",
+   "daylightHours": 346,
+   "source": "https://fireflyspace.com/news/firefly-aerospace-successfully-completes-14-days-of-surface-operations-on-the-moon",
+   "statement": "more than 14 days of surface operations (346 hours of daylight) and just over 5 hours of operations into the lunar night"
+  },
+  "slim": {
+   "landing": "2024-01-19T15:20:00Z",
+   "firstNightDateJst": "2024-01-31",
+   "source": "https://www.isas.jaxa.jp/en/missions/spacecraft/current/slim.html",
+   "statement": "After completing operation from 1/30 ~ 1/31, SLIM entered a two week dormancy period during the long lunar night (JAXA, @SLIM_JAXA, 2024-02-01)"
+  },
+  "chandrayaan3": {
+   "landing": "2023-08-23T12:33:00Z",
+   "landerSleep": "2023-09-04T02:30:00Z",
+   "expectedSunrise": "2023-09-22",
+   "source": "https://www.isro.gov.in/Chandrayaan3_Details.html",
+   "statement": "ISRO (X, 2023-09-02 y 2023-09-04, resumido): el rover queda dormido con el panel orientado al siguiente orto, previsto el 22 de septiembre de 2023; el lander Vikram entra en modo sueño hacia las 08:00 IST del 4 de septiembre."
+  }
+ },
+ "apollo": {
+  "source": "https://www.hq.nasa.gov/alsj/WOTM/WOTM-Sunangles.html",
+  "columns": [
+   "id",
+   "event",
+   "time",
+   "wotmElevationDeg",
+   "horizonsElevationDeg"
+  ],
+  "rows": [
+   [
+    "apollo11",
+    "orto",
+    "1969-07-20T00:06Z",
+    null,
+    0.413493
+   ],
+   [
+    "apollo11",
+    "alunizaje",
+    "1969-07-20T20:18Z",
+    10.3,
+    10.705971
+   ],
+   [
+    "apollo11",
+    "fin última EVA",
+    "1969-07-21T05:12Z",
+    14.8,
+    15.239508
+   ],
+   [
+    "apollo11",
+    "mediodía",
+    "1969-07-27T09:03Z",
+    88.7,
+    89.349302
+   ],
+   [
+    "apollo11",
+    "alunizaje (hora NSSDC al segundo)",
+    "1969-07-20T20:17:40Z",
+    10.3,
+    10.703141
+   ],
+   [
+    "apollo12",
+    "orto",
+    "1969-11-18T21:37Z",
+    null,
+    0.4506
+   ],
+   [
+    "apollo12",
+    "alunizaje",
+    "1969-11-19T06:55Z",
+    4.7,
+    5.152049
+   ],
+   [
+    "apollo12",
+    "fin última EVA",
+    "1969-11-20T07:44Z",
+    17.3,
+    17.695135
+   ],
+   [
+    "apollo12",
+    "mediodía",
+    "1969-11-26T07:37Z",
+    87.9,
+    88.477534
+   ],
+   [
+    "apollo12",
+    "alunizaje (hora NSSDC al segundo)",
+    "1969-11-19T06:54:35Z",
+    4.7,
+    5.148539
+   ],
+   [
+    "apollo14",
+    "orto",
+    "1971-02-04T13:28Z",
+    null,
+    0.329078
+   ],
+   [
+    "apollo14",
+    "alunizaje",
+    "1971-02-05T09:18Z",
+    10,
+    10.347565
+   ],
+   [
+    "apollo14",
+    "fin última EVA",
+    "1971-02-06T12:44Z",
+    23.9,
+    24.197875
+   ],
+   [
+    "apollo14",
+    "mediodía",
+    "1971-02-11T23:39Z",
+    88.3,
+    86.345335
+   ],
+   [
+    "apollo14",
+    "alunizaje (hora NSSDC al segundo)",
+    "1971-02-05T09:18:11Z",
+    10,
+    10.349108
+   ],
+   [
+    "apollo15",
+    "orto",
+    "1971-07-29T19:04Z",
+    null,
+    -0.38439
+   ],
+   [
+    "apollo15",
+    "alunizaje",
+    "1971-07-30T22:16Z",
+    12.4,
+    12.02101
+   ],
+   [
+    "apollo15",
+    "fin última EVA",
+    "1971-08-02T13:42Z",
+    40.6,
+    39.970432
+   ],
+   [
+    "apollo15",
+    "mediodía",
+    "1971-08-06T06:02Z",
+    65.8,
+    63.933963
+   ],
+   [
+    "apollo15",
+    "alunizaje (hora NSSDC al segundo)",
+    "1971-07-30T22:16:29Z",
+    12.4,
+    12.02467
+   ],
+   [
+    "apollo16",
+    "orto",
+    "1972-04-19T21:20Z",
+    null,
+    0.185973
+   ],
+   [
+    "apollo16",
+    "alunizaje",
+    "1972-04-21T02:24Z",
+    14.6,
+    14.763372
+   ],
+   [
+    "apollo16",
+    "fin última EVA",
+    "1972-04-23T21:06Z",
+    47.9,
+    47.898012
+   ],
+   [
+    "apollo16",
+    "mediodía",
+    "1972-04-27T06:37Z",
+    81,
+    79.435779
+   ],
+   [
+    "apollo16",
+    "alunizaje (hora NSSDC al segundo)",
+    "1972-04-21T02:23:35Z",
+    14.6,
+    14.759895
+   ],
+   [
+    "apollo17",
+    "orto",
+    "1972-12-10T17:03Z",
+    null,
+    0.575432
+   ],
+   [
+    "apollo17",
+    "alunizaje",
+    "1972-12-11T19:55Z",
+    12.8,
+    13.349839
+   ],
+   [
+    "apollo17",
+    "fin última EVA",
+    "1972-12-14T05:41Z",
+    39.5,
+    40.199549
+   ],
+   [
+    "apollo17",
+    "mediodía",
+    "1972-12-18T01:50Z",
+    68.3,
+    69.228278
+   ],
+   [
+    "apollo17",
+    "alunizaje (hora NSSDC al segundo)",
+    "1972-12-11T19:54:57Z",
+    12.8,
+    13.349444
+   ]
+  ]
+ }
+}

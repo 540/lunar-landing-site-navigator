@@ -1,0 +1,2150 @@
+<!doctype html><html lang="en"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>  <link rel="icon" type="image/png" sizes="32x32" href="../web/assets/icon-32.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="../web/assets/icon-512.png">
+  <link rel="apple-touch-icon" href="../web/assets/icon-180.png">
+</head><body>
+<title>Lunar Site Navigator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="../web/styles/tokens.css">
+<link rel="stylesheet" href="../web/styles/tour.css">
+<link rel="stylesheet" href="../shared/hands/hands.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: Luna 3D a sangre; cuatro misiones (nave + zona de aterrizaje) juntas en la cara visible. Al elegir una, descenso oblicuo con telemetría y ficha de destino a un lado para que se vea el render. Look oscuro único. */
+:root{
+  color-scheme: dark;
+  --bg:#000000; --glass:rgba(12,15,19,.72); --glass-strong:rgba(14,18,23,.92);
+  --line:rgba(160,175,190,.2); --line-strong:rgba(160,175,190,.38);
+  --fg:#eceef0; --muted:#9aa3ac; --faint:#5f6872;
+  --sim:#f3a83a; --tour:#5aa2f2; --rol:#6fd3b0; --land:#f47a8e; --brand:#fef401; --explore:#a46bff;
+  --f-display:"Space Grotesk","Segoe UI",system-ui,sans-serif;
+  --f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;background:var(--bg);color:var(--fg);overflow:hidden}
+body{font-family:var(--f-body);font-size:14px;line-height:1.5}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+.app{position:relative;height:100%;overflow:hidden}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:manipulation}
+.menuonly{transition:opacity .35s ease}
+/* visibility too, so Tab does not leave an open card for the hidden menu labels */
+.app.zoomed .menuonly{opacity:0;pointer-events:none !important;visibility:hidden;transition:opacity .35s ease,visibility 0s .35s}
+.app.zoomed .menuonly *{pointer-events:none !important}
+/* Salida hacia la pantalla de una misión que ya existe (href en ZONES) */
+#gl{transition:opacity .6s ease}
+.app.exploring #gl{touch-action:none;cursor:grab}
+.app.exploring.dragging #gl{cursor:grabbing}
+.app.leaving #gl{opacity:0}
+@media (prefers-reduced-motion:reduce){#gl{transition:none}}
+
+.hud{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;gap:12px;padding-block:18px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));pointer-events:none}
+.hud > *{pointer-events:auto}
+.brand{display:flex;flex-direction:column;gap:6px;max-width:520px}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.brand h1{margin:0;font-family:var(--f-display);font-weight:600;font-size:clamp(26px,4vw,40px);line-height:1.02;letter-spacing:-.02em;text-wrap:balance;text-shadow:0 2px 20px #000}
+.brand p{margin:0;color:var(--muted);max-width:42ch;text-shadow:0 1px 8px #000}
+
+.labels{position:absolute;inset:0;pointer-events:none}
+/* SPIKE: the missions as cards on the left of the menu, only while the Moon and the rocket leave that room (.app.mcards-on, set by mOverview) */
+.mcards{align-self:flex-start;margin-bottom:auto;width:300px;list-style:none;margin-top:4px;padding:0;display:flex;flex-direction:column;gap:6px;max-height:0;overflow:hidden;opacity:0;visibility:hidden;transition:opacity .35s ease,visibility 0s .35s,max-height 0s .35s}
+/* off, the list takes no room in the column, so five cards can never push the dock off the screen; mOverview only turns it on when it fits */
+.app.mcards-on:not(.zoomed) .mcards{max-height:none;opacity:1;visibility:visible;transition:opacity .35s ease}
+.mcard{display:grid;gap:2px;width:100%;text-align:left;background:var(--glass);border:1px solid var(--line);border-left:2px solid var(--c);border-radius:10px;padding:8px 12px;backdrop-filter:blur(8px);transition:border-color .2s,background .2s,opacity .2s}
+.mcard .mis{font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;color:var(--c)}
+.mcard b{font-family:var(--f-display);font-weight:600;font-size:15px}
+.mcard small{font-size:12px;line-height:1.35;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.mcard:hover,.mcard.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 10%,var(--glass-strong))}
+.mcards.dim .mcard:not(.on){opacity:.55}
+.zl{position:absolute;left:0;top:0;pointer-events:auto;display:flex;align-items:center;gap:8px;background:none;border:0;padding:6px 8px;text-align:left;transition:opacity .3s}
+.zl.l{flex-direction:row-reverse;text-align:right}
+.zl .tick{width:20px;height:1px;background:var(--c);opacity:.7;flex:none;transition:width .25s ease,opacity .25s}
+.zl .txt{display:flex;flex-direction:column;gap:1px;background:var(--glass);border:1px solid var(--line);border-radius:10px;padding:6px 11px;backdrop-filter:blur(8px);transition:border-color .2s,background .2s}
+.zl .mis{font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;color:var(--c)}
+.zl b{font-family:var(--f-display);font-weight:600;font-size:15px;white-space:nowrap}
+.zl small{font-family:var(--f-mono);font-size:10.5px;color:var(--muted);white-space:nowrap}
+.zl:hover .txt,.zl.on .txt,.zl:focus-visible .txt{border-color:var(--c);background:var(--glass-strong)}
+.zl:hover .tick,.zl.on .tick{width:30px;opacity:1}
+.zl.dim{opacity:.5}
+.zl.wait{opacity:0;pointer-events:none}
+.zl:focus-visible{outline:none}
+/* 540 satellite and mapping probe: the label sits centered under them, without the tick */
+.zl.sat,.zl.probe{flex-direction:column;text-align:center}
+.zl.sat .tick,.zl.probe .tick{display:none}
+.zl.sat .txt,.zl.probe .txt{align-items:center}
+/* The probe is scenery: its label is informative only, shown while the pointer is near it and it is in sight */
+.zl.probe{pointer-events:none}
+.zl.probe:not(.on),.zl.probe.away{opacity:0}
+.zl.probe small{display:block}
+/* Visually hidden until focused from the keyboard */
+.vh:not(:focus-visible){position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+/* "Explorar la Luna" rocket: label centered under it; hidden until data/zones.json is in */
+.zl.xr{flex-direction:column;text-align:center}
+/* its tick is the same line as the missions', upright: from under the rocket's flame down to the label, with the margins the missions leave around theirs; where the reticle's chip is showing it passes behind it (--g0 to --g1) */
+.labels .zl.xr .tick{position:absolute;left:50%;bottom:calc(100% - var(--tb,0px));width:1px;height:var(--tk,0px);margin-left:-.5px;pointer-events:none;
+ background:linear-gradient(to bottom,var(--c) 0 var(--g0,100%),transparent var(--g0,100%) var(--g1,100%),var(--c) var(--g1,100%))}
+.zl.xr .txt{align-items:center}
+.zl.xr[hidden]{display:none}
+.zl.xr.away{opacity:0;pointer-events:none}
+
+.dock{align-self:center;width:min(560px,100%);background:var(--glass-strong);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;backdrop-filter:blur(12px);box-shadow:0 10px 40px rgba(0,0,0,.55);transition:border-color .25s,opacity .35s}
+.dock .row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.dock .k{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--dc,var(--muted))}
+.dock h2{margin:0;font-family:var(--f-display);font-weight:600;font-size:22px;line-height:1.1}
+.dock p{margin:0;color:var(--muted);max-width:60ch}
+.hint{font-family:var(--f-mono);font-size:11px;color:var(--faint)}
+
+.telemetry{position:absolute;left:50%;top:max(18px, env(safe-area-inset-top, 0px));transform:translateX(-50%);display:flex;gap:18px;font-family:var(--f-mono);font-size:11.5px;color:var(--muted);background:var(--glass);border:1px solid var(--line);border-radius:999px;padding:6px 16px;backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .3s;white-space:nowrap;font-variant-numeric:tabular-nums;max-width:calc(100% - 24px)}
+.telemetry b{color:var(--tc,var(--fg));font-weight:500}
+.telemetry.on{opacity:1}
+
+.dest{position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-end;padding-block:24px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(24px, env(safe-area-inset-right, 0px));background:linear-gradient(90deg,rgba(0,0,0,0) 45%,rgba(0,0,0,.55) 100%);opacity:0;pointer-events:none;visibility:hidden;transition:opacity .35s ease,visibility 0s .35s}
+/* visibility, not just opacity: a closed card must not take the Tab focus */
+.dest.on{opacity:1;pointer-events:auto;visibility:visible;transition:opacity .35s ease,visibility 0s}
+.destcard{width:min(400px,100%);background:var(--glass-strong);border:1px solid var(--tc,var(--line));border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:11px;backdrop-filter:blur(14px);box-shadow:0 20px 60px rgba(0,0,0,.6);transform:translateX(16px);transition:transform .35s ease;max-height:100%;overflow-y:auto;overscroll-behavior:contain}
+.dest.on .destcard{transform:none}
+.destcard .k{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--tc)}
+.destcard h2{margin:0;font-family:var(--f-display);font-weight:600;font-size:clamp(22px,3vw,28px);line-height:1.05;letter-spacing:-.015em}
+.destcard p{margin:0;color:var(--muted)}
+.placeholder{border:1px dashed var(--line-strong);border-radius:10px;padding:11px 13px;display:flex;flex-direction:column;gap:7px}
+.placeholder span{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.placeholder ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px;color:var(--fg)}
+.back{align-self:flex-start;border:1px solid var(--tc,var(--line));background:transparent;color:var(--tc,var(--fg));border-radius:999px;padding:9px 18px;font-weight:600;display:inline-flex;gap:8px;align-items:center}
+.back:hover{background:rgba(255,255,255,.05)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+/* "Quiénes somos" card, opened from the 540 satellite */
+.aboutlogo{align-self:flex-start;width:132px;height:auto;border-radius:8px;display:block}
+.placeholder.facts{border-style:solid}
+.placeholder p{margin:0;color:var(--fg)}
+a.fwd{text-decoration:none}
+.fwd{border:0;background:var(--tc,var(--fg));color:#0b0d10;border-radius:999px;padding:10px 22px;font-weight:600;display:inline-flex;gap:10px;align-items:center;box-shadow:0 0 0 0 var(--tc);transition:box-shadow .25s,transform .15s}
+.fwd span{transition:transform .2s}
+.fwd:hover{box-shadow:0 0 24px -2px var(--tc)}
+.fwd:hover span{transform:translateX(3px)}
+.fwd:active{transform:scale(.97)}
+/* Pantalla de destino (marcador de posición) */
+.screen{position:absolute;inset:0;background:var(--bg);display:grid;place-items:center;padding-block:24px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));opacity:0;pointer-events:none;visibility:hidden;transition:opacity .5s ease,visibility 0s .5s}
+.screen.on{opacity:1;pointer-events:auto;visibility:visible;transition:opacity .5s ease,visibility 0s}
+.scrbody{width:min(520px,100%);display:flex;flex-direction:column;gap:12px;border-left:2px solid var(--tc);padding-left:20px}
+.scrbody .k{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--tc)}
+.scrbody h2{margin:0;font-family:var(--f-display);font-weight:600;font-size:clamp(28px,5vw,44px);line-height:1;letter-spacing:-.02em}
+.scrbody p{margin:0;color:var(--muted);max-width:48ch}
+@media (prefers-reduced-motion:reduce){.screen,.fwd,.fwd span{transition:none}}
+
+/* Fijado de objetivo sobre el cohete al pasar el ratón */
+.lock{position:absolute;left:0;top:0;width:72px;height:72px;pointer-events:none;opacity:0;transition:opacity .2s;--lc:var(--fg)}
+.lock.on{opacity:1}
+.lock i{position:absolute;width:14px;height:14px;border:0 solid var(--lc);transition:inset .25s ease}
+.lock i:nth-child(1){left:-6px;top:-6px;border-left-width:1.5px;border-top-width:1.5px}
+.lock i:nth-child(2){right:-6px;top:-6px;border-right-width:1.5px;border-top-width:1.5px}
+.lock i:nth-child(3){left:-6px;bottom:-6px;border-left-width:1.5px;border-bottom-width:1.5px}
+.lock i:nth-child(4){right:-6px;bottom:-6px;border-right-width:1.5px;border-bottom-width:1.5px}
+.lock.on i:nth-child(1){left:0;top:0}.lock.on i:nth-child(2){right:0;top:0}.lock.on i:nth-child(3){left:0;bottom:0}.lock.on i:nth-child(4){right:0;bottom:0}
+.lock span{position:absolute;left:50%;top:calc(100% + 6px);transform:translateX(-50%);font-family:var(--f-mono);font-size:10px;letter-spacing:.04em;color:var(--lc);white-space:nowrap;background:var(--glass);border-radius:4px;padding:1px 6px;font-variant-numeric:tabular-nums}
+.lock em{position:absolute;inset:50% auto auto 50%;width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:50%;background:var(--lc);font-style:normal;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.lock em{animation:none}.lock i{transition:none}}
+.credit{position:absolute;right:max(16px, env(safe-area-inset-right, 0px));bottom:6px;font-family:var(--f-mono);font-size:10px;color:var(--faint);pointer-events:none}
+.loading{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-mono);font-size:12px;color:var(--muted);pointer-events:none;transition:opacity .6s}
+.loading.done{opacity:0}
+/* 3D not available (#144): no WebGL or the context was lost. Links to the three screens instead of a black page */
+.glost{position:absolute;inset:0;z-index:50;display:grid;place-items:center;padding:24px;background:var(--bg)}
+.glost .box{max-width:420px;display:flex;flex-direction:column;gap:14px;background:var(--glass-strong);border:1px solid var(--line-strong);border-radius:14px;padding:22px 24px}
+.glost p{margin:0;font-size:15px}
+.glost ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.glost a{color:var(--fg);font-weight:600}
+@media (max-width:700px){
+  .zl b{font-size:13.5px}.zl small{display:none}.zl .tick{width:10px}
+  .dock h2{font-size:19px}
+  .credit{display:none}
+  .telemetry{gap:12px;font-size:10.5px}
+  .dest{align-items:flex-end;justify-content:center;background:linear-gradient(180deg,rgba(0,0,0,0) 40%,rgba(0,0,0,.6) 100%);padding-right:max(16px, env(safe-area-inset-right, 0px))}
+  .destcard{transform:translateY(16px)}
+  .back,.fwd{min-height:44px}
+}
+/* Small phones: tighter labels and telemetry */
+@media (max-width:380px){
+  .brand h1{font-size:24px}
+  .zl{padding:4px 6px}.zl b{font-size:12.5px}.zl .txt{padding:5px 9px}.zl .tick{width:6px}
+  .telemetry{gap:8px;font-size:10px;padding:5px 12px}
+  .destcard{padding:16px}
+}
+/* Short portrait screens: the flavour text gives way to the Moon */
+@media (max-width:700px) and (max-height:620px){
+  .brand p,.dock p{display:none}
+  .dock{padding:11px 14px}
+  .dest{padding-block:12px}.destcard{gap:9px}
+}
+/* Phones in landscape: compact header, dock in a corner, card that scrolls inside the screen */
+@media (max-height:520px) and (orientation:landscape){
+  .hud{padding-block:10px}
+  .brand{gap:4px}.brand h1{font-size:22px}.brand p{display:none}
+  .dock{align-self:flex-start;width:min(340px,100%);padding:9px 14px;gap:3px}.dock p,.dock .hint{display:none}.dock h2{font-size:17px}
+  .credit{display:none}
+  .telemetry{top:max(10px, env(safe-area-inset-top, 0px))}
+  .dest{padding-block:10px}.destcard{width:min(440px,56%);padding:14px 16px;gap:8px}
+  .placeholder{padding:9px 11px;gap:5px}
+}
+@media (prefers-reduced-motion:reduce){.zl,.zl .tick,.dock,.loading,.dest,.destcard,.telemetry,.menuonly,.app.zoomed .menuonly,.dest.on,.screen.on{transition:none}}
+.lightbtn{align-self:flex-start;display:inline-flex;gap:8px;align-items:center;background:var(--glass);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12px;color:var(--muted);backdrop-filter:blur(8px)}
+.lightbtn:hover{border-color:var(--line-strong);color:var(--fg)}
+/* Tutorial (first visit and #tutorialBtn): engine and styles come from ../web/ */
+.brandbtns{display:flex;flex-wrap:wrap;gap:8px}
+.lightbtn svg{flex:none;color:var(--tour)}
+.lightbtn .sw{width:8px;height:8px;border-radius:50%;background:var(--sim);box-shadow:0 0 8px var(--sim)}
+.lightbtn b{font-family:var(--f-mono);font-weight:500;color:var(--fg)}
+.lang-toggle{display:inline-flex;gap:4px;align-self:flex-start}
+.lang-toggle .lightbtn{font-family:var(--f-mono);padding:5px 10px}
+.lang-toggle .lightbtn[aria-pressed="true"]{color:var(--fg);border-color:var(--line-strong);cursor:default}
+/* Phones: light, tutorial and ES/EN share one row, so the header is no taller than before the switch existed and
+   leaves the sky for the Mission 04 and satellite labels (home/src/menu-layout.mjs). On the narrowest, the tutorial is just its icon */
+@media (max-width:400px){
+  .brandbtns{flex-wrap:nowrap;gap:6px}
+  .brandbtns .lightbtn{padding:5px 8px;gap:6px}
+  .brandbtns .lang-toggle .lightbtn{padding:5px 7px}
+}
+@media (max-width:340px){#tutorialBtn .tlabel{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}}
+/* "Explorar la Luna": zones of the whole Moon (home/data/zones.json). Lilac diamonds, never rockets, so they are not taken for missions */
+:root{--zone:#c4b0ff;--yes:#7fd69a;--maybe:#f2c46b;--hard:#f39283}
+.xp{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;gap:12px;padding-block:18px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));pointer-events:none;opacity:0;visibility:hidden;transition:opacity .35s ease,visibility 0s .35s}
+.xp{padding-bottom:max(34px, env(safe-area-inset-bottom, 0px))} /* the bottom chips clear #site-version */
+.app.exploring .xp{opacity:1;visibility:visible;transition:opacity .35s ease .2s,visibility 0s}
+.app.exploring .xp > *{pointer-events:auto}
+.xphead{display:flex;flex-direction:column;gap:6px;max-width:520px;align-self:flex-start}
+.xphead h2{margin:0;font-family:var(--f-display);font-weight:600;font-size:clamp(22px,3.4vw,34px);line-height:1.05;letter-spacing:-.02em;text-wrap:balance;text-shadow:0 2px 20px #000}
+.xphead p{margin:0;color:var(--muted);max-width:44ch;text-shadow:0 1px 8px #000}
+.xphead .legend{margin:6px 0 0 -12px;align-self:flex-start;width:fit-content;border-radius:999px;padding:4px 12px;background:transparent;transition:background-color .2s,color .2s} /* the legend lives under the buttons in both layouts */
+.xphead .back{--tc:var(--zone);background:var(--glass);backdrop-filter:blur(8px)}
+.xpbtns{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:4px}
+.xpbtns .lang-toggle{align-self:center}
+.handbtn[aria-pressed="true"]{background:color-mix(in srgb,var(--zone) 22%,var(--glass))}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend .gem{width:9px;height:9px;transform:rotate(45deg);border:2px solid var(--zone);background:color-mix(in srgb,var(--zone) 35%,transparent)}
+.legend .rk{width:5px;height:13px;border-radius:3px 3px 1px 1px;background:linear-gradient(var(--fg) 70%,var(--sim) 70%)}
+.chips{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:8px;background:transparent;border:1px solid var(--line-strong);border-radius:999px;padding:6px 12px;font-size:13px;white-space:nowrap;min-height:36px}
+.chip i{width:8px;height:8px;transform:rotate(45deg);border:1.5px solid var(--zone);flex:none}
+.chip:hover,.chip.on{border-color:var(--zone);background:color-mix(in srgb,var(--zone) 12%,transparent)}
+.chip.on i{background:var(--zone)}
+/* Chips as cards while the globe leaves room for them on the left (.app.xover, set by xOverview) */
+.chip .cv,.chip .cx{display:none}
+.xover .xp{justify-content:flex-start}
+/* over the globe: near-black backing, white text */
+/* only colours change: the box stays the same size, so the overlap test cannot feed back on itself */
+.legend.onmoon{background:rgba(6,7,10,.86);color:var(--fg)}
+.chip.onmoon{background:rgba(6,7,10,.86);color:var(--fg);backdrop-filter:blur(6px)}
+.chip.onmoon.on,.chip.onmoon:hover{background:color-mix(in srgb,var(--zone) 22%,rgba(6,7,10,.9))}
+.xover .xpdock{width:min(400px,34vw);min-height:0;display:flex;flex-direction:column;gap:10px;background:none;border:0;padding:0;backdrop-filter:none;box-shadow:none}
+.xover .chips{flex-direction:column;flex-wrap:nowrap;gap:8px;overflow-y:auto;min-height:0;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent;scrollbar-gutter:stable;padding-right:6px;--fade-size:28px;scroll-padding-block:var(--fade-size);--fade-top:0px;--fade-bottom:0px}
+/* a fade only on the side that still has cards to show (classes set by syncChipsFade); the mask lives only here so a list with nothing to fade keeps the cards' backdrop blur (a mask makes the list a Backdrop Root) */
+.xover .chips.more-up,.xover .chips.more-down{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 var(--fade-top),#000 calc(100% - var(--fade-bottom)),transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 var(--fade-top),#000 calc(100% - var(--fade-bottom)),transparent 100%)}
+.xover .chips.more-up{--fade-top:var(--fade-size)}
+.xover .chips.more-down{--fade-bottom:var(--fade-size)}
+.xover .chips:hover{scrollbar-color:var(--muted) transparent}
+.xover .chips::-webkit-scrollbar{width:6px;background:transparent}
+.xover .chips::-webkit-scrollbar-track,.xover .chips::-webkit-scrollbar-corner{background:transparent}
+.xover .chips::-webkit-scrollbar-button{display:none;width:0;height:0}
+.xover .chips::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:3px}
+.xover .chips::-webkit-scrollbar-thumb:hover,.xover .chips::-webkit-scrollbar-thumb:active{background:var(--muted)}
+.xover .chip{display:grid;grid-template-columns:14px 1fr auto;align-items:center;gap:4px 10px;white-space:normal;text-align:left;width:100%;border-radius:12px;padding:11px 14px;background:var(--glass);backdrop-filter:blur(8px);font-size:15px;font-weight:600}
+.xover .chip .cn{grid-column:2}
+.xover .chip .cv{display:block;grid-column:3;border-radius:999px;padding:1px 9px;font-size:11.5px;font-weight:600;color:#0b0d10;background:var(--vc)}
+.xover .chip .cx{display:flex;flex-direction:column;gap:7px;grid-column:2 / 4}
+.xover .chip .cr{font-size:12.5px;font-weight:400;color:var(--muted)}
+.xover .chip .cst{display:grid;grid-template-columns:1fr 1fr auto;gap:12px}
+.xover .chip .cs{display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:2px 6px;font-weight:400}
+.xover .chip .cs em{font-style:normal;font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.xover .chip .cs b{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
+.xover .chip .cs u{grid-column:1 / 3;height:3px;border-radius:2px;background:linear-gradient(90deg,var(--zone) var(--w),var(--line) var(--w));text-decoration:none}
+.xover .chip.why{grid-template-columns:14px 1fr;padding-block:13px;border-color:color-mix(in srgb,var(--brand) 55%,transparent);background:color-mix(in srgb,var(--brand) 10%,var(--glass))}
+.xover .chip.why .cx{grid-column:2}
+.zpins{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .35s}
+.app.exploring .zpins{opacity:1}
+.zdot,.zname{position:absolute;left:0;top:0;border:0;padding:0;background:none;transition:opacity .25s}
+.app.exploring .zdot,.app.exploring .zname{pointer-events:auto}
+.zdot{width:30px;height:30px;margin:-15px 0 0 -15px;display:grid;place-items:center}
+.zdot i{width:13px;height:13px;transform:rotate(45deg);border:2px solid var(--zone);background:color-mix(in srgb,var(--zone) 30%,rgba(0,0,0,.4));box-shadow:0 0 12px color-mix(in srgb,var(--zone) 60%,transparent);transition:transform .2s}
+.zname{display:inline-flex;align-items:center;gap:6px;background:var(--glass);border:1px dashed color-mix(in srgb,var(--zone) 70%,transparent);border-radius:6px;padding:3px 9px;font-size:12.5px;font-weight:500;white-space:nowrap;backdrop-filter:blur(8px);color:var(--fg)}
+.zdot:hover i,.zdot.on i{transform:rotate(45deg) scale(1.3);background:var(--zone)}
+.zname:hover,.zname.on{border-style:solid;border-color:var(--zone);background:var(--glass-strong)}
+.zdot.off,.zname.off{opacity:0;pointer-events:none !important}
+#zcard{--tc:var(--zone)}
+.zcard .destcard{width:min(430px,100%);gap:12px}
+/* «¿Por qué el polo sur?»: first chip and its card, in the brand yellow so it reads as the way in */
+.chip.why,#whycard{--zone:var(--brand);--tc:var(--brand)}
+.chip.why{font-weight:600;border-color:color-mix(in srgb,var(--brand) 55%,transparent)}
+.chip.why i{transform:none;border-radius:50%}
+.whyclose{margin:0;color:var(--fg) !important;font-weight:500}
+.zfact{color:var(--fg) !important}
+.zsec{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:10px}
+.zsec > span{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.verdict{display:flex;gap:10px;align-items:flex-start}
+.verdict b{flex:none;border-radius:999px;padding:2px 11px;font-family:var(--f-display);font-weight:600;font-size:14px;color:#0b0d10;background:var(--vc)}
+.verdict p{margin:0;color:var(--muted)}
+.inds{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.inds li{display:grid;grid-template-columns:28px 1fr;gap:2px 10px;align-items:start}
+.inds svg{grid-row:span 2;width:26px;height:26px;color:var(--zone)}
+.inds b{font-weight:600}
+.inds b em{font-style:normal;font-weight:400;color:var(--muted)}
+.inds small{color:var(--muted);font-size:12.5px;line-height:1.4}
+.zcard details{border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+.zcard summary{cursor:pointer;font-size:13px;color:var(--muted)}
+.zcard summary:hover{color:var(--fg)}
+.zcard dl{margin:8px 0 0;display:grid;grid-template-columns:auto 1fr;gap:5px 12px;font-size:12.5px}
+.zcard dt{color:var(--muted)}
+.zcard dd{margin:0;font-variant-numeric:tabular-nums}
+.zcard .src{margin:8px 0 0;font-size:11.5px;color:var(--faint) !important}
+.zcard .actions a.back{text-decoration:none}
+@media (max-width:700px){
+  .zcard .destcard{max-height:62%}
+  .xphead p{display:none}
+  .hands-on .xphead h2{max-width:calc(100% - 152px)}
+  .xpdock{padding:10px 12px}
+  .chips{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;margin-inline:-4px;padding-inline:4px}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{min-height:40px}
+  .zname{font-size:11.5px;padding:2px 7px}
+}
+@media (max-height:520px) and (orientation:landscape){
+  .xp{padding-block:10px}
+  .xphead{gap:4px}.xphead p{display:none}.xphead h2{font-size:20px}
+  .xpdock{padding:8px 12px;gap:6px}.legend{display:none}
+  .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .zcard .destcard{max-height:100%}
+}
+@media (prefers-reduced-motion:reduce){.xp,.zpins,.zdot,.zname,.zdot i{transition:none}}
+</style>
+
+<div class="app" id="app">
+  <canvas id="gl" aria-hidden="true"></canvas>
+  <div class="loading" id="loading" role="status" aria-live="polite">Cargando el polo sur…</div>
+  <div class="glost" id="glost" role="alertdialog" aria-modal="true" aria-label="Vista 3D no disponible" aria-describedby="glostText" hidden>
+    <div class="box">
+      <p id="glostText">La vista 3D no está disponible en este equipo o se ha detenido.</p>
+      <ul>
+        <li><a href="../web/">Simulador de misiones</a></li>
+        <li><a href="../viewpoint/">Mirador del Polo Sur</a></li>
+        <li><a href="../rolegame/">Juego de rol</a></li>
+        <li><a href="../lander/">Aterrizaje a bordo</a></li>
+      </ul>
+      <button class="back" id="glostReload" type="button" data-i18n="glost.reload">Recargar</button>
+    </div>
+  </div>
+  <div class="lock menuonly" id="lock" aria-hidden="true"><i></i><i></i><i></i><i></i><em></em><span id="lockTxt"></span></div>
+  <div class="labels menuonly" id="labels"></div>
+
+  <div class="hud">
+    <header class="brand menuonly">
+      <span class="eyebrow">NASA Space Apps 2026 · Lunar Landing Site Navigator</span>
+      <h1 data-i18n="brand.title">Cuatro misiones rumbo al polo sur</h1>
+      <p data-i18n="brand.lead">Elige una nave o su zona de aterrizaje y baja con ella.</p>
+      <div class="brandbtns">
+        <button class="lightbtn" id="lightBtn" aria-pressed="false"><span class="sw"></span><span id="lightTxt"></span></button>
+        <button class="lightbtn" id="tutorialBtn" title="Repetir el tutorial" data-i18n-title="brand.tutorialTitle"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6.25"/><path d="M10.7 5.3 9.2 9.2 5.3 10.7 6.8 6.8z"/></svg><span class="tlabel">Tutorial</span></button>
+        <button class="lightbtn xbtn vh" id="exploreBtn" hidden><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.5 14.5 8 8 14.5 1.5 8z"/><circle cx="8" cy="8" r="1.6" fill="currentColor" stroke="none"/></svg><span data-i18n="brand.explore">Explorar la Luna</span></button>
+      </div>
+    </header>
+    <ul class="mcards menuonly" id="mcards"></ul>
+
+    <section class="dock menuonly" id="dock" aria-live="polite">
+      <div class="row">
+        <span class="k" id="dKicker">Polo sur de la Luna</span>
+        <span class="hint" id="dHint">Pasa el ratón o toca una nave</span>
+      </div>
+      <h2 id="dTitle">Simulador, mirador, rol o aterrizaje</h2>
+      <p id="dText">El Sol apenas asoma por el horizonte: lo que no toca queda en sombra, a veces durante miles de millones de años.</p>
+    </section>
+  </div>
+
+  <div class="zpins" id="zpins" aria-hidden="true"></div>
+  <div class="xp" id="xp">
+    <header class="xphead">
+      <span class="eyebrow" data-i18n="xp.eyebrow">Explorar la Luna</span>
+      <h2 id="xpTitle" data-i18n="xp.title">¿Por qué no se aterriza en cualquier sitio?</h2>
+      <p data-i18n="xp.lead">Cada zona enseña una razón distinta: la luz, la Tierra en el cielo o el terreno. Empieza por «¿Por qué el polo sur?», toca un rombo o elige una zona abajo.</p>
+      <div class="xpbtns">
+        <button class="back" id="xpBack"><span aria-hidden="true">←</span> <span data-i18n="xp.back">Volver a las misiones</span></button>
+        <button class="back handbtn" id="handBtn" aria-pressed="false"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 8V3.5a1 1 0 0 1 2 0V7m0-.5v-4a1 1 0 0 1 2 0v4m0-3a1 1 0 0 1 2 0V8m0-1.5a1 1 0 0 1 2 0V10a4.5 4.5 0 0 1-4.5 4.5c-1.9 0-2.9-.8-3.9-2.4L2.4 9.4a1 1 0 0 1 1.7-1L5.5 10"/></svg><span data-hand-label>Mover con las manos</span></button>
+      </div>
+      <div class="legend"><span><i class="gem"></i><span data-i18n="xp.legendZone">Rombo: zona para conocer</span></span><span><i class="rk"></i><span data-i18n="xp.legendMission">Nave: misión de la portada</span></span></div>
+    </header>
+    <nav class="xpdock" aria-labelledby="xpTitle">
+      <ul class="chips" id="chips"></ul>
+    </nav>
+  </div>
+
+  <div class="dest zcard" id="zcard" role="dialog" aria-modal="true" aria-labelledby="zTitle">
+    <div class="destcard">
+      <span class="k" id="zKicker"></span>
+      <h2 id="zTitle"></h2>
+      <p class="zfact" id="zFact"></p>
+      <div class="zsec">
+        <span data-i18n="z.canLand">¿Se puede aterrizar aquí?</span>
+        <div class="verdict"><b id="zVerdict"></b><p id="zWhy"></p></div>
+      </div>
+      <div class="zsec">
+        <span data-i18n="z.whatLike">Cómo es estar aquí</span>
+        <ul class="inds">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg><b><span data-i18n="z.light">Luz</span>: <em id="zLight"></em></b><small id="zLightTxt"></small></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M5 8.5c2.5.3 3.6 1.6 3.4 3.4-.2 1.7 1 2.6 2.4 2.9M14.5 4.3c-.6 1.7.2 2.9 2 3.2 1.5.3 2.3 1.4 2.2 3M13.5 20.3c.2-1.8 1.3-2.9 3-3.1"/></svg><b><span data-i18n="z.earth">Tierra</span>: <em id="zEarth"></em></b><small id="zEarthTxt"></small></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 19.5h19M3.5 19.5l5.5-9 3.5 5 2.5-3.5 5.5 7.5"/></svg><b><span data-i18n="z.ground">Terreno</span>: <em id="zGround"></em></b><small id="zGroundTxt"></small></li>
+        </ul>
+      </div>
+      <details>
+        <summary data-i18n="z.figures">Ver las cifras</summary>
+        <dl id="zFigures"></dl>
+        <p class="src" id="zSource"></p>
+      </details>
+      <div class="actions" id="zActions"></div>
+    </div>
+  </div>
+
+  <div class="dest zcard" id="whycard" role="dialog" aria-modal="true" aria-labelledby="whyTitle">
+    <div class="destcard">
+      <span class="k" data-i18n="why.kicker">Explorar la Luna · Polo sur</span>
+      <h2 id="whyTitle" data-i18n="why.title">¿Por qué casi todas las misiones van al polo sur?</h2>
+      <p class="zfact" data-i18n="why.fact">Por el hielo. En el polo el Sol va siempre rozando el horizonte, y eso crea algo que no hay en ningún otro sitio de la Luna: cráteres donde no da nunca el Sol, al lado de crestas donde casi nunca se pone.</p>
+      <div class="zsec">
+        <span data-i18n="why.have">Lo que hay allí</span>
+        <ul class="inds">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5v19M3.8 7.2l16.4 9.6M3.8 16.8l16.4-9.6M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5"/></svg><b data-i18n="why.ice">Hielo en la sombra eterna</b><small data-i18n="why.iceTxt">En el fondo de cráteres como Cabeus hace más de 200 grados bajo cero desde hace miles de millones de años. El agua que trajeron cometas y asteroides se quedó allí congelada. En 2009 la misión LCROSS de la NASA la encontró.</small></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.5 4.4 6 7.8 6 11a6 6 0 0 1-12 0c0-3.2 2.5-6.6 6-11Z"/><path d="M9.2 14.5a2.8 2.8 0 0 0 2.8 2.8"/></svg><b data-i18n="why.water">Agua, aire y combustible</b><small data-i18n="why.waterTxt">Al derretir el hielo hay agua para beber. Si la separas con electricidad sale oxígeno, para respirar, e hidrógeno: juntos, oxígeno e hidrógeno son combustible de cohete.</small></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5c3 2.5 4.5 6 4.5 10.5l-1.5 3h-6l-1.5-3C7.5 8.5 9 5 12 2.5Z"/><circle cx="12" cy="9" r="1.6"/><path d="M7.5 13 5 16.5h3.5M16.5 13l2.5 3.5h-3.5M10.5 18.5 12 21.5l1.5-3"/></svg><b data-i18n="why.local">Sin traerlo de la Tierra</b><small data-i18n="why.localTxt">Subir cada kilo desde la Tierra cuesta muchísimo. Fabricar agua, aire y combustible en la Luna abarata quedarse, volver a casa e incluso seguir hacia Marte.</small></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg><b data-i18n="why.lightTitle">Luz, justo al lado</b><small id="whyLight" data-i18n="why.lightTxt">A pocos kilómetros, en crestas como la de Shackleton, hay Sol casi todo el año: energía solar casi sin noche.</small></li>
+        </ul>
+      </div>
+      <p class="whyclose" data-i18n="why.close">Hielo y energía a un paso: por eso el programa Artemis de la NASA quiere llevar personas aquí.</p>
+      <div class="actions" id="whyActions"></div>
+    </div>
+  </div>
+
+  <div class="telemetry" id="telemetry" aria-hidden="true">
+    <span>ALT <b id="tAlt">0</b> km</span><span>LAT <b id="tLat">0</b></span><span>LON <b id="tLon">0</b></span>
+  </div>
+
+  <div class="dest" id="dest" role="dialog" aria-modal="true" aria-labelledby="destTitle">
+    <div class="destcard">
+      <span class="k" id="destKicker">Destino</span>
+      <h2 id="destTitle"></h2>
+      <p id="destText"></p>
+      <div class="placeholder">
+        <span id="destLabel">Lo que habrá aquí</span>
+        <ul id="destList"></ul>
+      </div>
+      <div class="actions">
+        <button class="fwd" id="fwdBtn"><span data-i18n="dest.proceed">Adelante</span> <span aria-hidden="true">→</span></button>
+        <button class="back" id="backBtn"><span aria-hidden="true">←</span> <span data-i18n="dest.back">Volver al menú</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dest" id="about" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+    <div class="destcard">
+      <span class="k" data-i18n="about.kicker">Satélite 540 · Quiénes somos</span>
+      <img class="aboutlogo" src="tex/logo-540.png" width="352" height="136" alt="540">
+      <h2 id="aboutTitle" data-i18n="about.title">Un estudio de desarrolladores y desarrolladoras de software</h2>
+      <p data-i18n="about.text">Desde 2014 desarrollamos software ágil y sólido para un mundo humano y sostenible. Este navegador lunar es nuestra propuesta para NASA Space Apps 2026.</p>
+      <div class="placeholder facts">
+        <span data-i18n="about.how">Cómo trabajamos</span>
+        <ul>
+          <li data-i18n="about.how1">Un equipo de profesionales fullstack</li>
+          <li data-i18n="about.how2">Agilidad, sencillez y las personas en el centro del desarrollo</li>
+          <li data-i18n="about.how3">Relaciones de confianza con nuestros clientes</li>
+        </ul>
+      </div>
+      <div class="placeholder facts" id="aboutAi">
+        <span data-i18n="about.ai">Uso de inteligencia artificial</span>
+        <p data-i18n="about.aiText">Este proyecto se ha desarrollado con ayuda de IA: Claude Code, de Anthropic, ha escrito código, tests y documentación a partir de historias que el equipo de 540 define, revisa y prueba.</p>
+      </div>
+      <div class="actions">
+        <a class="fwd" id="aboutLink" href="https://www.540deg.com" target="_blank" rel="noopener">540deg.com <span aria-hidden="true">↗</span></a>
+        <button class="back" id="aboutBack"><span aria-hidden="true">←</span> <span data-i18n="common.backToMoon">Volver a la Luna</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="screen" role="dialog" aria-modal="true" aria-labelledby="scrTitle">
+    <div class="scrbody">
+      <span class="k" id="scrKicker"></span>
+      <h2 id="scrTitle"></h2>
+      <p id="scrText"></p>
+      <button class="back" id="scrBack"><span aria-hidden="true">←</span> <span data-i18n="common.backToMoon">Volver a la Luna</span></button>
+    </div>
+  </div>
+
+  <div class="credit menuonly" data-i18n="credit">Textura: NASA SVS, CGI Moon Kit (LROC WAC y LOLA) · relieve a ×0,75 de su altura, suavizado junto al polo</div>
+</div>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
+</script>
+<script type="module">
+import * as THREE from "three";
+import {startTour,startTourIfNew} from "../web/js/common/tour-engine.js";
+/* ?v=: a page newer than the pointer.js in the browser cache would turn the camera on in the menu (#259). Bump it when its API changes */
+import {createHandPointer} from "../shared/hands/pointer.js?v=259";
+import {GOVERNOR,STORAGE_KEY,WAKE_MS,calibrationOutcome,decodeStored,decodeStoredTooSlow,encodeStored,governorInit,governorRatio,governorRetop,governorStep,levelValues,measuredStats,nextCalibration,pixelRatio,readSignals,renderMode,resolveQuality,settledEased,shouldRender} from "../shared/render/quality.js";
+import {createLostNotice,createRendererOrNotice,watchContextLoss} from "../shared/render/lost-notice.js";
+import {applyTexts,carryLang,initLang,mountLangToggle} from "../shared/i18n/page.js";
+import {translator} from "../shared/i18n/lang.js";
+import {num,pct} from "../shared/format/number.js";
+import {HOME_TEXTS,localizeExplore,localizeZones} from "./i18n.js";
+import {earthSpin} from "../shared/render/earth.js";
+import {AMBIENT,SUN} from "../shared/render/lighting.js";
+import {landerNdcX,landerNdcY,liftAboveDock,rocketLine,ROCKET_LINE_MARGIN,ROCKET_LINE_CLEARANCE,labelBelowChip,mcardsFit,MCARDS_OFFSET,chipsFade,chipsScrolls} from "./src/menu-layout.mjs";
+import {MOON_TEX,createMoonGlobe,moonFallback} from "../shared/render/moon-globe.js";
+
+const LANG=initLang(),tx=translator(HOME_TEXTS,LANG);
+if(LANG==="en"){applyTexts(tx);
+ /* #glost and #loading by hand: tests/quality.test.mjs pins their Spanish markup attribute by attribute */
+ const g=document.getElementById("glost");g.setAttribute("aria-label",tx("glost.label"));document.getElementById("glostText").textContent=tx("glost.text");document.getElementById("loading").textContent=tx("page.loading");
+ for(const a of g.querySelectorAll("a"))a.textContent=tx("screen."+a.getAttribute("href").split("/")[1]);}
+carryLang(LANG);
+/* The ES/EN switch in the header, and another in "Explorar la Luna", where the header is hidden */
+mountLangToggle(document.querySelector(".brandbtns"),{lang:LANG,buttonClass:"lightbtn"});
+mountLangToggle(document.querySelector(".xpbtns"),{lang:LANG,buttonClass:"lightbtn"});
+const D2R=Math.PI/180,R2D=180/Math.PI,RKM=1737.4;
+/* Sitios reales del polo sur (coordenadas aproximadas) */
+const ZONES=[
+ {id:"simulador",craft:"robot",mission:"MISIÓN 01",name:"Simulador de misiones",place:"Borde de Shackleton",coords:"≈89,9° S",lat:-89.9,lon:-60,app:150,color:"--sim",hold:.45,narrow:{app:205,hold:.38},href:"../web/",
+  text:"El polo sur exacto está en el borde de este cráter. Elige sitio y fecha de aterrizaje y comprueba si tu módulo tendrá luz, la Tierra a la vista y terreno seguro.",
+  list:["Mapa del polo sur con los sitios candidatos de Artemis","Línea de tiempo para elegir la fecha de aterrizaje","Luz, comunicación con la Tierra y pendiente de cada punto"]},
+ {id:"tour",craft:"hopper",mission:"MISIÓN 02",name:"Mirador del Polo Sur",place:"Macizo de Malapert",coords:"≈86° S 0° E",lat:-86,lon:0,app:-45,color:"--tour",hold:.45,narrow:{app:-15,hold:.38},href:"../viewpoint/",
+  text:"Explora el polo sur en 3D sobre el relieve real de LOLA, con el Sol y la Tierra de cada día. Desde el simulador, «Ver en 3D» abre aquí tu misión.",
+  list:["Paradas en los sitios de aterrizaje y de impacto del polo","Vistas a pie y desde el dron en cada parada","Preguntas para predecir antes de ver la respuesta"]},
+ {id:"rol",mission:"MISIÓN 03",name:"Juego de rol",place:"Mons Mouton · Athena, 2025",coords:"≈84,8° S 29° E",lat:-84.8,lon:29,app:30,side:1,color:"--rol",hold:.5,href:"../rolegame/",
+  text:"Aterriza cerca de donde Athena acabó tumbada en 2025. Tu tripulación, tus decisiones: aguanta la noche lunar y vuelve a casa.",
+  list:["Creación de la tripulación y reparto de roles","Decisiones con recursos limitados: energía, agua y oxígeno","Partida por turnos sobre el terreno real"]},
+ {id:"aterrizaje",lander:true,mission:"MISIÓN 04",name:"Aterrizaje a bordo",place:"Borde de Cabeus B",coords:"≈82,3° S 54,5° O",lat:-82.3,lon:-54.5,app:-122,color:"--land",hold:.45,href:"../lander/",
+  text:"Siéntate en la cabina del módulo de aterrizaje y baja los últimos dos kilómetros hasta el polo sur. El piloto automático sabe posarse solo, pero el mando es tuyo cuando quieras.",
+  list:["Cabina en primera persona con la tripulación a bordo","Interruptores, pantallas y palancas que responden","Física de descenso real: gravedad lunar, empuje y combustible"]}
+];
+/* "Explorar la Luna": hand-written texts. Coordinates, light, Earth and slope come from data/zones.json (scripts/build-zones.ts) */
+const EXPLORE=[
+ {id:"shackleton-ridge",name:"Cresta de Shackleton",region:"Polo sur",verdict:"maybe",
+  fact:"Es uno de los sitios con más horas de Sol de toda la Luna: una loma alta entre dos cráteres, desde la que se ve lejos en casi todas direcciones.",
+  why:"Hay luz casi siempre y, al lado, cráteres en sombra donde puede haber hielo: energía y agua a pocos kilómetros, justo lo que busca Artemis. Pero el Sol y la Tierra van rozando el horizonte: unos metros más abajo, una loma los tapa.",
+  ground:"Abrupto alrededor",groundTxt:"La cresta es estrecha: a los lados, el terreno cae hacia cráteres de kilómetros de profundidad.",
+  links:[["../web/","Planifica un aterrizaje aquí"],["../viewpoint/?region=shackleton-rim","Mírala en 3D"],["#explorar-por-que","¿Por qué importa el polo sur?"]]},
+ {id:"cabeus",name:"Cráter Cabeus",region:"Polo sur · sombra eterna",verdict:"hard",
+  fact:"En 2009 la NASA estrelló a propósito la etapa vacía de un cohete contra el fondo de este cráter (misión LCROSS). En la nube de polvo que levantó encontró agua helada.",
+  why:"El hielo está justo donde nunca da el Sol: no hay energía solar y el suelo está a más de 200 grados bajo cero. Aun así, es un tesoro: ese hielo puede ser agua, oxígeno y combustible sin traerlos de la Tierra.",
+  ground:"Fondo de cráter",groundTxt:"Rodeado de paredes altas: son ellas las que le hacen sombra todo el año.",
+  links:[["#explorar-por-que","¿Para qué sirve ese hielo?"],["../viewpoint/","Explora el polo sur en 3D"],["../web/","Busca un sitio con luz cerca"]]},
+ {id:"von-karman",name:"Cráter Von Kármán",region:"Cara oculta · Chang'e 4",verdict:"maybe",
+  fact:"En 2019 la sonda china Chang'e 4 fue la primera en posarse en la cara oculta. Oculta no quiere decir oscura: aquí el Sol sale y se pone igual que en la cara que vemos.",
+  why:"El suelo es llano y hay luz la mitad del tiempo, pero la Tierra no se ve nunca: para hablar con casa hace falta un satélite que haga de repetidor (Chang'e 4 usó uno llamado Queqiao).",
+  ground:"Llano",groundTxt:"Es el fondo de un cráter enorme, de unos 180 km, relleno de lava antigua.",
+  links:[["../viewpoint/","Compárala con el polo sur en 3D"]]},
+ {id:"apollo-11",name:"Mar de la Tranquilidad",region:"Apolo 11",verdict:"yes",
+  fact:"Aquí pisaron la Luna las primeras personas, en julio de 1969. No es un mar de agua: es una gran llanura de lava que se enfrió hace miles de millones de años.",
+  why:"Es llano y la Tierra está siempre en el cielo. El precio: noches de unas dos semanas seguidas sin Sol, a más de 150 grados bajo cero.",
+  ground:"Llano",groundTxt:"Una llanura de lava con cráteres pequeños; al aterrizar, el Apolo 11 tuvo que esquivar uno lleno de rocas.",
+  links:[["#explorar-por-que","¿Por qué ahora se va al polo sur?"],["../viewpoint/","Míralo en 3D"]]},
+ {id:"apollo-15",name:"Hadley-Apeninos",region:"Apolo 15",verdict:"yes",
+  fact:"En 1971 los astronautas del Apolo 15 condujeron aquí el primer coche lunar, un todoterreno eléctrico.",
+  why:"Sirve para comparar con el polo: el Sol sube alto y se pone como en casa, solo que muy despacio (unas dos semanas de luz y dos de noche), y la Tierra no se pone nunca.",
+  ground:"Llano entre montañas",groundTxt:"Aterrizaron en una llanura entre los montes Apeninos y un cañón serpenteante, el surco de Hadley.",
+  links:[["../web/","Compárala con el polo en el simulador"]]},
+ {id:"mare-crisium",name:"Mar de las Crisis",region:"Blue Ghost 1",verdict:"yes",
+  fact:"En marzo de 2025 el módulo Blue Ghost, de la empresa Firefly, aterrizó aquí de pie y trabajó durante todo un día lunar, unas dos semanas.",
+  why:"Llano y con la Tierra siempre a la vista. Como está cerca del borde de la cara visible, la Tierra se ve baja y sube y baja un poco: la Luna se balancea ligeramente al girar (es la libración).",
+  ground:"Llano",groundTxt:"Otra llanura de lava, rodeada de montañas.",
+  links:[["#explorar-por-que","¿Por qué ahora se va al polo sur?"],["../viewpoint/","Míralo en 3D"]]},
+ {id:"north-pole",name:"Polo norte",region:"Para comparar con el sur",verdict:"maybe",
+  fact:"Cerca de aquí, en el borde del cráter Peary, hay puntos que tuvieron luz todo el tiempo durante el verano del norte, según un estudio de 2005 con imágenes de la sonda Clementine.",
+  why:"Como en el sur, el Sol va rozando el horizonte: hay alturas con luz casi siempre y cráteres siempre a oscuras. Promete lo mismo que el sur, pero el sur tiene más cráteres en sombra eterna, y más grandes: más sitios donde guardar hielo. Por eso casi todas las misiones de hoy miran al polo sur.",
+  ground:"Lleno de cráteres",groundTxt:"Cráteres unos junto a otros, como en el polo sur.",
+  links:[["../viewpoint/","Compáralo con el polo sur en 3D"],["#explorar-por-que","¿Por qué el polo sur?"]]}
+];
+localizeZones(ZONES,LANG);localizeExplore(EXPLORE,LANG);
+const css=getComputedStyle(document.documentElement);
+ZONES.forEach(z=>z.hex=css.getPropertyValue(z.color).trim());
+const reduce=matchMedia("(prefers-reduced-motion:reduce)").matches;
+/* Touch screens have no hover: the hints talk about tapping */
+const touch=matchMedia("(hover:none)").matches;
+const T=k=>tx(touch?k+"Touch":k);
+const HINT={idle:T("hint.idle"),go:T("hint.go"),sat:T("hint.sat"),xr:T("hint.xr")};
+const $=id=>document.getElementById(id);
+const app=$("app");
+const local=(lat,lon)=>new THREE.Vector3(Math.cos(lat*D2R)*Math.cos(lon*D2R),Math.sin(lat*D2R),-Math.cos(lat*D2R)*Math.sin(lon*D2R));
+
+/* ---------- Quality ---------- */
+/* Level alto, medio or bajo (shared/render/quality.js, #142, #143): ?q=… forces it; otherwise the level saved by an
+   earlier visit on this device; otherwise the page measures the device before showing the Moon (see Calibration),
+   from bajo on a modest device and from medio on the rest. The bench knobs pr, shadow, cap, tex, aniso, fs and rs of the URL override single values
+   (tools/render-bench/). A non-numeric or <= 0 value is ignored; rs=0 turns off rocket shadows. */
+const QS=new URLSearchParams(location.search);
+
+/* ---------- Render ---------- */
+const canvas=$("gl");
+/* 3D not available (#144): #glost replaces the Moon with links to the three screens and a reload button
+   (shared/render/lost-notice.js). While it shows, the rest of the page is inert and focus is inside it; when it goes away,
+   focus goes back to where it was, or to the screen's back button or the menu's first control */
+const lost=createLostNotice({notice:$("glost"),loading:$("loading"),roots:[app,document.body],
+ fallbackFocus:()=>mode==="screen"?$("scrBack"):$("lightBtn")});
+$("glostReload").addEventListener("click",()=>location.reload());
+/* A loss while the mission screen (no WebGL needed) is open waits until the user leaves it (leaveScreen());
+   three.js rebuilds its state on webglcontextrestored, and then the notice goes away and the Moon is drawn again */
+const contextLoss=watchContextLoss(canvas,{notice:lost,deferWhile:()=>mode==="screen",onRestore:()=>wake()});
+/* Without WebGL the renderer cannot be created: the notice, and the rest of the scene does not run */
+const renderer=createRendererOrNotice(()=>new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:false}),lost);
+/* The renderer without the bench wrapper: the calibration measures with it, outside __bench.frames */
+const drawRaw=renderer.render.bind(renderer);
+/* GPU name, the key of the stored level */
+const GPU_NAME=(()=>{const gl=renderer.getContext(),ext=gl.getExtension("WEBGL_debug_renderer_info");return String(gl.getParameter(ext?ext.UNMASKED_RENDERER_WEBGL:gl.RENDERER)||"");})();
+/* Level saved by an earlier calibration with this GPU (alto up to 7 days old, medio or bajo up to 1 day); without storage (private mode), none */
+const STORED=(()=>{try{return decodeStored(localStorage.getItem(STORAGE_KEY),{renderer:GPU_NAME,now:Date.now()});}catch(e){return null;}})();
+/* An earlier calibration with this GPU said not even bajo renders continuously (#144) */
+const STORED_TOO_SLOW=(()=>{try{return decodeStoredTooSlow(localStorage.getItem(STORAGE_KEY),{renderer:GPU_NAME,now:Date.now()});}catch(e){return false;}})();
+/* Device signals (readSignals, shared with the Mirador and the 3D sky), read once the renderer exists */
+const SIGNALS=readSignals(renderer.getContext(),navigator);
+const QUALITY=resolveQuality({params:QS,signals:SIGNALS,stored:STORED});
+/* Render mode (#144): "onDemand" on a software renderer, a device too slow for continuous rendering (stored, or
+   found by calibrate()) or with reduced motion: the Moon stays still and is drawn again only after activity
+   (wake(): until WAKE_MS after it) or while the camera moves. "continuous": every frame. */
+let RENDER_MODE=renderMode({softwareRenderer:SIGNALS.softwareRenderer,tooSlow:STORED_TOO_SLOW,reducedMotion:reduce});
+let awakeUntil=0;
+const wake=()=>{awakeUntil=performance.now()+WAKE_MS;};
+for(const type of ["pointerdown","pointermove","pointerup","wheel","keydown","resize"])addEventListener(type,wake,{passive:true});
+document.addEventListener("visibilitychange",wake);
+wake();
+/* Q: the values in use; applyLevel() changes them once the scene is built */
+const Q={...QUALITY.values,bench:QS.has("bench")};
+/* Pixel ratio of the level for the current size and density; resize() recalculates it */
+const qualityPixelRatio=(w,h)=>pixelRatio(QUALITY.level,w,h,devicePixelRatio||1,Q.pr);
+renderer.setPixelRatio(qualityPixelRatio(innerWidth,innerHeight));
+/* Pixel ratio governor (#166): in continuous mode, once the Moon is on screen, the intervals between painted frames
+   go in windows of GOVERNOR.windowFrames to governorStep(), which moves the pixel ratio one step down when frames run
+   late and back up when they have room (never the level). A window is tainted (does not count) if in it there was a
+   resize, a tab coming back, a texture load, a camera move, a mode change or the first GOV_SETTLE_MS after reveal().
+   Nothing is stored: each visit starts at the top. gov: null until reveal(). */
+const GOV_SETTLE_MS=2000;
+let gov=null,govTaint=true,govSamples=[],govMode=null,revealAt=0;const govChanges=[];
+const taintGovernor=()=>{govTaint=true;};
+document.addEventListener("visibilitychange",taintGovernor);
+/* Pixel ratio in use: the one of the level, capped by the governor's step. If the cap of the level changes (screen
+   density, or the size in alto), governorRetop() moves the governor to the new top keeping its drop, vetoes and freeze */
+function governedPixelRatio(){const top=qualityPixelRatio(W,Hh);if(!gov)return top;
+ gov=governorRetop(gov,top);
+ return Math.min(top,governorRatio(gov));}
+const benchGovernor=()=>{if(B)B.quality.governor={ratio:governorRatio(gov),frozen:gov.frozen,changes:govChanges.map(c=>({...c}))};};
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.3;
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(32,1,0.0005,200);
+let maxAniso=Math.min(Q.aniso,renderer.capabilities.getMaxAnisotropy());
+/* Textures with anisotropy, so applyLevel() can change it */
+const ANISO=new Set();
+const aniso=t=>{t.anisotropy=maxAniso;ANISO.add(t);return t;};
+/* ?bench: frame timings, context losses and screenshots for tools/render-bench/bench.mjs */
+const B=Q.bench?window.__bench={frames:[],sync:false,lost:0,readyAt:null,colorAt:null,tex:Q.tex,
+ quality:{level:QUALITY.level,source:QUALITY.source,values:{...QUALITY.values},calibration:[],tooSlow:false,renderMode:RENDER_MODE},
+ loseContext:()=>{const ext=renderer.getContext().getExtension("WEBGL_lose_context");if(ext)ext.loseContext();return!!ext;},
+ lostNotice:()=>lost.visible(),
+ explore:()=>{openExplore();return mode!=="menu";},probe:t=>{if(t!==undefined)probeT=t;return{x:PROBE.sx,y:PROBE.sy,shown:PROBE.shown,t:probeT};},lander:()=>({x:LANDER.rx,y:LANDER.ry,r:LANDER.pr}),mode:()=>mode,animating:()=>!!anim,colorReady:()=>B.colorAt!==null,
+ /* In onDemand the loop may be idle: wake it and let a few frames run first, as in continuous mode. The first draw
+    after a pause can come out incomplete on some GPUs (two onDemand passes gave different screenshots) */
+ /* Drawn with the sync readback: the first draw after an idle onDemand loop sometimes came out with whole draw
+    calls missing (the landing mark, the flame core, the Moon) in headless Chrome with the GPU (#144) */
+ shot:()=>{const s=B.sync;B.sync=true;renderer.render(scene,camera);B.sync=s;return canvas.toDataURL("image/png");},
+ gpu:()=>{const gl=renderer.getContext(),ext=gl.getExtension("WEBGL_debug_renderer_info");
+  return{renderer:gl.getParameter(ext?ext.UNMASKED_RENDERER_WEBGL:gl.RENDERER),maxTextureSize:renderer.capabilities.maxTextureSize,buffer:[canvas.width,canvas.height],lost:gl.isContextLost()};},
+ info:()=>{const i=renderer.info;return{triangles:i.render.triangles,calls:i.render.calls,textures:i.memory.textures,geometries:i.memory.geometries};}}:null;
+if(B){const gl=renderer.getContext(),px=new Uint8Array(4),render=renderer.render.bind(renderer);
+ renderer.render=(s,c)=>{const t=performance.now();render(s,c);if(B.sync)gl.readPixels(0,0,1,1,gl.RGBA,gl.UNSIGNED_BYTE,px);B.frames.push([t,performance.now()-t]);};
+ canvas.addEventListener("webglcontextlost",()=>{B.lost++;});}
+
+/* Stars from a fixed seed, so two screenshots compare */
+const starRand=(s=>()=>(s=(s*1664525+1013904223)>>>0)/4294967296)(540);
+
+{const N=3200,pos=new Float32Array(N*3),col=new Float32Array(N*3);
+ for(let i=0;i<N;i++){const u=starRand()*2-1,a=starRand()*Math.PI*2,r=60+starRand()*30,s=Math.sqrt(1-u*u);
+  pos.set([r*s*Math.cos(a),r*u,r*s*Math.sin(a)],i*3);const b=.35+starRand()*.65,w=starRand();
+  col.set([b*(w>.85?1:.85),b*.9,b*(w<.15?1:.88)],i*3);}
+ const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(pos,3));g.setAttribute("color",new THREE.BufferAttribute(col,3));
+ scene.add(new THREE.Points(g,new THREE.PointsMaterial({size:.12,vertexColors:true,sizeAttenuation:true,depthWrite:false})));}
+
+/* Luz: Sol rasante como en el polo real; la Tierra, también en el horizonte, aporta un poco de luz azulada */
+/* The colours of the Sun and the ambient are those of shared/render/lighting.js (#339); the intensities stay the home's, so its render bench gives the same picture */
+const sun=new THREE.DirectionalLight(SUN.color,3.4);scene.add(sun);scene.add(sun.target);
+sun.castShadow=true;sun.shadow.mapSize.set(Q.shadow,Q.shadow);
+Object.assign(sun.shadow.camera,{left:-.42,right:.42,top:.42,bottom:-.42,near:.2,far:4});
+sun.shadow.bias=-.0002;sun.shadow.normalBias=.0006;
+const earthshine=new THREE.DirectionalLight(0x7f9fd0,.22);scene.add(earthshine);scene.add(earthshine.target);
+const ambient=new THREE.AmbientLight(AMBIENT.color,.05);scene.add(ambient);
+const LIGHT={real:{el:1.5,amb:.05,txt:tx("light.real")},boost:{el:9,amb:.3,txt:tx("light.boost")}};
+let light="real";
+function setLight(k){light=k;wake();$("lightTxt").innerHTML=LIGHT[k].txt;$("lightBtn").setAttribute("aria-pressed",k==="boost");ambient.intensity=LIGHT[k].amb;}
+$("lightBtn").addEventListener("click",()=>setLight(light==="real"?"boost":"real"));
+setLight("real");
+
+/* ---------- Luna ---------- */
+/* The globe, its material, the pole shader and the textures: shared/render/moon-globe.js (G1.2, #140) */
+const loader=new THREE.TextureLoader();let ready=false;
+function tex(url,srgb,seed,cb){const t=loader.load(url,()=>{wake();taintGovernor();cb&&cb(t);},undefined,()=>{if(seed){t.image=moonFallback(seed);t.needsUpdate=true;}wake();taintGovernor();cb&&cb(t,true);});if(srgb)t.colorSpace=THREE.SRGBColorSpace;return aniso(t);}
+let heightDone=false;
+const colorDone=()=>{if(B&&B.colorAt===null)B.colorAt=performance.now();};
+/* Once the 4k texture is in, the 2k one is freed from the GPU; if the 4k fails, the 2k stays.
+   The 4k one is asked for once the level is decided (after the calibration), and only if the level wants it.
+   __bench.tex: the colour texture in use ("fallback" if the 2k one failed and the procedural image stands in) */
+let color2k=false,color2kFailed=false,color4k=false;
+function ensureColor(){
+ if(!color2k||calibrating)return;
+ if(Q.tex!=="4k"){if(!color4k){if(B&&!color2kFailed)B.tex="2k";colorDone();}return;}
+ if(color4k)return;color4k=true;
+ tex(MOON_TEX.color4k,true,0,(t4,err)=>{if(!err){ANISO.delete(MOON.useColor(t4));if(B)B.tex="4k";}else if(B&&!color2kFailed)B.tex="2k";colorDone();});}
+/* The samples of the polar average depend on Q.fs: a level change compiles another program */
+const MOON=createMoonGlobe(renderer,{load:tex,samples:()=>Q.fs,capGrid:Q.cap,
+ onHeight:()=>{heightDone=true;sampleGround();start();},
+ onColor:(t2,err2)=>{color2k=true;color2kFailed=!!err2;if(err2&&B)B.tex="fallback";start();ensureColor();}});
+const height=MOON.height,moonMat=MOON.material;
+setTimeout(()=>start(true),7000);
+
+const pivot=new THREE.Group();scene.add(pivot);
+const moon=new THREE.Group();moon.rotation.y=-Math.PI/2;pivot.add(moon);
+moon.add(MOON.group);
+
+/* ---------- Tierra (Explorar la Luna) ---------- */
+/* The Moon always shows the same face to the Earth, so the Earth hangs off the Moon over the centre of the near side
+   (lat 0, lon 0) and turns with it when the globe is dragged: with the far side towards the camera it hides behind the
+   Moon and rises past the limb as the globe turns. At the real angular size seen from the Moon (~7°): 30 Moon radii
+   away with a radius of 30·3.67/60, closer than the stars (60–90) so they never draw over it. Only shown while exploring.
+   Textures of NASA (shared/render/tex/earth-*): Blue Marble for the day, Black Marble (city lights) for the night, a real cloud cover
+   and the water mask for the glint of the Sun on the oceans. They load the first time "Explorar la Luna" opens. */
+const EARTH_D=30,EARTH_R=EARTH_D*3.67/60;
+const earth=(()=>{
+ const blank=new THREE.DataTexture(new Uint8Array([0,0,0,255]),1,1);blank.needsUpdate=true;
+ const uniforms={day:{value:blank},night:{value:blank},clouds:{value:blank},water:{value:blank},
+  sunDir:{value:new THREE.Vector3(1,0,0)},opacity:{value:0},drift:{value:0}};
+ const material=new THREE.ShaderMaterial({uniforms,
+  vertexShader:`varying vec2 vUv;varying vec3 vN;varying vec3 vView;
+   void main(){vUv=uv;vN=normalize(mat3(modelMatrix)*normal);vec4 w=modelMatrix*vec4(position,1.0);vView=normalize(cameraPosition-w.xyz);gl_Position=projectionMatrix*viewMatrix*w;}`,
+  fragmentShader:`uniform sampler2D day,night,clouds,water;uniform vec3 sunDir;uniform float opacity,drift;
+   varying vec2 vUv;varying vec3 vN;varying vec3 vView;
+   void main(){
+    vec3 n=normalize(vN),V=normalize(vView),L=normalize(sunDir);
+    float nl=dot(n,L),lit=max(nl,0.0),dayK=smoothstep(-.12,.18,nl);
+    float cl=texture2D(clouds,vUv+vec2(drift,0.0)).r;
+    /* cloud shadow: the same cover, shifted a little towards the night side */
+    float sh=texture2D(clouds,vUv+vec2(drift-.0025,.001)).r;
+    float wt=texture2D(water,vUv).r;
+    vec3 ground=texture2D(day,vUv).rgb*(1.0-.45*sh);
+    vec3 surf=mix(ground,vec3(1.0),smoothstep(.02,.6,cl));
+    /* light: diffuse with a soft terminator, slightly warm where the Sun grazes */
+    vec3 sunCol=mix(vec3(1.0,.62,.38),vec3(1.0),smoothstep(0.0,.35,nl));
+    vec3 c=surf*sunCol*(.015+1.05*pow(lit,.85));
+    /* glint of the Sun on the oceans, hidden under clouds */
+    vec3 H=normalize(L+V);c+=vec3(1.0,.93,.82)*pow(max(dot(n,H),0.0),140.0)*wt*(1.0-cl)*.75*dayK;
+    /* city lights on the night side */
+    c+=texture2D(night,vUv).rgb*vec3(1.0,.82,.55)*(1.0-dayK)*(1.0-.85*cl)*1.6;
+    /* atmosphere: blue haze towards the limb on the lit side */
+    float fr=pow(1.0-max(dot(n,V),0.0),2.2);
+    c=mix(c,vec3(.32,.58,1.0)*(.25+lit),fr*.75*smoothstep(-.25,.35,nl));
+    gl_FragColor=vec4(c,opacity);
+    #include <colorspace_fragment>
+   }`,
+  transparent:true,toneMapped:false});
+ const ball=new THREE.Mesh(new THREE.SphereGeometry(EARTH_R,96,48),material);
+ /* the glow of the atmosphere past the limb: a slightly larger shell drawn from the inside, brightest at the surface */
+ const airMat=new THREE.ShaderMaterial({uniforms:{sunDir:uniforms.sunDir,opacity:uniforms.opacity},
+  vertexShader:`varying vec3 vNv;varying vec3 vN;void main(){vNv=normalize(normalMatrix*normal);vN=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+  fragmentShader:`uniform vec3 sunDir;uniform float opacity;varying vec3 vNv;varying vec3 vN;
+   void main(){float d=-normalize(vNv).z;float i=pow(clamp(d*3.4,0.0,1.0),2.2);
+    float s=smoothstep(-.35,.5,dot(normalize(vN),normalize(sunDir)));
+    gl_FragColor=vec4(vec3(.35,.62,1.0)*i*s*2.0*opacity,1.0);
+    #include <colorspace_fragment>
+   }`,
+  side:THREE.BackSide,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false});
+ const air=new THREE.Mesh(new THREE.SphereGeometry(EARTH_R*1.045,64,32),airMat);
+ /* axial tilt of 23.4° with respect to the Moon's axis, which is almost perpendicular to the ecliptic */
+ const tilt=new THREE.Group();tilt.rotation.z=23.44*D2R;tilt.add(ball);
+ const grp=new THREE.Group();grp.add(air,tilt);grp.position.copy(local(0,0)).multiplyScalar(EARTH_D);grp.visible=false;
+ let asked=false;
+ /* textures on demand; the Earth stays hidden until the day map is in */
+ const load=()=>{if(asked)return;asked=true;
+  const t=(url,srgb,key,done)=>loader.load(url,x=>{if(srgb)x.colorSpace=THREE.SRGBColorSpace;
+   /* the clouds are read at u+drift, past the right edge of the map: it must wrap around, not smear its last column */
+   x.wrapS=THREE.RepeatWrapping;aniso(x);uniforms[key].value=x;wake();taintGovernor();done&&done();},undefined,
+   ()=>console.error("Explorar la Luna: no se pudo cargar",url));
+  t("../shared/render/tex/earth-day-2k.jpg",true,"day",()=>{grp.userData.ready=true;});
+  t("../shared/render/tex/earth-night-2k.jpg",true,"night");t("../shared/render/tex/earth-clouds-2k.jpg",false,"clouds");t("../shared/render/tex/earth-water-1k.jpg",false,"water");};
+ grp.userData={ball,material,uniforms,load,ready:false};moon.add(grp);return grp;})();
+/* ?bench: where the Earth is on screen (CSS px) and whether it is in front of the camera */
+if(B)B.earth=()=>{const p=new THREE.Vector3();earth.getWorldPosition(p);p.project(camera);return{x:(p.x+1)/2*W,y:(1-p.y)/2*Hh,front:p.z<1,visible:earth.visible};};
+
+/* ---------- Piezas de cada misión ---------- */
+function lzTex(){const c=document.createElement("canvas");c.width=c.height=256;const x=c.getContext("2d");x.translate(128,128);
+ const g=x.createRadialGradient(0,0,0,0,0,110);g.addColorStop(0,"rgba(255,255,255,.22)");g.addColorStop(.7,"rgba(255,255,255,.05)");g.addColorStop(1,"rgba(255,255,255,0)");
+ x.fillStyle=g;x.beginPath();x.arc(0,0,110,0,7);x.fill();
+ x.strokeStyle="#fff";x.lineWidth=5;x.setLineDash([18,10]);x.beginPath();x.arc(0,0,108,0,7);x.stroke();x.setLineDash([]);
+ x.lineWidth=3;x.beginPath();x.arc(0,0,62,0,7);x.stroke();
+ for(let i=0;i<4;i++){x.rotate(Math.PI/2);x.beginPath();x.moveTo(0,-122);x.lineTo(0,-96);x.stroke();x.beginPath();x.moveTo(0,-40);x.lineTo(0,-22);x.stroke();}
+ const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return aniso(t);}
+function pulseTex(){const c=document.createElement("canvas");c.width=c.height=128;const x=c.getContext("2d");x.strokeStyle="#fff";x.lineWidth=3;x.beginPath();x.arc(64,64,60,0,7);x.stroke();const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;}
+function beamTex(){const c=document.createElement("canvas");c.width=4;c.height=128;const x=c.getContext("2d");const g=x.createLinearGradient(0,0,0,128);
+ g.addColorStop(0,"rgba(255,255,255,0)");g.addColorStop(.7,"rgba(255,255,255,.35)");g.addColorStop(1,"rgba(255,255,255,.9)");x.fillStyle=g;x.fillRect(0,0,4,128);
+ const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;}
+function glowTex(){const c=document.createElement("canvas");c.width=c.height=128;const x=c.getContext("2d");const g=x.createRadialGradient(64,64,0,64,64,64);
+ g.addColorStop(0,"rgba(255,255,255,.9)");g.addColorStop(.25,"rgba(255,255,255,.35)");g.addColorStop(1,"rgba(255,255,255,0)");x.fillStyle=g;x.fillRect(0,0,128,128);
+ const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;}
+const LZ=lzTex(),PT=pulseTex(),BEAM=beamTex(),GLOW=glowTex();
+/* Las marcas se pintan encima del relieve (sin prueba de profundidad contra el suelo) */
+const decal=(map,hex,size)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(size,size),new THREE.MeshBasicMaterial({map,color:hex,transparent:true,depthWrite:false,depthTest:false,blending:THREE.AdditiveBlending}));m.renderOrder=2;return m;};
+
+const RH=.02; /* alto del cohete en radios lunares (estilizado: ~35 km) */
+function cyl(a,b,r,mat){const d=new THREE.Vector3().subVectors(b,a),m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,d.length(),8),mat);
+ m.position.copy(a).add(b).multiplyScalar(.5);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());return m;}
+/* Casco: chapa blanca con soldaduras, larguerillos, escotillas y una banda de paneles solares arriba */
+function hullTex(){const c=document.createElement("canvas");c.width=512;c.height=512;const x=c.getContext("2d");
+ const g=x.createLinearGradient(0,0,0,512);g.addColorStop(0,"#eef0f2");g.addColorStop(.8,"#e3e6e9");g.addColorStop(1,"#c3c7cc");x.fillStyle=g;x.fillRect(0,0,512,512);
+ x.fillStyle="rgba(0,0,0,.035)";for(let i=0;i<512;i+=32)x.fillRect(i,0,1,512);
+ x.fillStyle="rgba(0,0,0,.13)";for(let j=150;j<512;j+=72)x.fillRect(0,j,512,2);
+ x.fillStyle="#141c28";x.fillRect(0,40,512,74);
+ x.strokeStyle="#33435c";x.lineWidth=2;for(let i=0;i<512;i+=16){x.beginPath();x.moveTo(i,40);x.lineTo(i,114);x.stroke();}
+ x.beginPath();x.moveTo(0,77);x.lineTo(512,77);x.stroke();
+ x.fillStyle="rgba(255,255,255,.5)";x.fillRect(0,38,512,2);x.fillRect(0,114,512,2);
+ x.strokeStyle="rgba(0,0,0,.22)";x.lineWidth=2;[[60,250,46,70],[300,330,30,30],[410,210,22,46],[180,420,60,26]].forEach(r=>x.strokeRect(...r));
+ const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return aniso(t);}
+let HULL=null,FOIL=null,PANEL=null;
+function lathe(prof,mat,seg=40){return new THREE.Mesh(new THREE.LatheGeometry(prof.map(([r,y])=>new THREE.Vector2(r,y)),seg),mat);}
+function makeRocket(hex,tint){
+ HULL=HULL||hullTex();
+ const g=new THREE.Group(),R=RH*.12,V=(r,y)=>[r,y];
+ /* tint: the white plating takes a colour (the purple "Explorar la Luna" rocket) */
+ const hull=new THREE.MeshStandardMaterial({map:HULL,color:tint??0xffffff,roughness:.42,metalness:.35,emissive:tint?hex:0x15181c,emissiveIntensity:tint?.12:1});
+ const white=new THREE.MeshStandardMaterial({color:tint??0xeceef0,roughness:.4,metalness:.35,emissive:tint?hex:0x15181c,emissiveIntensity:tint?.12:1});
+ const accent=new THREE.MeshStandardMaterial({color:hex,roughness:.45,metalness:.25,emissive:hex,emissiveIntensity:.25});
+ const steel=new THREE.MeshStandardMaterial({color:0x9aa1a9,roughness:.35,metalness:.85});
+ const dark=new THREE.MeshStandardMaterial({color:0x23272d,roughness:.55,metalness:.6,side:THREE.DoubleSide});
+ const foil=new THREE.MeshStandardMaterial({color:0xc69a3e,roughness:.3,metalness:1,emissive:0x1e1405});
+ const add=m=>{m.castShadow=Q.rs;m.userData.rs=true;g.add(m);return m;};
+ const b0=RH*.2,bh=RH*.48,top=b0+bh,nl=RH*.27;
+ /* casco y morro ojival */
+ add(new THREE.Mesh(new THREE.CylinderGeometry(R,R,bh,48,1,true),hull)).position.y=b0+bh/2;
+ const ogive=[];for(let k=0;k<=16;k++){const t=k/16;ogive.push(V(R*Math.pow(1-t*t,.78),top+nl*t));}
+ add(lathe(ogive,white,48));
+ add(new THREE.Mesh(new THREE.CylinderGeometry(R*1.012,R*1.012,RH*.016,48),accent)).position.y=top-RH*.02;
+ /* ventanas de cabina */
+ const glass=new THREE.MeshStandardMaterial({color:0x0b131d,roughness:.08,metalness:.9,emissive:0x1d3a58,emissiveIntensity:.5});
+ for(let i=-1;i<=1;i++){const a=i*.28,w=add(new THREE.Mesh(new THREE.BoxGeometry(R*.16,R*.11,R*.05),glass));
+  w.position.set(Math.sin(a)*R*.97,top+nl*.18,Math.cos(a)*R*.97);w.rotation.y=a;w.rotation.x=-.25;}
+ /* propulsores de control (RCS) */
+ for(let i=0;i<4;i++){const a=i*Math.PI/2,p=add(new THREE.Mesh(new THREE.BoxGeometry(R*.18,R*.3,R*.14),steel));
+  p.position.set(Math.sin(a)*R*1.05,top-RH*.08,Math.cos(a)*R*1.05);p.rotation.y=a;}
+ /* placa de equipo con el color de la misión */
+ const tag=add(new THREE.Mesh(new THREE.BoxGeometry(R*.34,R*.5,R*.04),accent));tag.position.set(-R*.62,b0+bh*.45,R*.79);tag.rotation.y=-.66;
+ /* faldón térmico y escudo de base */
+ add(lathe([V(R*.55,b0-RH*.03),V(R*1.06,b0-RH*.012),V(R*1.06,b0+RH*.02),V(R,b0+RH*.03)],dark,48));
+ for(let i=0;i<3;i++){const a=i*2.1+.5,box=add(new THREE.Mesh(new THREE.BoxGeometry(R*.32,RH*.05,R*.26),foil));
+  box.position.set(Math.sin(a)*R*1.05,b0+RH*.045,Math.cos(a)*R*1.05);box.rotation.y=a;}
+ /* tobera parabólica con garganta incandescente */
+ const by=b0-RH*.03,bl=RH*.12,bell=[];for(let k=0;k<=12;k++){const t=k/12;bell.push(V(R*(.2+.36*Math.sqrt(t)),by-bl*t));}
+ add(lathe(bell,dark,32));
+ const throat=new THREE.Mesh(new THREE.CircleGeometry(R*.2,20),new THREE.MeshBasicMaterial({color:0xffb070}));throat.rotation.x=Math.PI/2;throat.position.y=by-RH*.004;g.add(throat);
+ /* patas: puntal principal, puntal de apoyo y zapata */
+ for(let i=0;i<4;i++){const a=i*Math.PI/2+Math.PI/4,c=Math.cos(a),s=Math.sin(a);
+  const hip=new THREE.Vector3(c*R*.98,b0+RH*.17,s*R*.98),foot=new THREE.Vector3(c*R*2.15,RH*.012,s*R*2.15);
+  const knee=hip.clone().lerp(foot,.55),root=new THREE.Vector3(c*R*.9,b0-RH*.01,s*R*.9);
+  add(cyl(hip,foot,R*.055,steel));add(cyl(root,knee,R*.04,steel));
+  add(cyl(hip,hip.clone().lerp(foot,.3),R*.085,foil));
+  const pad=add(new THREE.Mesh(new THREE.CylinderGeometry(R*.2,R*.3,RH*.016,16),dark));pad.position.copy(foot);}
+ /* pluma de escape: ancha en vacío, se abre y se apaga */
+ const flameMat=new THREE.MeshBasicMaterial({color:hex,transparent:true,opacity:.55,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
+ const coreMat=new THREE.MeshBasicMaterial({color:0xfff2d6,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false});
+ const plume=(r0,r1,L,n=14)=>{const p=[];for(let k=0;k<=n;k++){const t=k/n;p.push(V(Math.max(1e-5,(r0+(r1-r0)*Math.sin(t*Math.PI*.6))*(1-Math.pow(t,3))),-L*t));}return p;};
+ const flame=new THREE.Group();
+ flame.add(lathe(plume(R*.5,R*.85,RH*.62),flameMat,28),lathe(plume(R*.22,R*.3,RH*.3),coreMat,20));
+ flame.position.y=by-bl;g.add(flame);
+ const beacon=new THREE.Mesh(new THREE.SphereGeometry(R*.08,10,8),new THREE.MeshBasicMaterial({color:0xff5040}));beacon.position.y=top+nl+R*.04;g.add(beacon);
+ g.userData={flame,beacon,mid:RH*.45};
+ return g;
+}
+/* Mission 04: a crewed lander (squat descent stage in gold foil, silver cabin with triangular windows, four deployed
+   legs with pads and contact probes, RCS quads and a short descent-engine flame). Origin under the pads, +Z is the front */
+const LH=RH*.66; /* pads to the top of the mast */
+function makeLander(hex){
+ FOIL=FOIL||foilTex();
+ const g=new THREE.Group(),k=RH,V3=(x,y,z)=>new THREE.Vector3(x*k,y*k,z*k),M=o=>new THREE.MeshStandardMaterial(o);
+ const gold=M({color:0xb08430,metalness:1,roughness:.5,roughnessMap:FOIL,bumpMap:FOIL,bumpScale:.9,emissive:0x2a1c06,envMapIntensity:1});
+ const silver=M({color:0xd5d8de,metalness:.55,roughness:.45,roughnessMap:FOIL,bumpMap:FOIL,bumpScale:.7,emissive:0x17191d,envMapIntensity:.8});
+ const alu=M({color:0xaab0b8,metalness:.9,roughness:.38,emissive:0x0c0d0f});
+ const dark=M({color:0x1d2025,metalness:.5,roughness:.55,side:THREE.DoubleSide});
+ const white=M({color:0xe6e7e9,metalness:0,roughness:.7,side:THREE.DoubleSide});
+ const glass=M({color:0x0b131d,metalness:.9,roughness:.08,emissive:0x2a5a8a,emissiveIntensity:.7,side:THREE.DoubleSide});
+ const accent=M({color:hex,roughness:.45,metalness:.25,emissive:hex,emissiveIntensity:.35});
+ const add=(m,par=g)=>{m.castShadow=Q.rs;m.userData.rs=true;par.add(m);return m;};
+ const cy=(rt,rb,h,seg,mat,y,start=0)=>{const m=add(new THREE.Mesh(new THREE.CylinderGeometry(rt*k,rb*k,h*k,seg,1,false,start),mat));m.position.y=y*k;return m;};
+ /* descent stage: octagonal, gold, with bays between the legs and a band in the mission colour */
+ const S0=.17,S1=.39,SR=.3;
+ cy(SR,SR,S1-S0,8,gold,(S0+S1)/2,Math.PI/8);
+ cy(SR*1.02,SR*1.02,.014,8,accent,S1-.02,Math.PI/8);
+ cy(SR*1.04,SR*1.04,.012,8,alu,S1+.006,Math.PI/8);
+ for(let i=0;i<4;i++){const a=i*Math.PI/2,b=add(new THREE.Mesh(new THREE.BoxGeometry(.19*k,.13*k,.016*k),i%2?silver:dark));
+  b.position.set(Math.sin(a)*SR*.93*k,(S0+.1)*k,Math.cos(a)*SR*.93*k);b.rotation.y=a;}
+ /* crew cabin: hexagonal, silver, one flat face to the front with two triangular windows */
+ const C0=S1+.012,CH=.19,CZ=-.02;
+ cy(.19,.23,CH,6,silver,C0+CH/2,Math.PI/6).position.z=CZ*k;
+ const ap=.21*Math.cos(Math.PI/6),tilt=Math.atan2(.04*Math.cos(Math.PI/6),CH);
+ const face=new THREE.Group();face.position.set(0,(C0+CH*.55)*k,(CZ+ap+.002)*k);face.rotation.x=-tilt;g.add(face);
+ add(new THREE.Mesh(new THREE.PlaneGeometry(.2*k,.11*k),dark),face);
+ [-1,1].forEach(sd=>{const sh=new THREE.Shape();sh.moveTo(sd*.095*k,.052*k);sh.lineTo(sd*.012*k,.052*k);sh.lineTo(sd*.012*k,-.045*k);sh.closePath();
+  add(new THREE.Mesh(new THREE.ShapeGeometry(sh),glass),face).position.z=.0008*k;});
+ /* hatch, mast with a small dish, whip antenna with the beacon */
+ cy(.075,.085,.03,16,alu,C0+CH+.015);
+ g.add(cyl(V3(.06,C0+CH,-.1),V3(.08,C0+CH+.13,-.12),.007*k,alu));
+ const DR=.055,prof=[];for(let j=0;j<=10;j++){const r=DR*j/10;prof.push([r*k,r*r*7*k]);}
+ const dish=lathe(prof,white,24);dish.position.copy(V3(.085,C0+CH+.135,-.125));dish.rotation.set(-.5,0,.5);g.add(dish);
+ g.add(cyl(V3(-.12,C0+CH-.02,-.06),V3(-.15,C0+CH+.1,-.07),.0035*k,alu));
+ const beacon=new THREE.Mesh(new THREE.SphereGeometry(.014*k,10,8),new THREE.MeshBasicMaterial({color:0xff5040}));beacon.position.copy(V3(-.15,C0+CH+.105,-.07));g.add(beacon);
+ /* RCS quads on short booms at the cabin corners: one nozzle up, one down, two sideways */
+ for(let i=0;i<4;i++){const a=i*Math.PI/2+Math.PI/4,q=new THREE.Group();
+  q.position.set(Math.sin(a)*.27*k,(C0+CH*.62)*k,(Math.cos(a)*.27+CZ)*k);q.rotation.y=a;g.add(q);
+  add(new THREE.Mesh(new THREE.BoxGeometry(.035*k,.035*k,.035*k),alu),q);
+  add(new THREE.Mesh(new THREE.BoxGeometry(.012*k,.012*k,.05*k),alu),q).position.z=-.035*k;
+  [[0,1,0,0],[0,-1,0,Math.PI],[1,0,-Math.PI/2,0],[-1,0,Math.PI/2,0]].forEach(([x,y,rz,rx])=>{const n=add(new THREE.Mesh(new THREE.ConeGeometry(.009*k,.022*k,10,1,true),dark),q);
+   n.position.set(x*.026*k,y*.026*k,0);n.rotation.set(rx,0,rz);});}
+ /* descent engine: bell under the stage, glowing throat and a short flame */
+ const by=S0,bl=.09,bell=[];for(let j=0;j<=10;j++){const t=j/10;bell.push([(.05+.065*Math.sqrt(t))*k,(by-bl*t)*k]);}
+ add(lathe(bell,dark,28));
+ const throat=new THREE.Mesh(new THREE.CircleGeometry(.05*k,20),new THREE.MeshBasicMaterial({color:0xffc890}));throat.rotation.x=Math.PI/2;throat.position.y=(by-.004)*k;g.add(throat);
+ const flameMat=new THREE.MeshBasicMaterial({color:hex,transparent:true,opacity:.3,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
+ const coreMat=new THREE.MeshBasicMaterial({color:0xfff2d6,transparent:true,opacity:.95,blending:THREE.AdditiveBlending,depthWrite:false});
+ const plume=(r0,r1,L,n=12)=>{const p=[];for(let j=0;j<=n;j++){const t=j/n;p.push([Math.max(1e-5,(r0+(r1-r0)*Math.sin(t*Math.PI*.6))*(1-Math.pow(t,2.2)))*k,-L*t*k]);}return p;};
+ const flame=new THREE.Group();flame.add(lathe(plume(.085,.1,.34),flameMat,24),lathe(plume(.04,.045,.22),coreMat,16));
+ flame.position.y=(by-bl)*k;g.add(flame);
+ /* legs: gold-wrapped primary strut, two braces from the stage floor, footpad and a contact probe under it */
+ for(let i=0;i<4;i++){const a=i*Math.PI/2+Math.PI/4,c=Math.sin(a),s=Math.cos(a);
+  const hip=V3(c*SR*.86,S1-.04,s*SR*.86),foot=V3(c*.62,.03,s*.62),knee=hip.clone().lerp(foot,.62);
+  add(cyl(hip,foot,.014*k,alu));add(cyl(hip,hip.clone().lerp(foot,.45),.022*k,gold));
+  [-1,1].forEach(sd=>add(cyl(V3(c*SR*.8+sd*s*.1,S0+.01,s*SR*.8-sd*c*.1),knee,.009*k,alu)));
+  const pad=add(lathe([[0,0],[.06*k,.004*k],[.068*k,.02*k],[.062*k,.024*k]],alu,20));pad.position.copy(foot).setY(0);
+  g.add(cyl(foot.clone().setY(.004*k),foot.clone().setY(-.11*k),.0028*k,alu));}
+ g.userData={flame,beacon,mats:[gold,silver,alu,dark,white,glass,accent],mid:LH*.5};
+ return g;
+}
+/* Shared by the mission craft that fly like the rockets: materials in the satellite's style and a vacuum plume */
+function craftKit(hex,k){
+ FOIL=FOIL||foilTex();PANEL=PANEL||panelTex();
+ const M=o=>new THREE.MeshStandardMaterial(o),g=new THREE.Group();
+ const m={
+  gold:M({color:0xb08430,metalness:1,roughness:.5,roughnessMap:FOIL,bumpMap:FOIL,bumpScale:.9,emissive:0x2a1c06,envMapIntensity:1}),
+  silver:M({color:0xd5d8de,metalness:.55,roughness:.45,roughnessMap:FOIL,bumpMap:FOIL,bumpScale:.7,emissive:0x17191d,envMapIntensity:.8}),
+  alu:M({color:0xaab0b8,metalness:.9,roughness:.38,emissive:0x0c0d0f}),
+  dark:M({color:0x1d2025,metalness:.5,roughness:.55,side:THREE.DoubleSide}),
+  white:M({color:0xe6e7e9,metalness:.1,roughness:.6,emissive:0x15181c,side:THREE.DoubleSide}),
+  glass:M({color:0x0b131d,metalness:.9,roughness:.08,emissive:0x2a5a8a,emissiveIntensity:.7,side:THREE.DoubleSide}),
+  cells:M({map:PANEL,metalness:.3,roughness:.28,emissiveMap:PANEL,emissive:0xffffff,emissiveIntensity:.55}),
+  kapton:M({color:0x6e4b1d,metalness:.4,roughness:.55}),
+  accent:M({color:hex,roughness:.45,metalness:.25,emissive:hex,emissiveIntensity:.35})};
+ const V3=(x,y,z)=>new THREE.Vector3(x*k,y*k,z*k);
+ const add=(o,par=g)=>{o.castShadow=Q.rs;o.userData.rs=true;par.add(o);return o;};
+ const cy=(rt,rb,h,seg,mat,x,y,z,start=0)=>{const o=add(new THREE.Mesh(new THREE.CylinderGeometry(rt*k,rb*k,h*k,seg,1,false,start),mat));o.position.set(x*k,y*k,z*k);return o;};
+ const box=(w,h,d,mat,x,y,z,par=g)=>{const o=add(new THREE.Mesh(new THREE.BoxGeometry(w*k,h*k,d*k),mat),par);o.position.set(x*k,y*k,z*k);return o;};
+ const rod=(a,b,r,mat)=>add(cyl(V3(...a),V3(...b),r*k,mat));
+ const bell=(r0,r1,len,y,x=0,z=0)=>{const p=[];for(let j=0;j<=10;j++){const t=j/10;p.push([(r0+(r1-r0)*Math.sqrt(t))*k,(y-len*t)*k]);}
+  const b=add(lathe(p,m.dark,24));b.position.set(x*k,0,z*k);
+  const th=new THREE.Mesh(new THREE.CircleGeometry(r0*k,16),new THREE.MeshBasicMaterial({color:0xffc890}));th.rotation.x=Math.PI/2;th.position.set(x*k,(y-.004)*k,z*k);g.add(th);};
+ const flameMat=new THREE.MeshBasicMaterial({color:hex,transparent:true,opacity:.4,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
+ const coreMat=new THREE.MeshBasicMaterial({color:0xfff2d6,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false});
+ const plume=(r0,r1,L,n=12)=>{const p=[];for(let j=0;j<=n;j++){const t=j/n;p.push([Math.max(1e-5,(r0+(r1-r0)*Math.sin(t*Math.PI*.6))*(1-Math.pow(t,2.6)))*k,-L*t*k]);}return p;};
+ const flame=(r,L,x,y,z)=>{const f=new THREE.Group();f.add(lathe(plume(r,r*1.5,L),flameMat,20),lathe(plume(r*.45,r*.55,L*.55),coreMat,14));f.position.set(x*k,y*k,z*k);g.add(f);return f;};
+ const beacon=(x,y,z)=>{const b=new THREE.Mesh(new THREE.SphereGeometry(.014*k,10,8),new THREE.MeshBasicMaterial({color:0xff5040}));b.position.set(x*k,y*k,z*k);g.add(b);return b;};
+ const pad=(x,z)=>{const p=add(lathe([[0,0],[.05*k,.004*k],[.058*k,.018*k],[.052*k,.022*k]],m.alu,16));p.position.set(x*k,0,z*k);};
+ return {g,m,V3,add,cy,box,rod,bell,flame,beacon,pad,mats:Object.values(m)};
+}
+/* Mission 01: a robotic cargo lander. It carries what the planner checks: a solar array standing upright (at the pole the
+   Sun skims the horizon), a dish aimed low at the Earth and wide legs for the slope. Origin under the pads, +Z is the front */
+function makeRobotLander(hex){
+ const k=RH*1.25,{g,m,add,cy,box,rod,bell,flame,beacon,pad,mats}=craftKit(hex,k);
+ /* deck: hexagonal, gold, between a dark floor and an aluminium top, with a band in the mission colour */
+ const D0=.17,D1=.33,DR=.27;
+ cy(DR,DR,D1-D0,6,m.gold,0,(D0+D1)/2,0,Math.PI/6);
+ cy(DR*1.02,DR*1.02,.016,6,m.accent,0,D1-.022,0,Math.PI/6);
+ cy(DR*1.04,DR*1.04,.012,6,m.alu,0,D1+.006,0,Math.PI/6);
+ cy(DR*.98,DR*.98,.01,6,m.dark,0,D0-.004,0,Math.PI/6);
+ /* payload bays on two faces and a camera with its lens on the front */
+ [Math.PI/3,-Math.PI/3].forEach(a=>{const b=box(.16,.09,.014,m.silver,Math.sin(a)*DR*.87,D0+.075,Math.cos(a)*DR*.87);b.rotation.y=a;});
+ box(.07,.05,.06,m.alu,0,D1+.04,DR*.62);
+ const lens=cy(.016,.016,.012,16,m.glass,0,D1+.04,DR*.62+.034);lens.rotation.x=Math.PI/2;
+ /* solar array: one tall bifacial panel on a mast at the back, upright */
+ rod([0,D1,-.1],[0,D1+.07,-.1],.012,m.alu);
+ const PW=.46,PH=.3,PY=D1+.07+PH/2;
+ box(PW,PH,.012,[m.alu,m.alu,m.alu,m.alu,m.cells,m.cells],0,PY,-.1);
+ box(PW+.012,.012,.02,m.alu,0,PY+PH/2,-.1);box(PW+.012,.012,.02,m.alu,0,PY-PH/2,-.1);
+ /* high-gain dish on its mast, aimed low (the Earth also hangs near the horizon), with the feed on three struts */
+ rod([.17,D1,.09],[.2,D1+.17,.12],.009,m.alu);
+ const R=.085,prof=[];for(let j=0;j<=12;j++){const r=R*j/12;prof.push([r*k,r*r*5.5*k]);}
+ const dish=new THREE.Group();dish.add(lathe(prof,m.white,28));
+ for(let i=0;i<3;i++){const an=i*2.094+.3;dish.add(cyl(new THREE.Vector3(Math.cos(an)*R*.95*k,R*R*5.5*k,Math.sin(an)*R*.95*k),new THREE.Vector3(0,.075*k,0),.0025*k,m.alu));}
+ dish.position.set(.2*k,(D1+.18)*k,.12*k);dish.rotation.set(0,.5,-1.2);g.add(dish);
+ const bc=beacon(-PW/2+.01,PY+PH/2+.02,-.1);
+ /* engine under the deck, four legs with gold sleeves, two braces each and wide pads */
+ bell(.045,.1,.08,D0-.005);
+ const fl=flame(.07,.36,0,D0-.085,0);
+ for(let i=0;i<4;i++){const a=i*Math.PI/2+Math.PI/4,c=Math.sin(a),s=Math.cos(a);
+  const hip=[c*DR*.82,D1-.03,s*DR*.82],foot=[c*.6,.02,s*.6],knee=hip.map((v,j)=>v+(foot[j]-v)*.6);
+  rod(hip,foot,.013,m.alu);rod(hip,hip.map((v,j)=>v+(foot[j]-v)*.4),.021,m.gold);
+  [-1,1].forEach(sd=>rod([c*DR*.78+sd*s*.09,D0+.01,s*DR*.78-sd*c*.09],knee,.008,m.alu));
+  pad(foot[0],foot[2]);}
+ g.userData={flame:fl,beacon:bc,mats,mid:.36*k};
+ return g;
+}
+/* Mission 02: a hopper drone that flies over the relief with four throttled thrusters (no air for propellers), a gimballed
+   camera under its nose and short legs to land between hops. Origin under the pads, +Z is the front */
+function makeHopper(hex){
+ const k=RH*1.3,{g,m,add,cy,box,rod,bell,flame,beacon,pad,mats}=craftKit(hex,k);
+ /* body: octagonal, white, with a gold belly, a band in the mission colour and a low dome on top */
+ const B0=.2,B1=.33,BR=.13;
+ cy(BR,BR*1.08,B1-B0,8,m.white,0,(B0+B1)/2,0,Math.PI/8);
+ cy(BR*1.1,BR*1.1,.014,8,m.accent,0,B1-.03,0,Math.PI/8);
+ cy(BR*1.06,BR*.8,.03,8,m.gold,0,B0-.012,0,Math.PI/8);
+ const dome=add(new THREE.Mesh(new THREE.SphereGeometry(BR*.92*k,24,10,0,Math.PI*2,0,Math.PI/2),m.silver));dome.position.y=B1*k;dome.scale.y=.55;
+ /* solar cells on the four faces between the arms */
+ for(let i=0;i<4;i++){const a=i*Math.PI/2,p=box(.085,.07,.006,m.cells,Math.sin(a)*BR*1.01,(B0+B1)/2-.01,Math.cos(a)*BR*1.01);p.rotation.y=a;}
+ /* four arms with a thruster pod at each end, nozzle down */
+ const AY=B1-.04,AR=.36,flames=[];
+ for(let i=0;i<4;i++){const a=i*Math.PI/2+Math.PI/4,c=Math.sin(a),s=Math.cos(a),x=c*AR,z=s*AR;
+  rod([c*BR*.9,AY,s*BR*.9],[x,AY,z],.017,m.alu);
+  rod([c*BR*.9,AY-.05,s*BR*.9],[x*.8,AY-.005,z*.8],.008,m.alu);
+  cy(.042,.042,.07,16,m.white,x,AY,z);
+  cy(.045,.045,.014,16,m.accent,x,AY+.022,z);
+  bell(.016,.034,.045,AY-.035,x,z);
+  flames.push(flame(.03,.2,x,AY-.08,z));}
+ /* gimballed camera under the nose */
+ rod([0,B0-.02,.07],[0,B0-.06,.09],.007,m.alu);
+ const cam=add(new THREE.Mesh(new THREE.SphereGeometry(.036*k,16,12),m.dark));cam.position.set(0,(B0-.075)*k,.1*k);
+ const lens=cy(.018,.018,.012,16,m.glass,0,B0-.075,.136);lens.rotation.x=Math.PI/2;
+ /* whip antenna on the dome with the beacon */
+ rod([.04,B1+.05,-.04],[.05,B1+.15,-.05],.004,m.alu);
+ const bc=beacon(.05,B1+.155,-.05);
+ /* four short legs between the arms */
+ for(let i=0;i<4;i++){const a=i*Math.PI/2,c=Math.sin(a),s=Math.cos(a);
+  rod([c*BR*.85,B0+.01,s*BR*.85],[c*.25,.02,s*.25],.011,m.alu);pad(c*.25,s*.25);}
+ g.userData={flame:flames,beacon:bc,mats,mid:.22*k};
+ return g;
+}
+
+/* Radio del suelo bajo cada zona, leído del mismo mapa de alturas que desplaza la malla (con el suavizado del polo) */
+function sampleGround(){const im=height.image;if(!im||!im.width)return;
+ try{const c=document.createElement("canvas"),w=c.width=1024,h=c.height=512,x=c.getContext("2d",{willReadFrequently:true});
+  x.drawImage(im,0,0,w,h);const d=x.getImageData(0,0,w,h).data;
+  const at=(u,v)=>d[(Math.min(h-1,Math.max(0,Math.floor((1-v)*h)))*w+Math.floor(((u%1+1)%1)*w)%w)*4]/255;
+  ZONES.forEach(z=>{const u=.5+z.lon/360,v=.5+z.lat/180,pf=sm(.012,.085,(90+z.lat)*D2R);
+   let ra=0;for(let i=0;i<12;i++)ra+=at(u+i/12,v);ra/=12;
+   z.gr=1+(ra+(at(u,v)-ra)*pf)*moonMat.displacementScale+moonMat.displacementBias;
+   /* la marca de la zona baja al suelo real para que el cohete se pose en su centro */
+   if(z.lz){z.lz.position.copy(z.n).multiplyScalar(z.gr+.0005);z.pulse.position.copy(z.n).multiplyScalar(z.gr+.0006);}});}catch(e){}}
+const sm=(a,b,x)=>{const e=Math.min(1,Math.max(0,(x-a)/(b-a)));return e*e*(3-2*e);};
+const PH=.55,PL=.7,MARK=.032;
+function pathAt(z,s){const u=1-s;return z.n.clone().multiplyScalar(1.004+PH*Math.pow(u,1.5)).addScaledVector(z.a,PL*Math.pow(u,1.8));}
+const CRAFT={robot:makeRobotLander,hopper:makeHopper};
+/* Approach (app, azimuth in the tangent plane) and resting point on the path (hold); narrow screens may have their own,
+   since there the craft sit closer together than their labels are wide */
+function aim(z,narrow){
+ const o=narrow&&z.narrow||z,n=z.n;z.h=o.hold;
+ const out=new THREE.Vector3(Math.cos(o.app*D2R),0,-Math.sin(o.app*D2R));z.a=out.addScaledVector(n,-out.dot(n)).normalize();
+ if(!z.trail||z.lander)return;
+ const pos=z.trail.geometry.attributes.position,N=pos.count;
+ for(let k=0;k<N;k++){const p=pathAt(z,k/(N-1));pos.setXYZ(k,p.x,p.y,p.z);}
+ pos.needsUpdate=true;z.trail.geometry.computeBoundingSphere();}
+let NARROW=false;
+ZONES.forEach(z=>{
+ const n=local(z.lat,z.lon);z.n=n;z.gr=z.gr||1.0005;
+ aim(z,false);
+ z.site=n.clone();
+ /* MARK: smaller than the gap between the two closest sites (tour and rol, ~.045 apart) so their marks never overlap */
+ const lz=decal(LZ,z.hex,MARK);lz.position.copy(n).multiplyScalar(1.0045);lz.lookAt(lz.position.clone().add(n));moon.add(lz);z.lz=lz;
+ const pu=decal(PT,z.hex,MARK);pu.position.copy(n).multiplyScalar(1.0046);pu.lookAt(pu.position.clone().add(n));pu.material.opacity=0;moon.add(pu);z.pulse=pu;
+ const r=(z.lander?makeLander:CRAFT[z.craft]??makeRocket)(z.hex);moon.add(r);z.rocket=r;
+ /* the lander has a straight descent line instead of a trail; the loop moves its ends */
+ const N=z.lander?90:220,pts=[];for(let k=0;k<N;k++)pts.push(z.lander?n.clone():pathAt(z,k/(N-1)));
+ const g=new THREE.BufferGeometry().setFromPoints(pts);g.setAttribute("color",new THREE.BufferAttribute(new Float32Array(N*3),3));
+ const line=new THREE.Line(g,new THREE.LineBasicMaterial({vertexColors:true,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));moon.add(line);
+ z.trail=line;z.col=new THREE.Color(z.hex);z.hv=0;
+ const beam=new THREE.Mesh(new THREE.CylinderGeometry(.006,.0025,.07,32,1,true),new THREE.MeshBasicMaterial({map:BEAM,color:z.hex,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));
+ beam.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),n);moon.add(beam);z.beam=beam;
+ const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:z.hex,transparent:true,opacity:.35,blending:THREE.AdditiveBlending,depthWrite:false}));
+ glow.scale.setScalar(RH*1.6);glow.position.y=z.lander?LH*.4:RH*.15;r.add(glow);z.glow=glow;
+});
+const LANDER=ZONES.find(z=>z.lander);
+/* its height on a phone screen, in px */
+const LANDER_PX=34;
+/* LA_H: lander altitude over its zone before the final descent; LZ_S: its scale there */
+const LA_H=.03,LZ_S=.5;
+/* Aterrizaje: polvo que levanta el motor y onda al tocar suelo */
+const dust=decal(GLOW,0xcfc6b4,.05),shock=decal(PT,0xffffff,.05);
+[dust,shock].forEach(m=>{m.material.opacity=0;m.renderOrder=3;moon.add(m);});
+
+/* ---------- 540 satellite: floats in the sky of the menu; clicking it opens "Quiénes somos" ---------- */
+const SAT={id:"540",sat:true,mission:tx("sat.mission"),name:tx("sat.name"),place:tx("sat.place"),coords:tx("sat.coords"),color:"--brand",hv:0,sx:-999,sy:-999,px:0,
+ text:tx("sat.text")};
+SAT.hex=css.getPropertyValue("--brand").trim();
+const SAT_SPAN=.53; /* tip to tip of the solar wings, in lunar radii */
+/* Crinkled multilayer insulation: drives the bump and the roughness of the foil */
+function foilTex(){const c=document.createElement("canvas");c.width=c.height=256;const x=c.getContext("2d");x.fillStyle="#b4b4b4";x.fillRect(0,0,256,256);
+ let s=7;const r=()=>(s=(s*1664525+1013904223)>>>0)/4294967296;
+ for(let i=0;i<620;i++){const px=r()*256,py=r()*256,d=8+r()*30,v=Math.floor(70+r()*185);x.fillStyle=`rgba(${v},${v},${v},.5)`;
+  x.beginPath();x.moveTo(px,py);x.lineTo(px+(r()-.5)*d*2,py+(r()-.5)*d*2);x.lineTo(px+(r()-.5)*d*2,py+(r()-.5)*d*2);x.fill();}
+ const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return aniso(t);}
+/* Solar cells: near-black blue, thin gaps and busbars, slight variation from cell to cell */
+function panelTex(){const c=document.createElement("canvas");c.width=c.height=512;const x=c.getContext("2d");x.fillStyle="#1b1d22";x.fillRect(0,0,512,512);
+ let s=11;const r=()=>(s=(s*1664525+1013904223)>>>0)/4294967296;
+ const C=6,R=8,m=10,cw=(512-2*m)/C,ch=(512-2*m)/R;
+ for(let i=0;i<C;i++)for(let j=0;j<R;j++){const x0=m+i*cw+1.5,y0=m+j*ch+1.5,k=r()*14;
+  const g=x.createLinearGradient(x0,y0,x0+cw,y0+ch);g.addColorStop(0,`rgb(${9+k},${14+k},${44+k*1.6})`);g.addColorStop(1,`rgb(${4+k*.5},${7+k*.5},${24+k})`);
+  x.fillStyle=g;x.fillRect(x0,y0,cw-3,ch-3);
+  x.fillStyle="rgba(170,180,200,.16)";x.fillRect(x0,y0+ch*.33,cw-3,1);x.fillRect(x0,y0+ch*.66,cw-3,1);}
+ const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return aniso(t);}
+function makeSatellite(){
+ const g=new THREE.Group(),BW=.11,BH=.1,BD=.09,PW=.085,PH=.094,YK=.032,GAP=.004,V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+ FOIL=FOIL||foilTex();PANEL=PANEL||panelTex();
+ const logo=loader.load("tex/logo-540.png",()=>{wake();taintGovernor();});logo.colorSpace=THREE.SRGBColorSpace;aniso(logo);
+ const M=o=>new THREE.MeshStandardMaterial(o);
+ const foil=M({color:0x8f6521,metalness:1,roughness:.7,roughnessMap:FOIL,bumpMap:FOIL,bumpScale:1.4,emissive:0x140d03,envMapIntensity:.7});
+ const alu=M({color:0xaab0b8,metalness:.9,roughness:.42});
+ const dark=M({color:0x1b1d21,metalness:.5,roughness:.6,side:THREE.DoubleSide});
+ const white=M({color:0xe6e7e9,metalness:0,roughness:.7,side:THREE.DoubleSide});
+ const mirror=M({color:0x8d959e,metalness:1,roughness:.22});
+ const cells=M({map:PANEL,metalness:.3,roughness:.28,emissiveMap:PANEL,emissive:0xffffff,emissiveIntensity:.55});
+ const kapton=M({color:0x6e4b1d,metalness:.4,roughness:.55});
+ const plate=M({map:logo,color:0x777777,metalness:0,roughness:.9,emissiveMap:logo,emissive:0xffffff,emissiveIntensity:.55});
+ /* #291: the plate, its backing and the radiators lie closer to the surface behind them than the depth buffer resolves
+    from the menu camera (near 0.0005), so each layer is pulled towards the camera in depth to stop them z-fighting */
+ const lift=(m,k)=>{m.polygonOffset=true;m.polygonOffsetFactor=-2*k;m.polygonOffsetUnits=-8*k;return m;};
+ const backing=lift(dark.clone(),1);lift(mirror,1);lift(plate,2);
+ const box=(w,h,d,mat,x=0,y=0,z=0,par=g)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);par.add(m);return m;};
+ /* bus wrapped in gold insulation, between two aluminium decks */
+ box(BW,BH,BD,foil);box(BW*1.04,.004,BD*1.04,alu,0,BH/2);box(BW*1.04,.004,BD*1.04,alu,0,-BH/2);
+ /* face that looks at the camera: the 540 plate and a mirrored radiator under it */
+ const lw=BW*.86,lh=lw*136/352;
+ box(lw+.005,lh+.005,.002,backing,0,BH*.19,BD/2+.001);
+ const pl=new THREE.Mesh(new THREE.PlaneGeometry(lw,lh),plate);pl.position.set(0,BH*.19,BD/2+.0023);g.add(pl);
+ for(let i=-1;i<=1;i++)box(BW*.27,BH*.24,.002,mirror,i*BW*.29,-BH*.27,BD/2+.001);
+ /* attitude thrusters on the lower corners and the main engine under the bus */
+ [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([a,b])=>{const n=new THREE.Mesh(new THREE.ConeGeometry(.006,.012,12,1,true),dark);n.position.set(a*BW*.43,-BH/2-.008,b*BD*.4);g.add(n);});
+ const eng=new THREE.Mesh(new THREE.ConeGeometry(.02,.03,24,1,true),dark);eng.position.y=-BH/2-.016;g.add(eng);
+ /* star trackers */
+ [-1,1].forEach(b=>{const st=new THREE.Mesh(new THREE.CylinderGeometry(.008,.006,.02,14,1,true),dark);st.position.set(BW*.32,BH/2+.011,b*BD*.24);st.rotation.z=-.45;g.add(st);});
+ /* high-gain dish on a short boom, with its feed on three struts */
+ const DR=.05,prof=[];for(let k=0;k<=12;k++){const r=DR*k/12;prof.push([r,r*r*6]);}
+ const dish=new THREE.Group();dish.add(lathe(prof,white,36));
+ const rimY=DR*DR*6,feedY=.042;
+ for(let i=0;i<3;i++){const an=i*2.094+.4;dish.add(cyl(V3(Math.cos(an)*DR*.96,rimY,Math.sin(an)*DR*.96),V3(0,feedY,0),.0011,alu));}
+ const feed=new THREE.Mesh(new THREE.CylinderGeometry(.004,.0055,.008,12),alu);feed.position.y=feedY;dish.add(feed);
+ dish.add(cyl(V3(0,-.022,0),V3(0,.001,0),.004,alu));
+ dish.position.set(-BW*.16,BH/2+.024,-BD*.05);dish.rotation.set(.6,0,.3);g.add(dish);
+ /* low-gain whip */
+ g.add(cyl(V3(BW*.3,-BH/2,BD*.3),V3(BW*.37,-BH/2-.05,BD*.3),.0013,alu));
+ /* solar wings: yoke and two hinged panels each; kapton on the back */
+ const wings=[-1,1].map(sd=>{const w=new THREE.Group();w.position.x=sd*BW/2;w.rotation.x=-.3;g.add(w);
+  const hy=PH*.32;
+  w.add(cyl(V3(0,0,0),V3(sd*YK,hy,0),.0022,alu),cyl(V3(0,0,0),V3(sd*YK,-hy,0),.0022,alu),cyl(V3(sd*YK,hy+.008,0),V3(sd*YK,-hy-.008,0),.0022,alu));
+  for(let k=0;k<2;k++){
+   box(PW,PH,.0025,[alu,alu,alu,alu,cells,kapton],sd*(YK+PW/2+k*(PW+GAP)),0,0,w);
+   if(k){const xb=sd*(YK+PW+GAP/2);[-1,1].forEach(u=>w.add(cyl(V3(xb,u*hy-.007,-.002),V3(xb,u*hy+.007,-.002),.0024,alu)));}}return w;});
+ /* faint halo, only while hovered, to show it can be clicked */
+ const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:SAT.hex,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));
+ glow.position.z=-.08;g.add(glow);
+ /* Aircraft-style lights: steady red and green on the wingtips, a white double-flash strobe on each tip and a red
+    beacon on the tip of the whip. Drawn over the craft (no depth test) so the panels never cut the flare in half */
+ const lamp=(color,par,x,y,z)=>{const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,depthTest:false}));
+  sp.position.set(x,y,z);sp.renderOrder=4;par.add(sp);return sp;};
+ const tipX=YK+2*PW+GAP+.004,nav=[],strobe=[];
+ wings.forEach((w,i)=>{const sd=i?1:-1;nav.push(lamp(sd<0?0xff2a1e:0x2bff6a,w,sd*tipX,0,0));strobe.push(lamp(0xffffff,w,sd*tipX,0,0));});
+ const beacon=lamp(0xff3324,g,BW*.37,-BH/2-.052,BD*.3);
+ g.userData={glow,nav,strobe,beacon,mats:[foil,alu,dark,backing,white,mirror,cells,kapton]};return g;
+}
+/* What the satellite reflects: black sky, the Sun to the left and the sunlit Moon. Only its own materials use it */
+function buildSatEnv(){
+ const pm=new THREE.PMREMGenerator(renderer),es=new THREE.Scene();es.background=new THREE.Color(0x010102);
+ const sunM=new THREE.Mesh(new THREE.SphereGeometry(5,16,12),new THREE.MeshBasicMaterial({color:new THREE.Color(46,43,38)}));
+ sunM.position.set(-1,.1,-.15).normalize().multiplyScalar(50);es.add(sunM);
+ const moonM=new THREE.Mesh(new THREE.SphereGeometry(1,32,16),new THREE.MeshBasicMaterial({color:0x7a7772}));moonM.position.copy(SATP).negate();es.add(moonM);
+ const env=pm.fromScene(es,0,.1,100).texture;pm.dispose();
+ [...sat.userData.mats,...probe.userData.mats,...ZONES.flatMap(z=>z.rocket.userData.mats??[])].forEach(m=>{m.envMap=env;m.needsUpdate=true;});
+}
+let satEnv=false;
+const sat=makeSatellite();scene.add(sat);
+
+/* ---------- Mapping probe: an LRO-like orbiter (LROC and LOLA, the sources of the texture and relief) in a low polar
+   orbit. Scenery, not an entry: only the purple rocket opens "Explorar la Luna". Lilac like the zones: orbit line, fading
+   swath behind it and a beam ---------- */
+const PROBE={name:tx("probe.name"),sources:tx("probe.sources"),hv:0,near:false,sx:-999,sy:-999,px:0,shown:false};
+PROBE.hex=css.getPropertyValue("--zone").trim();
+/* PO_R: orbit radius; PO_W: angular speed (one turn in ~56 s); PO_REST: parked phase with reduced motion, in sight */
+const PO_R=1.13,PO_W=2*Math.PI/56,PO_REST=-.32,PROBE_SPAN=.125,PROBE_S=1.35,TRAIL=.9;
+let probeT=-.75;
+function makeProbe(){
+ const g=new THREE.Group(),M=o=>new THREE.MeshStandardMaterial(o),V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+ /* probe frame: -X looks down at the Moon, +Y is the direction of flight, +Z the orbit normal */
+ const blanket=M({color:0xd9dce2,metalness:.25,roughness:.55,roughnessMap:FOIL,bumpMap:FOIL,bumpScale:.8,emissive:0x16181c});
+ const alu=M({color:0xaab0b8,metalness:.8,roughness:.4,emissive:0x0c0d0f});
+ const dark=M({color:0x24272c,metalness:.5,roughness:.55,side:THREE.DoubleSide});
+ const white=M({color:0xe6e7e9,metalness:0,roughness:.7,side:THREE.DoubleSide});
+ const cells=M({map:PANEL,metalness:.3,roughness:.3,emissiveMap:PANEL,emissive:0xffffff,emissiveIntensity:.6});
+ const lens=new THREE.MeshBasicMaterial({color:PROBE.hex});
+ const box=(w,h,d,mat,x=0,y=0,z=0)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);g.add(m);return m;};
+ /* long bus, a radiator on its back and the instrument deck facing the Moon */
+ box(.024,.052,.026,blanket);box(.0015,.04,.02,alu,.0125);box(.003,.05,.028,dark,-.0135);
+ /* two narrow-angle cameras and the laser altimeter, looking down */
+ [[-.012,-.006],[-.012,.006],[.01,0]].forEach(([y,z],i)=>{const c=new THREE.Mesh(new THREE.CylinderGeometry(i<2?.0042:.005,i<2?.0042:.005,.016,14),white);
+  c.rotation.z=Math.PI/2;c.position.set(-.021,y,z);g.add(c);
+  const l=new THREE.Mesh(new THREE.CircleGeometry(i<2?.003:.0036,14),lens);l.rotation.y=-Math.PI/2;l.position.set(-.0292,y,z);g.add(l);});
+ /* a single solar wing on its boom, cells to the sky */
+ g.add(cyl(V3(0,.01,.013),V3(0,.01,.032),.0014,alu));
+ box(.002,.038,.058,[cells,dark,alu,alu,alu,alu],.002,.01,.062).rotation.z=-.55;
+ /* high-gain dish on a boom on the other side */
+ g.add(cyl(V3(.006,-.016,-.013),V3(.016,-.016,-.03),.0012,alu));
+ const DR=.011,prof=[];for(let k=0;k<=8;k++){const r=DR*k/8;prof.push([r,r*r*14]);}
+ const dish=lathe(prof,white,20);dish.rotation.z=-Math.PI/2;dish.position.set(.016,-.016,-.03);g.add(dish);
+ const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:PROBE.hex,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));
+ glow.scale.setScalar(PROBE_SPAN*1.5);g.add(glow);
+ g.userData={glow,mats:[blanket,alu,dark,white,cells]};return g;
+}
+const orbit=new THREE.Group(),spin=new THREE.Group();orbit.add(spin);moon.add(orbit);
+/* A near-polar plane turned to `lon` and tilted `tilt` degrees off the south pole; phase 0 is its closest pass to the pole */
+function setOrbitPlane(lon,tilt){
+ const nrm=local(0,lon+90).multiplyScalar(Math.cos(tilt*D2R)).add(new THREE.Vector3(0,Math.sin(tilt*D2R),0)).normalize();
+ const x=new THREE.Vector3(0,-1,0);x.addScaledVector(nrm,-x.dot(nrm)).normalize();
+ orbit.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(x,new THREE.Vector3().crossVectors(nrm,x),nrm));}
+setOrbitPlane(-40,26);
+const probe=makeProbe();probe.position.x=PO_R;spin.add(probe);
+const fadeMat=o=>new THREE.MeshBasicMaterial({transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,...o});
+const orbitLine=new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(Array.from({length:160},(_,i)=>new THREE.Vector3(Math.cos(i/160*Math.PI*2)*PO_R,Math.sin(i/160*Math.PI*2)*PO_R,0))),
+ new THREE.LineBasicMaterial({color:PROBE.hex,transparent:true,opacity:.3,blending:THREE.AdditiveBlending,depthWrite:false}));
+orbit.add(orbitLine);
+/* swath behind the probe: fixed geometry in the spinning frame, fading to the tail through its vertex colours */
+const trail=(()=>{const N=48,pos=[],col=[],idx=[],c=new THREE.Color(PROBE.hex);
+ for(let i=0;i<=N;i++){const f=i/N,a=-TRAIL*(1-f),w=.002+.006*f,b=.6*Math.pow(f,1.8);
+  for(const z of [-w,w]){pos.push(Math.cos(a)*PO_R,Math.sin(a)*PO_R,z);col.push(c.r*b,c.g*b,c.b*b);}
+  if(i<N)idx.push(2*i,2*i+1,2*i+2,2*i+1,2*i+3,2*i+2);}
+ const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));g.setAttribute("color",new THREE.Float32BufferAttribute(col,3));g.setIndex(idx);
+ return new THREE.Mesh(g,fadeMat({vertexColors:true,opacity:.85,side:THREE.DoubleSide}));})();
+spin.add(trail);
+/* beam down to the surface, brightest at the probe (BEAM fades towards the top of the cylinder, turned here to point down) */
+const PB_H=PO_R-1.006;
+const probeBeam=new THREE.Mesh(new THREE.CylinderGeometry(.032,.004,PB_H,24,1,true),fadeMat({map:BEAM,color:PROBE.hex,opacity:.2,side:THREE.DoubleSide}));
+probeBeam.rotation.z=Math.PI/2;probeBeam.position.x=1.006+PB_H/2;spin.add(probeBeam);
+const footprint=new THREE.Mesh(new THREE.PlaneGeometry(.07,.07),fadeMat({map:GLOW,color:PROBE.hex,opacity:.35}));
+footprint.rotation.y=Math.PI/2;footprint.scale.set(1,1.7,1);footprint.position.x=1.007;spin.add(footprint);
+
+/* ---------- "Explorar la Luna": a purple rocket waits beside the left limb of the Moon; clicking it, it flies past the camera and the camera pulls back to the whole globe ---------- */
+const XR={id:"explorar-cohete",xr:true,mission:tx("xr.mission"),name:tx("xr.name"),place:tx("xr.place"),coords:tx("xr.coords"),color:"--explore",hv:0,sx:-999,sy:-999,px:0,on:false,
+ fly:null,gone:false,text:tx("xr.text")};
+XR.hex=css.getPropertyValue("--explore").trim();
+const xr=makeRocket(XR.hex,0xc6a6ff);xr.traverse(m=>{m.castShadow=false;});xr.visible=false;scene.add(xr);
+{const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:XR.hex,transparent:true,opacity:.35,blending:THREE.AdditiveBlending,depthWrite:false}));
+ glow.position.y=RH*.15;xr.add(glow);xr.userData.glow=glow;}
+
+/* ---------- Etiquetas ---------- */
+const labels=$("labels");
+ZONES.forEach(z=>{
+ const b=document.createElement("button");b.className="zl";b.style.setProperty("--c",`var(${z.color})`);
+ b.innerHTML=`<span class="tick"></span><span class="txt"><span class="mis">${z.mission}</span><b>${z.name}</b><small>${z.place}</small></span>`;
+ b.setAttribute("aria-label",`${z.name}. ${z.place}`);
+ b.addEventListener("pointerenter",()=>setHover(z));b.addEventListener("pointerleave",()=>setHover(null));
+ b.addEventListener("focus",()=>setHover(z));b.addEventListener("blur",()=>setHover(null));
+ b.addEventListener("click",()=>go(z));
+ b.dataset.zone=z.id;
+ labels.appendChild(b);z.el=b;
+ /* SPIKE: its card on the left, same behaviour as the label */
+ const li=document.createElement("li"),c=document.createElement("button");c.className="mcard";c.style.setProperty("--c",`var(${z.color})`);
+ c.innerHTML=`<span class="mis">${z.mission} · ${z.place}</span><b>${z.name}</b><small>${z.text}</small>`;
+ c.addEventListener("pointerenter",()=>setHover(z));c.addEventListener("pointerleave",()=>setHover(null));
+ c.addEventListener("focus",()=>setHover(z));c.addEventListener("blur",()=>setHover(null));
+ c.addEventListener("click",()=>go(z));
+ li.appendChild(c);$("mcards").appendChild(li);z.card=c;
+});
+$("mcards").setAttribute("aria-label",tx("mcards.label"));
+{const b=document.createElement("button");b.className="zl sat";b.style.setProperty("--c","var(--brand)");
+ b.innerHTML=`<span class="tick"></span><span class="txt"><span class="mis">${SAT.mission}</span><b>${SAT.name}</b></span>`;
+ b.setAttribute("aria-label",`${SAT.name}. ${tx("sat.aria")}`);
+ b.addEventListener("pointerenter",()=>setHover(SAT));b.addEventListener("pointerleave",()=>setHover(null));
+ b.addEventListener("focus",()=>setHover(SAT));b.addEventListener("blur",()=>setHover(null));
+ b.addEventListener("click",openAbout);
+ labels.appendChild(b);SAT.el=b;}
+{const b=document.createElement("div");b.className="zl probe";b.style.setProperty("--c","var(--zone)");b.setAttribute("aria-hidden","true");
+ b.innerHTML=`<span class="tick"></span><span class="txt"><b>${PROBE.name}</b><small>${PROBE.sources}</small></span>`;
+ labels.appendChild(b);PROBE.el=b;}
+
+{const b=document.createElement("button");b.className="zl xr";b.style.setProperty("--c","var(--explore)");b.hidden=true;
+ b.innerHTML=`<span class="tick"></span><span class="txt"><span class="mis">${XR.mission}</span><b>${XR.name}</b><small>${XR.place}</small></span>`;
+ b.setAttribute("aria-label",`${XR.name}. ${tx("xr.aria")}`);
+ b.addEventListener("pointerenter",()=>setHover(XR));b.addEventListener("pointerleave",()=>setHover(null));
+ b.addEventListener("focus",()=>setHover(XR));b.addEventListener("blur",()=>setHover(null));
+ b.addEventListener("click",()=>openExplore(undefined,false,true));
+ labels.appendChild(b);XR.el=b;}
+/* Its card on the left, the last of the list: one more way in, same behaviour as the rocket's label */
+{const li=document.createElement("li"),c=document.createElement("button");c.className="mcard";c.style.setProperty("--c","var(--explore)");
+ c.innerHTML=`<span class="mis">${XR.mission}</span><b>${XR.name}</b><small>${XR.text}</small>`;
+ c.addEventListener("pointerenter",()=>setHover(XR));c.addEventListener("pointerleave",()=>setHover(null));
+ c.addEventListener("focus",()=>setHover(XR));c.addEventListener("blur",()=>setHover(null));
+ c.addEventListener("click",()=>openExplore(undefined,c));
+ /* like the rocket, it is not there until zones.json has loaded (see where XR.el.hidden turns false) */
+ li.hidden=true;li.appendChild(c);$("mcards").appendChild(li);XR.card=c;XR.cardItem=li;}
+
+/* ---------- Encuadre ---------- */
+/* Polo sur de frente a la cámara, que lo mira en oblicuo para ver el horizonte curvo */
+const BASE={x:-Math.PI/2,y:2.2},TILT=7*D2R,v0=new THREE.Vector3();
+const baseM=new THREE.Matrix4();
+function baseWorld(vLocal,out){return out.copy(vLocal).applyMatrix4(baseM);}
+let W=1,Hh=1,SUN_AZ=200;
+const CA=new THREE.Vector3(),LA=new THREE.Vector3(),CB=new THREE.Vector3(),CC=new THREE.Vector3();
+/* Satellite: resting position and attitude in the menu, and the close-up camera for "Quiénes somos" */
+const SATP=new THREE.Vector3(),SATQ=new THREE.Quaternion(),CS=new THREE.Vector3(),SATL=new THREE.Vector3(),menuCam=new THREE.PerspectiveCamera(),satDummy=new THREE.Object3D();
+/* "Explorar la Luna" rocket: resting point and attitude beside the left limb, and the screen axes of the menu camera (right, up, depth) */
+const XP=new THREE.Vector3(),XQ=new THREE.Quaternion(),XRv=new THREE.Vector3(),XUv=new THREE.Vector3(),XWv=new THREE.Vector3(),XL=new THREE.Vector3();
+const XO={s:5.2};
+/* Its flights to and from the explore view: a cubic Bézier in the camera's own space, so the camera moving does not throw it out of shot */
+const XB=[0,0,0,0].map(()=>new THREE.Vector3()),XA=new THREE.Vector3();
+function xrBez(u,out){const w=1-u;return out.copy(XB[0]).multiplyScalar(w*w*w).addScaledVector(XB[1],3*w*w*u).addScaledVector(XB[2],3*w*u*u).addScaledVector(XB[3],u*u*u);}
+const CE=new THREE.Vector3(),qFrom=new THREE.Quaternion(),qTo=new THREE.Quaternion(),qExp=new THREE.Quaternion(),qBase=new THREE.Quaternion();
+let SATS=1;
+/* top of the rocket label: under the reticle's chip (real height), computed from the rocket at rest so it does not move with hover */
+/* A hidden twin of the chip with representative text: measuring the real chip would read 2 px while it is empty (before the first hover, after the satellite) */
+let chipProbe=null;
+const XR_FLAME=RH*.62; /* length of the rocket's plume at scale 1 (makeRocket); the line starts under its steady tip, without the flicker */
+const XR_PAD=6; /* top padding of .zl: from the top of the label to the top of its box */
+function xrLabelTop(cam){if(!chipProbe){chipProbe=$("lockTxt").cloneNode(false);chipProbe.removeAttribute("id");chipProbe.style.visibility="hidden";chipProbe.textContent="M · ALT 0 km";$("lock").appendChild(chipProbe);}
+ const chipH=chipProbe.offsetHeight,chipOffset=chipProbe.offsetTop-$("lock").offsetHeight/2;
+ v3.set(0,RH*.5*XO.s,0).applyQuaternion(XQ).add(XP).project(cam);
+ const rocketY=(-v3.y*.5+.5)*Hh;
+ v3.copy(XL).project(cam);
+ return labelBelowChip({rocketY,chipHeight:chipH,chipOffset,anchorTop:(-v3.y*.5+.5)*Hh+8,clearance:ROCKET_LINE_CLEARANCE-XR_PAD});}
+function computeMenu(){
+ pivot.rotation.set(BASE.x,BASE.y,0);pivot.updateMatrixWorld(true);baseM.copy(moon.matrixWorld);
+ const c=new THREE.Vector3();ZONES.forEach(z=>c.add(z.n));c.normalize();
+ baseWorld(c,LA);
+ const narrow=W<700,aspect=W/Hh;
+ if(narrow!==NARROW){NARROW=narrow;ZONES.forEach(z=>aim(z,narrow));}
+ /* el disco del hemisferio sur ocupa casi todo el alto */
+ const Dc=1/((narrow?.86:.78)*Math.tan(camera.fov*D2R/2)*Math.min(1,aspect));
+ CA.copy(LA).add(new THREE.Vector3(0,-Math.sin(TILT),Math.cos(TILT)).multiplyScalar(Dc-1));
+ LA.y-=narrow?.13:.1;
+ /* Sol entrando por la izquierda de la pantalla, rasante al polo */
+ const sw=new THREE.Vector3(-1,0,-.15).normalize().transformDirection(baseM.clone().invert());
+ SUN_AZ=Math.atan2(-sw.z,sw.x)*R2D;
+ /* The satellite hangs in the empty sky of the menu: top right, in front of the Moon */
+ menuCam.fov=camera.fov;menuCam.aspect=aspect;menuCam.near=camera.near;menuCam.far=camera.far;menuCam.updateProjectionMatrix();
+ menuCam.position.copy(CA);menuCam.lookAt(LA);menuCam.updateMatrixWorld(true);
+ const dist=Dc*.72,ray=new THREE.Vector3(narrow?.52:.7,narrow?.5:.56,.5).unproject(menuCam).sub(CA).normalize();
+ SATP.copy(CA).addScaledVector(ray,dist/ray.dot(menuCam.getWorldDirection(new THREE.Vector3())));
+ SATS=narrow?.52:.72;
+ /* plate towards the camera, turned a bit to the Sun (screen left) and banked */
+ satDummy.position.copy(SATP);satDummy.lookAt(CA);satDummy.rotateZ(-.24);satDummy.rotateY(-.68);satDummy.rotateX(.12);SATQ.copy(satDummy.quaternion);
+ if(!satEnv){satEnv=true;buildSatEnv();}
+ /* close-up: the satellite fills a fraction of the width, leaving room for the card */
+ const near=Math.max(.3,SAT_SPAN*SATS/((narrow?.8:.36)*2*Math.tan(camera.fov*D2R/2)*aspect));
+ CS.copy(SATP).addScaledVector(v0.copy(CA).sub(SATP).normalize(),near);
+ SATL.copy(SATP);if(narrow)SATL.y-=near*.22;
+ /* Mission 04 lander: hangs in the free sky above its zone (up and to its left on phones, clear of the other
+    labels), upright on screen and turned three-quarters to the camera, at a fixed size on screen */
+ {const z=LANDER,lz=baseWorld(v0.copy(z.n).multiplyScalar(1.004),new THREE.Vector3()),sp=lz.clone().project(menuCam);
+  /* on short phones, lower so that the lander and its label stay under the header */
+  const ny=narrow?landerNdcY({top:.43,headerBottom:document.querySelector(".brand").getBoundingClientRect().bottom,reach:LANDER_PX/2+Math.max(LANDER_PX,z.el.offsetHeight)/2,height:Hh}):.68;
+  /* on phones its label goes on its left: far enough from the left edge for it to fit there (otherwise frame() flips it right, over the satellite) */
+  const nx=narrow?landerNdcX({preferred:sp.x-.13,labelWidth:z.el.offsetWidth,gap:RH*.7/LH*LANDER_PX+12,width:W}):sp.x+.03;
+  const ray=new THREE.Vector3(nx,ny,.5).unproject(menuCam).sub(CA).normalize();
+  const dist=CA.distanceTo(lz)*.8,P=CA.clone().addScaledVector(ray,dist/ray.dot(menuCam.getWorldDirection(new THREE.Vector3())));
+  const up=new THREE.Vector3().setFromMatrixColumn(menuCam.matrixWorld,1),fr=CA.clone().sub(P).normalize();
+  fr.addScaledVector(up,-fr.dot(up)).normalize();
+  const qM=new THREE.Quaternion().setFromRotationMatrix(baseM).invert(),Y=new THREE.Vector3(0,1,0);
+  const attitude=(u,f,yaw)=>qM.clone().multiply(new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3().crossVectors(u,f),u,f))).multiply(new THREE.Quaternion().setFromAxisAngle(Y,yaw));
+  z.hover=P.clone().applyMatrix4(baseM.clone().invert());
+  z.hq=attitude(up,fr,.62);z.hu=Y.clone().applyQuaternion(z.hq);
+  /* over its zone: upright on the local vertical, the cabin towards the camera that comes down to it (see go()) */
+  const N=lz.clone().normalize(),bk=CA.clone().sub(lz);bk.addScaledVector(N,-bk.dot(N)).normalize();
+  z.qz=attitude(N,bk,.5);
+  z.ms=(narrow?LANDER_PX:56)*2*CA.distanceTo(P)*Math.tan(camera.fov*D2R/2)/(LH*Hh);
+  z.side=narrow?-1:1;}
+ /* The rocket hovers beside the left limb: the tangent point of the Moon seen from the menu camera, pushed a bit out into the sky and towards the camera */
+ {const d=CA.length();XWv.copy(CA).negate().normalize();
+  XUv.setFromMatrixColumn(menuCam.matrixWorld,1);XRv.copy(XWv).cross(XUv).normalize();XUv.copy(XRv).cross(XWv).normalize();
+  XP.copy(XWv).multiplyScalar(-1/d).addScaledVector(XRv,-Math.sqrt(1-1/(d*d)));
+  XO.s=narrow?4.8:5.2;
+  /* on phones the Moon fills the width: it waits at the lower left limb, over the free sky under the Moon */
+  XP.addScaledVector(XRv,narrow?.3:-.2).addScaledVector(XUv,narrow?-.78:-.06).addScaledVector(XWv,-.12);
+  /* upright on screen, leaning a little to the right, like a rocket waiting for its turn */
+  XQ.setFromUnitVectors(new THREE.Vector3(0,1,0),v0.copy(XUv).addScaledVector(XRv,.22).normalize());
+  XL.copy(XP).addScaledVector(XUv,-.03);
+  /* on short phones the dock would cover its label: up by as much as needed */
+  if(narrow&&!XR.el.hidden){const y=xrLabelTop(menuCam),lift=liftAboveDock({labelBottom:y+XR.el.offsetHeight,dockTop:dockTopFor(XR)});
+   if(lift){const k=lift*2*XP.clone().sub(CA).dot(menuCam.getWorldDirection(v0))*Math.tan(camera.fov*D2R/2)/Hh;XP.addScaledVector(XUv,k);
+    /* going up it can end behind the limb: then it comes forward along its line of sight, just in front of the Moon */
+    const ray=XP.clone().sub(CA),len=ray.length();ray.divideScalar(len);const b=CA.dot(ray),disc=b*b-CA.lengthSq()+1.03*1.03;
+    if(disc>0&&-b-Math.sqrt(disc)<len)XP.copy(CA).addScaledVector(ray,-b-Math.sqrt(disc));
+    XL.copy(XP).addScaledVector(XUv,-.03);}}}
+ /* "Explorar la Luna": the whole globe, a bit smaller than the screen */
+ const half=Math.min(camera.fov/2,Math.atan(Math.tan(camera.fov*D2R/2)*aspect)*R2D)*D2R;
+ CE.set(0,0,1/Math.sin((narrow?.8:.62)*half));
+}
+
+/* ---------- Estado ---------- */
+let mode="menu",hover=null,target=null,anim=null,t0=null,td=0; /* td: instante del contacto con el suelo */
+const view={p:0,q:0,s:0,ox:0,l:0,e:0,k:1,oy:0}; /* l: maniobra de aterrizaje, de la espera sobre la zona (0) al suelo (1); e: "Explorar la Luna"; k: giro entre dos zonas */
+const zoneOx=()=>W<700?0:.14;
+/* The Moon is ready to show once the 2k colour and the height textures are in (or have fallen back), or after 7 s
+   (late=true). With an automatic level (no ?q= and nothing stored) the next frame calibrates first, but only with the
+   whole scene: without those textures a frame costs less, the measurement would go up and store a level the device
+   may not hold. Late with textures missing: the level in use, nothing stored; the next visit measures again. */
+const sceneComplete=()=>color2k&&heightDone;
+function start(late){if(ready||(!late&&!sceneComplete()))return;ready=true;wake();if(QUALITY.source==="auto"&&sceneComplete()){calibrating=true;return;}reveal();}
+/* Deep links (#explorar, a mission, the satellite) wait for the Moon to be on screen: on a slow load (textures,
+   calibration) a fixed delay from page load ran the move behind #loading and the Moon showed up afterwards */
+const onReveal=[];
+function afterReveal(fn,ms=900){const run=()=>setTimeout(fn,ms);if(t0!==null)run();else onReveal.push(run);}
+function reveal(){wake();$("loading").classList.add("done");t0=performance.now();if(B)B.readyAt=t0;ensureColor();onReveal.splice(0).forEach(f=>f());
+ gov=governorInit(qualityPixelRatio(W,Hh));revealAt=t0;govTaint=true;govSamples=[];benchGovernor();
+ /* First visit: the tutorial, once the Moon is on screen and unless the URL goes straight to a mission (or it is a bench run) */
+ if(!location.hash&&!B)setTimeout(()=>{if(mode==="menu"&&!anim)startTourIfNew("home",tutorialSteps(),TUTORIAL);},1600);}
+
+function setHover(z){if(mode!=="menu")return;hover=z;wake();renderDock();}
+/* Top of the dock while it describes o (it grows with the text), measured on a hidden copy: the live dock is aria-live */
+function dockTopFor(o){const d=$("dock"),c=d.cloneNode(true);c.removeAttribute("id");c.setAttribute("aria-hidden","true");
+ c.querySelectorAll("[id]").forEach(e=>e.removeAttribute("id"));
+ const t=c.querySelectorAll(".k,.hint,h2,p");t[0].textContent=`${o.mission} · ${o.place} · ${o.coords}`;t[1].textContent=o.sat?HINT.sat:o.xr?HINT.xr:HINT.go;t[2].textContent=o.name;t[3].textContent=o.text;
+ Object.assign(c.style,{position:"absolute",visibility:"hidden",width:d.offsetWidth+"px"});d.parentNode.appendChild(c);
+ const top=d.getBoundingClientRect().bottom-c.offsetHeight;c.remove();return top;}
+function renderDock(){
+ const z=hover,d=$("dock");
+ [...ZONES,SAT,XR].forEach(o=>{o.el.classList.toggle("on",o===z);o.el.classList.toggle("dim",!!z&&o!==z);});
+ [...ZONES,XR].forEach(o=>o.card.classList.toggle("on",o===z));$("mcards").classList.toggle("dim",!!z);
+ canvas.style.cursor=z?"pointer":"";
+ if(!z){d.style.removeProperty("--dc");d.style.borderColor="";$("dKicker").textContent=tx("dock.kicker");$("dTitle").textContent=tx("dock.title");
+  $("dText").textContent=tx("dock.text");$("dHint").textContent=HINT.idle;return;}
+ d.style.setProperty("--dc",`var(${z.color})`);d.style.borderColor=`var(${z.color})`;
+ $("dKicker").textContent=`${z.mission} · ${z.place} · ${z.coords}`;$("dTitle").textContent=z.name;$("dText").textContent=z.text;$("dHint").textContent=z.sat?HINT.sat:z.xr?HINT.xr:HINT.go;
+}
+
+const easeIO=k=>k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+/* With reduced motion or in onDemand mode (#144) the camera goes to the end state in one frame */
+function animate(to,dur,done){wake();anim={from:{...view},to,t0:performance.now(),dur:(reduce||RENDER_MODE==="onDemand")?1:dur,done};}
+
+function go(z){
+ if(mode!=="menu")return;
+ mode="in";target=z;hover=null;renderDock();
+ app.classList.add("zoomed");app.style.setProperty("--tc",`var(${z.color})`);
+ $("telemetry").classList.add("on");
+ try{history.replaceState(null,"","#"+z.id);}catch(e){}
+ /* Punto de vista final: poco por encima de la zona, desde el mismo lado que el menú */
+ const P=baseWorld(z.n,new THREE.Vector3()),N=P.clone().normalize();
+ const back=CA.clone().sub(P);back.addScaledVector(N,-back.dot(N)).normalize();
+ CB.copy(P).addScaledVector(N,.085).addScaledVector(back,.075);
+ CC.copy(P).addScaledVector(N,.012).addScaledVector(back,.02);
+ animate({p:1,ox:zoneOx()},1500,()=>{
+  mode="zone";
+  setTimeout(()=>{if(mode!=="zone")return;$("telemetry").classList.remove("on");
+   $("destTitle").textContent=z.name;$("destText").textContent=z.text;
+   $("destKicker").textContent=tx("dest.kicker",{mission:z.mission,coords:z.coords});
+   $("destList").innerHTML=z.list.map(i=>`<li>${i}</li>`).join("");
+   $("destLabel").textContent=tx(z.href?"dest.labelLive":"dest.labelSoon");
+   $("dest").classList.add("on");$("fwdBtn").focus({preventScroll:true});},reduce?0:200);
+ });
+}
+/* The camera flies to the satellite and the "Quiénes somos" card opens */
+function openAbout(){
+ if(mode!=="menu")return;
+ mode="toAbout";hover=null;renderDock();
+ app.classList.add("zoomed");app.style.setProperty("--tc","var(--brand)");
+ try{history.replaceState(null,"","#"+SAT.id);}catch(e){}
+ animate({s:1,ox:W<700?0:.16},1300,()=>{mode="about";$("about").classList.add("on");$("aboutBack").focus({preventScroll:true});});
+}
+function closeAbout(){
+ if(mode!=="about")return;
+ mode="fromAbout";$("about").classList.remove("on");
+ try{history.replaceState(null,"",location.pathname);}catch(e){}
+ animate({s:0,ox:0},1100,()=>{mode="menu";app.classList.remove("zoomed");SAT.el.focus({preventScroll:true});});
+}
+const pick=z=>z.sat?openAbout():z.xr?openExplore(undefined,true):go(z);
+function back(){
+ if(mode!=="zone")return;
+ mode="out";$("dest").classList.remove("on");$("telemetry").classList.add("on");
+ try{history.replaceState(null,"",location.pathname);}catch(e){}
+ animate({p:0,ox:0},1200,()=>{
+  mode="menu";app.classList.remove("zoomed");$("telemetry").classList.remove("on");
+  const z=target;target=null;z&&z.el.focus({preventScroll:true});
+ });
+}
+function forward(){
+ if(mode!=="zone"||!target)return;const z=target;
+ /* Primero aterriza: giro, frenada y contacto. Después la cámara se acerca y se abre la pantalla */
+ mode="landing";td=0;$("dest").classList.remove("on");$("telemetry").classList.add("on");
+ [dust,shock].forEach(m=>{m.position.copy(z.n).multiplyScalar(z.gr+.0006);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),z.n);});
+ shock.material.color.set(z.hex);
+ animate({l:1,ox:0},2400,()=>{
+  td=performance.now();
+  setTimeout(()=>{if(mode!=="landing")return;$("telemetry").classList.remove("on");
+   /* La misión ya tiene pantalla: zoom al cohete, la Luna se apaga y se abre */
+   if(z.href){mode="leaving";app.classList.add("leaving");animate({q:1},900,()=>{location.href=z.href;});return;}
+   mode="screen";
+   $("scrKicker").textContent=`${z.mission} · ${z.place}`;$("scrTitle").textContent=z.name;
+   $("scrText").textContent=tx("scr.text",z.name);
+   animate({q:1},900);
+   setTimeout(()=>{$("screen").classList.add("on");$("scrBack").focus({preventScroll:true});},reduce?0:350);
+   try{history.replaceState(null,"","#"+z.id+"-pantalla");}catch(e){}
+  },reduce?0:500);
+ });
+}
+function leaveScreen(){
+ if(mode!=="screen")return;const z=target;
+ /* The 3D was lost while the mission screen was open: the notice instead of a black Moon */
+ if(contextLoss.showIfLost())return;
+ $("screen").classList.remove("on");td=0;
+ try{history.replaceState(null,"","#"+z.id);}catch(e){}
+ /* El cohete despega de nuevo y vuelve a esperar sobre la zona */
+ animate({q:0,l:0,ox:zoneOx()},1200,()=>{mode="zone";$("dest").classList.add("on");$("fwdBtn").focus({preventScroll:true});});
+}
+/* Al volver con «atrás» desde la pantalla de una misión, el navegador puede restaurar esta página tal como quedó */
+addEventListener("pageshow",e=>{if(!e.persisted||mode!=="leaving")return;
+ app.classList.remove("leaving");anim=null;view.q=0;view.l=0;view.ox=zoneOx();td=0;mode="zone";$("dest").classList.add("on");});
+$("backBtn").addEventListener("click",back);
+$("fwdBtn").addEventListener("click",forward);
+$("scrBack").addEventListener("click",leaveScreen);
+$("aboutBack").addEventListener("click",closeAbout);
+addEventListener("keydown",e=>{if(e.key!=="Escape")return;if(mode==="screen")leaveScreen();else if(mode==="about")closeAbout();else if(mode==="explore"||mode==="xmove"){cardOpen?closeCard():exitExplore();}else back();});
+
+/* ---------- Explorar la Luna ---------- */
+let XZ=[],xcur=null,cardOpen=false,xdata=null,xzoom=1,xzoomNow=1; /* xzoom: zoom asked for; xzoomNow: the one on screen */
+const MOON_INV=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,-Math.PI/2,0)).invert();
+/* Pivot attitude that puts (lat, lon) in front of the camera with north up; poles are seen from `lim` so the globe still reads as a globe */
+function faceQ(lat,lon,out,lim=60){const c=Math.max(-lim,Math.min(lim,lat)),L=lon*D2R,P=c*D2R;
+ const e=new THREE.Vector3(-Math.sin(L),0,-Math.cos(L)),n=new THREE.Vector3(-Math.sin(P)*Math.cos(L),Math.cos(P),Math.sin(P)*Math.sin(L));
+ return out.setFromRotationMatrix(new THREE.Matrix4().makeBasis(e,n,local(c,lon)).transpose()).multiply(MOON_INV);}
+const SUN_X=new THREE.Vector3(-.75,.35,.55).normalize();
+const VERDICT={yes:[tx("verdict.yes"),"--yes"],maybe:[tx("verdict.maybe"),"--maybe"],hard:[tx("verdict.hard"),"--hard"]};
+const LIGHT_W=Object.fromEntries(["most","half","little","never"].map(k=>[k,tx("light."+k)]));
+const EARTH_W=Object.fromEntries(["always","mostly","sometimes","never"].map(k=>[k,[tx("earth."+k),tx("earth."+k+"Txt")]]));
+const xNarrow=()=>W<700&&!(Hh<=520&&W>Hh);
+/* the globe sits a little above the centre, clear of the zone list at the bottom */
+const X_OY=.05;
+const zcard=$("zcard"),whycard=$("whycard");
+/* «¿Por qué el polo sur?»: not a zone (no pin, no figures) but the first chip; the globe turns to the south pole and opens #whycard */
+const WHY={id:"por-que",name:tx("why.chip"),lat:-89.5,lon:-90,intro:true};
+const xfind=id=>id===WHY.id?WHY:XZ.find(o=>o.id===id);
+
+fetch("data/zones.json").then(r=>r.ok?r.json():Promise.reject(r.status)).then(d=>{xdata=d;
+ const byId=new Map(d.zones.map(z=>[z.id,z]));
+ XZ=EXPLORE.filter(t=>byId.has(t.id)).map(t=>{const g=byId.get(t.id);return{...t,...g,n:local(g.lat,g.lon)};});
+ {const li=document.createElement("li"),b=document.createElement("button");b.className="chip why";b.innerHTML=`<i aria-hidden="true"></i><span class="cn">${WHY.name}</span><span class="cx"><small class="cr">${tx("why.chipSub")}</small></span>`;
+  b.dataset.zone=WHY.id;li.appendChild(b);$("chips").appendChild(li);WHY.chip=b;
+  b.addEventListener("click",()=>showZone(WHY));
+  b.addEventListener("pointerenter",()=>markZone(WHY));b.addEventListener("pointerleave",()=>markZone(xcur));
+  /* only keyboard focus marks the chip: the focus that openExplore() and closeCard() move here after a click must not look like a choice */
+  b.addEventListener("focus",()=>{if(b.matches(":focus-visible"))markZone(WHY);});b.addEventListener("blur",()=>markZone(xcur));}
+ XZ.forEach(z=>{
+  const li=document.createElement("li"),b=document.createElement("button");b.className="chip";b.innerHTML=`<i aria-hidden="true"></i><span class="cn">${z.name}</span>${chipMore(z)}`;
+  b.setAttribute("aria-label",`${z.name} · ${z.region}`);b.dataset.zone=z.id;
+  li.appendChild(b);$("chips").appendChild(li);z.chip=b;
+  const dot=document.createElement("button");dot.className="zdot off";dot.tabIndex=-1;dot.innerHTML="<i></i>";
+  const nm=document.createElement("button");nm.className="zname off";nm.tabIndex=-1;nm.textContent=z.name;
+  $("zpins").append(dot,nm);z.dot=dot;z.label=nm;
+  [b,dot,nm].forEach(el=>{el.addEventListener("click",()=>showZone(z));
+   el.addEventListener("pointerenter",()=>markZone(z));el.addEventListener("pointerleave",()=>markZone(xcur));});
+  b.addEventListener("focus",()=>{if(b.matches(":focus-visible"))markZone(z);});b.addEventListener("blur",()=>markZone(xcur));
+ });
+ syncChipsFade();
+ $("exploreBtn").hidden=false;XR.on=true;XR.el.hidden=false;XR.cardItem.hidden=false;xr.visible=true;computeMenu();
+ const h=location.hash.match(/^#explorar(?:-(.+))?$/);
+ if(h)afterReveal(()=>openExplore(h[1]));
+}).catch(e=>console.error("Explorar la Luna: no se pudo leer data/zones.json",e));
+
+/* With room beside the globe, the chips become cards on the left with the zone's figures */
+function chipMore(z){
+ const [vw,vc]=VERDICT[z.verdict];
+ const night=z.night.wholePeriod?tx("chip.nightWhole"):z.night.longestDays>=2?tx("chip.nightDays",{n:fmt(z.night.longestDays,1)}):tx("chip.nightHours",{n:fmt(z.night.longestHours)});
+ const st=(k,v,w)=>`<span class="cs"><em>${tx(k)}</em><b>${v}</b><u style="--w:${w}%"></u></span>`;
+ return `<b class="cv" style="--vc:var(${vc})">${vw}</b><span class="cx"><small class="cr">${z.region}</small>`
+  +`<span class="cst">${st("chip.sun",pct(LANG,z.light.percent),z.light.percent)}${st("chip.earth",pct(LANG,z.earth.percent),z.earth.percent)}`
+  +`<span class="cs"><em>${tx("chip.night")}</em><b>${night}</b></span></span></span>`;
+}
+/* The cards stay on the left as long as the globe (radius 1 around the pivot) does not reach them on screen.
+   Hysteresis: they come back only with some room to spare, so they do not flicker at the edge. */
+const XO_C=new THREE.Vector3();
+/* distance from the globe's disc on screen to a rectangle (negative: they overlap) */
+/* SPIKE: the mission cards show while neither the Moon's disc nor the "Explorar la Luna" rocket and its label reach them (24 px of hysteresis) */
+function mOverview(){
+ if(mode!=="menu")return;
+ const was=app.classList.contains("mcards-on");let on=false;
+ if(W>=700&&Hh>520){
+  camera.updateMatrixWorld();pivot.getWorldPosition(XO_C);
+  const d=XO_C.distanceTo(camera.position);XO_C.project(camera);
+  const c={x:(XO_C.x+1)/2*W,y:(1-XO_C.y)/2*Hh,r:d>1?Math.tan(Math.asin(1/d))/Math.tan(camera.fov*D2R/2)*Hh/2:Infinity};
+  /* off, the list is collapsed (max-height:0): its box is its natural height from just under the header */
+  const L=$("mcards"),h=document.querySelector(".brand").getBoundingClientRect(),k=$("dock").getBoundingClientRect(),
+   n0=L.getBoundingClientRect(),top=h.bottom+MCARDS_OFFSET,n={left:n0.left,right:n0.right,top,bottom:top+L.scrollHeight},m=was?0:24;
+  on=xoGap(c,n.left,n.top,n.right+m,n.bottom)>m;
+  /* the five cards must fit between the header and the dock: none is cropped and none covers either */
+  if(on)on=mcardsFit({headerBottom:h.bottom,listHeight:L.scrollHeight,dockTop:k.top});
+  if(on&&!XR.el.hidden){const r=XR.el.getBoundingClientRect();
+   on=r.left>n.right+m||r.top>n.bottom+m||r.bottom<n.top-m;}
+ }
+ if(on!==was)app.classList.toggle("mcards-on",on);
+}
+const xoGap=(c,x0,y0,x1,y1)=>Math.hypot(c.x-Math.max(x0,Math.min(c.x,x1)),c.y-Math.max(y0,Math.min(c.y,y1)))-c.r;
+function xOverview(){
+ if(!(mode==="explore"||mode==="toExplore"||mode==="xmove"||mode==="fromExplore"))return;
+ camera.updateMatrixWorld();pivot.getWorldPosition(XO_C);
+ const d=XO_C.distanceTo(camera.position);XO_C.project(camera);
+ const c={x:(XO_C.x+1)/2*W,y:(1-XO_C.y)/2*Hh,r:d>1?Math.tan(Math.asin(1/d))/Math.tan(camera.fov*D2R/2)*Hh/2:Infinity};
+ const was=app.classList.contains("xover");let on=false;
+ /* moving with the hands: always the chips at the bottom */
+ if(mode!=="fromExplore"&&!xNarrow()&&!document.documentElement.classList.contains("hands-on")){
+  const top=document.querySelector(".xphead").getBoundingClientRect().bottom;
+  on=xoGap(c,0,top,16+Math.min(400,.34*W),Hh)>(was?0:24);
+ }
+ if(on!==was)app.classList.toggle("xover",on);
+ /* legend and bottom chips over the bright globe get a dark backing so they stay legible: read every rect, then write */
+ const els=[document.querySelector(".xp .legend"),...(on?[]:[...document.querySelectorAll("#chips .chip")])];
+ const hit=els.map(e=>{const b=e.getBoundingClientRect();return b.width>0&&xoGap(c,b.left,b.top,b.right,b.bottom)<(e.classList.contains("onmoon")?8:0);});
+ els.forEach((e,i)=>{if(e.classList.contains("onmoon")!==hit[i])e.classList.toggle("onmoon",hit[i]);});
+ if(on)document.querySelectorAll("#chips .chip.onmoon").forEach(e=>e.classList.remove("onmoon"));
+}
+function markZone(z){WHY.chip?.classList.toggle("on",z===WHY);XZ.forEach(o=>{const on=o===z;o.chip.classList.toggle("on",on);o.dot.classList.toggle("on",on);o.label.classList.toggle("on",on);});}
+/* rocket: entered from the purple rocket, which gets the focus back on the way home */
+/* rocket: true when it comes from the purple rocket; an element when it comes from another control (the card), which gets the focus back */
+function openExplore(id,rocket=false){
+ if(mode!=="menu"||anim||!XZ.length||XR.fly)return;
+ mode="toExplore";hover=null;renderDock();
+ /* the rocket takes off towards the camera, from wherever it is on the screen now */
+ XR.from=rocket===true?XR.el:rocket||null;
+ if(reduce)XR.gone=true;else{camera.updateMatrixWorld();XA.copy(xr.position);camera.worldToLocal(XA);XR.fly={out:true,A:XA,t0:performance.now(),dur:1400};}
+ app.classList.add("zoomed","exploring");hands.resume();
+ faceQ(-25,15,qFrom);qTo.copy(qFrom);qExp.copy(qFrom);view.k=1;
+ const z=xfind(id);
+ try{history.replaceState(null,"","#explorar"+(z?"-"+z.id:""));}catch(e){}
+ animate({e:1,oy:X_OY},1500,()=>{mode="explore";if(z)showZone(z);else WHY.chip.focus({preventScroll:true});});
+}
+function exitExplore(){
+ if(mode!=="explore"&&mode!=="xmove")return;
+ if(cardOpen)closeCard(false);
+ xzoom=1;
+ mode="fromExplore";xcur=null;markZone(null);hands.pause();
+ try{history.replaceState(null,"",location.pathname);}catch(e){}
+ /* the rocket comes back out of nowhere, in front of the camera, and lands in its place; the focus goes back to it once it is there */
+ /* entered from the rocket, the focus goes back to it once it is there; otherwise to #exploreBtn, as before */
+ const home=()=>{const f=XR.from;/* a card that is no longer shown (window resized meanwhile) cannot take the focus */const t=f&&f.checkVisibility?.({visibilityProperty:true})&&(f!==XR.card||app.classList.contains("mcards-on"))?f:$("exploreBtn");t.focus({preventScroll:true});};
+ XR.gone=false;if(!reduce)XR.fly={out:false,t0:performance.now()+250,dur:2400,done:home};
+ animate({e:0,ox:0,oy:0},1300,()=>{mode="menu";app.classList.remove("zoomed","exploring");if(!XR.fly)home();});
+}
+/* Fade at the edge of the left list that still hides cards; none at its end or when it fits */
+function syncChipsFade(){
+ const L=$("chips");
+ const f=chipsFade(L);
+ L.classList.toggle("more-up",f.up);
+ L.classList.toggle("more-down",f.down);
+}
+$("chips").addEventListener("scroll",syncChipsFade,{passive:true});
+addEventListener("resize",syncChipsFade);
+new ResizeObserver(syncChipsFade).observe($("chips"));
+/* the card of the chosen zone (keyboard, link or pin) comes into view inside the list; no animation with reduced motion */
+function revealChip(z){
+ const c=z&&z.chip;if(!c)return;
+ const L=$("chips");if(!chipsScrolls(L))return;
+ c.scrollIntoView({block:"nearest",behavior:reduce?"auto":"smooth"});
+}
+function showZone(z){
+ if(mode!=="explore"&&mode!=="xmove")return;
+ revealChip(z);
+ if(cardOpen)closeCard(false);
+ xcur=z;markZone(z);mode="xmove";xzoom=1;
+ const n=xNarrow(),phoneLand=Hh<=520&&W>Hh;
+ qFrom.copy(qExp);faceQ(z.lat,z.lon,qTo,n?82:60);view.k=0;
+ try{history.replaceState(null,"","#explorar-"+z.id);}catch(e){}
+ animate({k:1,ox:n?0:phoneLand?.22:.15,oy:n?.2:X_OY},1100,()=>{mode="explore";z.intro?openWhy():openCard(z);});
+}
+function openCard(z){
+ const [vw,vc]=VERDICT[z.verdict];
+ $("zKicker").textContent=tx("z.kicker",{region:z.region,lat:deg(z.lat,"N","S"),lon:deg(z.lon,"E",WEST)});
+ $("zTitle").textContent=z.name;$("zFact").textContent=z.fact;
+ const vb=$("zVerdict");vb.textContent=vw;vb.style.setProperty("--vc",`var(${vc})`);$("zWhy").textContent=z.why;
+ const nightTxt=z.night.wholePeriod?tx("night.whole")
+  :z.night.longestDays>=2?tx("night.days",{n:fmt(z.night.longestDays)}):tx("night.hours",{n:fmt(z.night.longestHours)});
+ const polarSmooth=z.warnings.includes("smooth_moon_polar");
+ $("zLight").textContent=LIGHT_W[z.light.level];
+ $("zLightTxt").textContent=nightTxt+(polarSmooth?tx("night.polarSmooth"):"");
+ $("zEarth").textContent=EARTH_W[z.earth.level][0];$("zEarthTxt").textContent=EARTH_W[z.earth.level][1];
+ $("zGround").textContent=z.ground;$("zGroundTxt").textContent=z.groundTxt;
+ const el=z.earth.elevationDeg,smooth=z.horizon.model==="smooth";
+ const rows=[
+  [tx("fig.sun"),tx("fig.percentYear",{n:fmt(z.light.percent,1)})],
+  [tx("fig.night"),z.night.wholePeriod?tx("fig.nightWhole"):tx("fig.nightValue",{h:fmt(z.night.longestHours),d:fmt(z.night.longestDays,1)})],
+  [tx("fig.earth"),tx("fig.percentYear",{n:fmt(z.earth.percent,1)})],
+  [tx("fig.earthEl"),tx("fig.earthElValue",{min:fmt(el.min,1),max:fmt(el.max,1)})+(el.min<0?tx("fig.earthElBelow"):"")],
+  [tx("fig.slope"),z.slope.available?tx("fig.slopeValue",{deg:fmt(z.slope.deg,1),m:fmt(z.slope.baselineM)})+(z.slope.underestimated?tx("fig.slopeUnder"):""):tx("fig.slopeNone")],
+  [tx("fig.horizon"),tx(!smooth?"fig.horizonRelief":polarSmooth?"fig.horizonPolarSmooth":"fig.horizonSmooth")]];
+ $("zFigures").replaceChildren(...rows.flatMap(([k,v])=>{const dt=document.createElement("dt"),dd=document.createElement("dd");dt.textContent=k;dd.textContent=v;return[dt,dd];}));
+ $("zSource").textContent=tx("z.source")
+  +(!smooth||z.slope.available?tx("z.sourceRelief"):"");
+ const acts=z.links.map(([href,label],i)=>linkTo(href,label,i?"back":"fwd"));
+ const close=document.createElement("button");close.className="back";close.textContent=tx("z.close");close.addEventListener("click",()=>closeCard());
+ $("zActions").replaceChildren(...acts,close);
+ zcard.querySelector("details").open=false;zcard.querySelector(".destcard").scrollTop=0;
+ zcard.classList.add("on");cardOpen=true;close.focus({preventScroll:true});
+}
+/* A link of a card. "#explorar-<id>" stays on the globe and goes to that zone (or to «¿Por qué el polo sur?») */
+function linkTo(href,label,cls){
+ const a=document.createElement("a");a.className=cls;a.href=href;a.textContent=label+" ";
+ const s=document.createElement("span");s.setAttribute("aria-hidden","true");s.textContent="→";a.appendChild(s);
+ const t=href.match(/^#explorar-(.+)$/);
+ if(t)a.addEventListener("click",e=>{const z=xfind(t[1]);if(!z)return;e.preventDefault();showZone(z);});
+ return a;
+}
+function openWhy(){
+ const sh=XZ.find(o=>o.id==="shackleton-ridge");
+ if(sh)$("whyLight").textContent=tx("why.light",{pct:fmt(sh.light.percent)});
+ const close=document.createElement("button");close.className="back";close.textContent=tx("z.close");close.addEventListener("click",()=>closeCard());
+ $("whyActions").replaceChildren(linkTo("#explorar-cabeus",tx("why.toIce"),"fwd"),linkTo("#explorar-shackleton-ridge",tx("why.toLight"),"back"),close);
+ whycard.querySelector(".destcard").scrollTop=0;
+ whycard.classList.add("on");cardOpen=true;close.focus({preventScroll:true});
+}
+function closeCard(refocus=true){
+ if(!cardOpen)return;
+ cardOpen=false;zcard.classList.remove("on");whycard.classList.remove("on");
+ const z=xcur;xcur=null;markZone(null);
+ if(!refocus)return;
+ try{history.replaceState(null,"","#explorar");}catch(e){}
+ animate({ox:0,oy:X_OY},700);
+ z&&z.chip.focus({preventScroll:true});
+}
+[zcard,whycard].forEach(card=>{
+card.addEventListener("click",e=>{if(e.target===card)closeCard();});
+/* Tab stays inside the open card */
+card.addEventListener("keydown",e=>{if(e.key!=="Tab")return;
+ const f=[...card.querySelectorAll("a[href],button,summary")].filter(x=>x.offsetParent!==null);if(!f.length)return;
+ const first=f[0],last=f[f.length-1];
+ if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}});
+});
+$("exploreBtn").addEventListener("click",()=>openExplore());
+$("exploreBtn").addEventListener("focus",()=>setHover(XR));$("exploreBtn").addEventListener("blur",()=>setHover(null));
+$("xpBack").addEventListener("click",exitExplore);
+/* Pins over the globe: hidden on the far side, labels pushed apart so they do not overlap */
+const pinP=new THREE.Vector3(),pinC=new THREE.Vector3();
+function placePins(){
+ const show=view.e>.7&&(mode==="explore"||mode==="xmove"),boxes=[],vis=[];
+ XZ.forEach(z=>{
+  pinP.copy(z.n).multiplyScalar(1.004).applyMatrix4(moon.matrixWorld);
+  const facing=pinC.copy(camera.position).sub(pinP).normalize().dot(v.copy(pinP).normalize())>.12;
+  const on=show&&facing;z.dot.classList.toggle("off",!on);z.label.classList.toggle("off",!on);
+  if(!on)return;
+  pinP.project(camera);z.sx=(pinP.x*.5+.5)*W;z.sy=(-pinP.y*.5+.5)*Hh;
+  z.dot.style.transform=`translate(${z.sx}px,${z.sy}px)`;
+  boxes.push({x:z.sx-10,y:z.sy-10,w:20,h:20});vis.push(z);
+ });
+ const hit=(x,y,w,h)=>boxes.some(r=>x<r.x+r.w+3&&x+w+3>r.x&&y<r.y+r.h+2&&y+h+2>r.y);
+ vis.forEach(z=>{
+  const w=z.label.offsetWidth,h=z.label.offsetHeight,R=z.sx+14,L=z.sx-14-w,sides=z.sx>W*.62?[L,R]:[R,L];
+  let best=null;
+  find:for(const k of [0,1,-1,2,-2])for(const x of sides){const y=z.sy-h/2+k*(h+3);
+   if(x<8||x+w>W-8||y<8||y+h>Hh-8)continue;if(!hit(x,y,w,h)){best={x,y};break find;}}
+  if(!best)best={x:Math.max(8,Math.min(W-w-8,sides[0])),y:Math.max(8,Math.min(Hh-h-8,z.sy-h/2))};
+  boxes.push({x:best.x,y:best.y,w,h});z.label.style.transform=`translate(${best.x}px,${best.y}px)`;
+ });
+}
+
+function nearest(cx,cy){if(Math.hypot(SAT.sx-cx,SAT.sy-cy)<Math.max(34,SAT.px*.42))return SAT;
+ if(XR.on&&!XR.fly&&Math.hypot(XR.sx-cx,XR.sy-cy)<Math.max(36,XR.px*.7))return XR;let best=null,bd=1e9;ZONES.forEach(z=>{
+ const d=Math.min(Math.hypot(z.sx-cx,z.sy-cy),Math.hypot(z.rx-cx,z.ry-cy)-(z.pr||0)*.6);if(d<bd){bd=d;best=z;}});
+ const zr=Math.max(34,W*.03);
+ return bd<zr?best:null;}
+/* Probe label: informative only, and any hovered rocket or satellite hides it. Re-checked every frame because the probe
+   flies under a still pointer */
+const ptr={x:0,y:0,in:false};
+function peekProbe(){const n=mode==="menu"&&!anim&&ptr.in&&!touring&&!hover&&PROBE.shown&&Math.hypot(PROBE.sx-ptr.x,PROBE.sy-ptr.y)<Math.max(44,PROBE.px*.7);
+ if(n!==PROBE.near){PROBE.near=n;PROBE.el.classList.toggle("on",n);wake();}}
+canvas.addEventListener("pointermove",e=>{if(e.pointerType!=="touch"){ptr.x=e.clientX;ptr.y=e.clientY;ptr.in=true;}if(mode!=="menu")return;const z=nearest(e.clientX,e.clientY);if(z!==hover){hover=z;renderDock();}peekProbe();});
+canvas.addEventListener("pointerleave",()=>{ptr.in=false;if(mode==="menu"&&hover){hover=null;renderDock();}peekProbe();});
+/* Zooming out past the menu framing (wheel or trackpad pinch) also opens "Explorar la Luna" */
+let wheelAcc=0,wheelAt=0;
+canvas.addEventListener("wheel",e=>{if(e.ctrlKey)e.preventDefault();
+ if(mode!=="menu"||anim||!XZ.length||e.deltaY<=0){wheelAcc=0;return;}
+ if(e.timeStamp-wheelAt>400)wheelAcc=0;wheelAt=e.timeStamp;wheelAcc+=e.deltaMode?e.deltaY*40:e.deltaY;
+ if(wheelAcc>(e.ctrlKey?40:240)){wheelAcc=0;openExplore();}},{passive:false});
+canvas.addEventListener("click",e=>{if(mode!=="menu")return;const z=nearest(e.clientX,e.clientY);if(z)pick(z);});
+
+/* Explorar: dragging turns the globe. The frame loop rebuilds the attitude from qFrom→qTo, so the drag rotates both */
+const drag={id:null,x:0,y:0},dragQ=new THREE.Quaternion(),dragAxis=new THREE.Vector3();
+canvas.addEventListener("pointerdown",e=>{if(mode!=="explore"||anim)return;drag.id=e.pointerId;drag.x=e.clientX;drag.y=e.clientY;canvas.setPointerCapture(e.pointerId);app.classList.add("dragging");});
+canvas.addEventListener("pointermove",e=>{if(e.pointerId!==drag.id)return;
+ const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;
+ turnGlobe(dx,dy);});
+/* Turns the globe as a drag of (dx, dy) px does: half a turn per short side of the screen, less the closer the zoom */
+function turnGlobe(dx,dy){
+ const d=Math.hypot(dx,dy);if(!d)return;wake(); /* the hands move no pointer: in onDemand the loop is woken here */
+ dragAxis.set(dy/d,dx/d,0).applyQuaternion(camera.quaternion);
+ dragQ.setFromAxisAngle(dragAxis,d*Math.PI/Math.min(W,Hh)/xzoomNow);
+ qTo.premultiply(dragQ);qFrom.copy(qTo);view.k=1;}
+const endDrag=e=>{if(e.pointerId!==drag.id)return;drag.id=null;app.classList.remove("dragging");};
+canvas.addEventListener("pointerup",endDrag);canvas.addEventListener("pointercancel",endDrag);
+
+/* Explorar: zoom, from the whole globe (1) to X_ZOOM_MAX times closer to the surface. The wheel, the + and − keys and the
+   two hands (below) set xzoom; the frame loop takes the camera there (xzoomNow). A zone card always shows the whole globe. */
+const X_ZOOM_MAX=4;
+function zoomGlobe(f){if(mode!=="explore"||anim||cardOpen)return;xzoom=Math.min(X_ZOOM_MAX,Math.max(1,xzoom*f));wake();}
+canvas.addEventListener("wheel",e=>{if(mode!=="explore")return;e.preventDefault();zoomGlobe(Math.exp(-e.deltaY*(e.deltaMode?.05:.0015)));},{passive:false});
+addEventListener("keydown",e=>{if(e.metaKey||e.ctrlKey||e.altKey||e.target.closest?.("input,select,textarea"))return;
+ if(e.key==="+"||e.key==="=")zoomGlobe(1.3);else if(e.key==="-"||e.key==="_")zoomGlobe(1/1.3);});
+
+/* Hand control (../shared/hands/pointer.js), only in "Explorar" (#259): the index points and the thumb clicks anything, a
+   pinch drags the globe like the pointer does and zooms. HAND_GAIN: the hand crossing a third of the height of the camera
+   image is a quarter turn. The menu has no hands: openExplore turns them back on if they were on, and exitExplore pauses them. */
+const HAND_GAIN=1.5;
+const hands=createHandPointer({buttons:[$("handBtn")],resume:false,labels:{on:tx("hands.on"),off:tx("hands.off")},
+ canDrag:()=>mode==="explore"&&!anim&&!cardOpen&&drag.id===null,
+ onDrag(dx,dy){const m=Math.min(W,Hh)*HAND_GAIN;turnGlobe(dx*m,dy*m);},
+ onZoom:zoomGlobe});
+
+
+function resize(){const r=canvas.getBoundingClientRect();W=r.width;Hh=r.height;taintGovernor();renderer.setPixelRatio(governedPixelRatio());renderer.setSize(W,Hh,false);camera.aspect=W/Hh;camera.updateProjectionMatrix();computeMenu();}
+addEventListener("resize",resize);resize();
+/* the header can wrap differently once the web fonts are in, and the lander is placed under it */
+document.fonts?.ready.then(computeMenu);
+/* The screen density can change without a resize (the window moves to another screen, browser zoom): the pixel
+   ratio is recalculated, and the query is armed again for the new density */
+function watchDensity(){matchMedia(`(resolution: ${devicePixelRatio}dppx)`).addEventListener("change",()=>{resize();watchDensity();},{once:true});}
+watchDensity();
+/* One painted frame for the governor (#166). gap: ms since the previous painted frame (0 after a pause) */
+function governorWindow(now,gap){
+ if(anim||mode!==govMode||now<revealAt+GOV_SETTLE_MS)govTaint=true;govMode=mode;
+ if(gap>0)govSamples.push(gap);
+ if(govSamples.length<GOVERNOR.windowFrames)return;
+ const from=governorRatio(gov),r=governorStep(gov,{samples:govSamples,tainted:govTaint},now);
+ gov=r.state;govSamples=[];govTaint=false;
+ const ratio=r.ratio;if(ratio===null)return;
+ govChanges.push({at:Math.round(now),from,to:ratio});
+ renderer.setPixelRatio(Math.min(qualityPixelRatio(W,Hh),ratio));renderer.setSize(W,Hh,false);
+ benchGovernor();}
+
+/* ---------- Calibration (#143) ---------- */
+/* With the scene built and #loading still on screen: 15 warm-up frames (shader compiles, uploads) and two batches of
+   30 measured ones, each frame with GPU sync (1 px gl.readPixels after the render, as __bench.sync); measuredStats()
+   keeps the full batch with the lower median (bestBatch), so a load spike does not lower the level (#325).
+   calibrationStep() says where the level goes; applyLevel() moves there and, if nextCalibration() asks for it, a
+   second measurement follows. If the whole calibration takes more than 1.5 s it stops: the level in use stays, or the lower one if the cut measurement
+   already asks to go down. calibrationOutcome() says the level, tooSlow and whether to store it. */
+const CAL={warmup:15,frames:30,batches:2,budgetMs:1500};
+let calibrating=false;
+function measureLevel(deadline){const gl=renderer.getContext(),px=new Uint8Array(4),warm=[],batches=[];
+ const frame=()=>{const t=performance.now();drawRaw(scene,camera);gl.readPixels(0,0,1,1,gl.RGBA,gl.UNSIGNED_BYTE,px);return performance.now()-t;};
+ /* measuredStats() picks the stats: the best full batch; the cut one only if none ended; else the warm-up frames */
+ const done=cut=>({stats:measuredStats({warm,batches,cut}),cut});
+ for(let i=0;i<CAL.warmup;i++){if(performance.now()>deadline)return done(true);warm.push(frame());}
+ for(let b=0;b<CAL.batches;b++){const batch=[];batches.push(batch);
+  for(let i=0;i<CAL.frames;i++){if(performance.now()>deadline)return done(true);batch.push(frame());}}
+ return done(false);}
+function calibrate(){
+ const deadline=performance.now()+CAL.budgetMs,first=QUALITY.level,history=[];let cut=false;
+ for(let level=first;level;level=nextCalibration(history,first)){
+  if(level!==QUALITY.level)applyLevel(level);
+  const m=measureLevel(deadline),stats=m.stats;
+  if(stats.p50!==null)history.push({level,stats});
+  if(m.cut){cut=true;break;}
+ }
+ const r=calibrationOutcome(history,{cut,current:QUALITY.level});
+ if(r.level!==QUALITY.level)applyLevel(r.level);
+ calibrating=false;
+ /* Too slow for continuous rendering: still image from now on, and stored so the next visit starts that way (#144) */
+ if(r.tooSlow)RENDER_MODE=renderMode({softwareRenderer:SIGNALS.softwareRenderer,tooSlow:true,reducedMotion:reduce});
+ if(B){B.quality.calibration=history.map(h=>({level:h.level,p50:h.stats.p50,p95:h.stats.p95}));B.quality.tooSlow=r.tooSlow;B.quality.renderMode=RENDER_MODE;}
+ if(r.store)try{localStorage.setItem(STORAGE_KEY,encodeStored({level:QUALITY.level,renderer:GPU_NAME,at:Date.now(),tooSlow:r.tooSlow}));}catch(e){}
+}
+/* Applies a level to the scene already built, without reloading: pixel ratio, Sun shadow map, polar cap grid,
+   colour texture (asks for the 4k one or stays with the 2k one), anisotropy, samples of the polar average and
+   rocket shadows. What it replaces is freed from the GPU. */
+function applyLevel(level,values=levelValues(level,QS)){
+ const prev={...Q};QUALITY.level=level;QUALITY.values={...values};Object.assign(Q,values);
+ renderer.setPixelRatio(qualityPixelRatio(W,Hh));renderer.setSize(W,Hh,false);
+ if(Q.shadow!==prev.shadow){sun.shadow.mapSize.set(Q.shadow,Q.shadow);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}}
+ if(Q.cap!==prev.cap)MOON.setCapGrid(Q.cap);
+ if(Q.aniso!==prev.aniso){maxAniso=Math.min(Q.aniso,renderer.capabilities.getMaxAnisotropy());
+  ANISO.forEach(t=>{if(t.anisotropy===maxAniso)return;t.anisotropy=maxAniso;if(t.image&&t.version>0)t.needsUpdate=true;});}
+ if(Q.fs!==prev.fs)moonMat.needsUpdate=true;
+ if(Q.rs!==prev.rs)ZONES.forEach(z=>z.rocket.traverse(m=>{if(m.userData.rs)m.castShadow=Q.rs;}));
+ if(B){B.quality.level=level;B.quality.values={...values};}
+ ensureColor();}
+
+/* ---------- Bucle ---------- */
+const dockEl=$("dock"),v=new THREE.Vector3(),wn=new THREE.Vector3(),toCam=new THREE.Vector3(),axis=new THREE.Vector3(),q=new THREE.Quaternion(),qUp=new THREE.Quaternion(),tan=new THREE.Vector3(),lockEl=$("lock");
+const tgtMid=new THREE.Vector3(),lookP=new THREE.Vector3(),v2=new THREE.Vector3(),v3=new THREE.Vector3(),camL=new THREE.Vector3(),sunL=new THREE.Vector3(),earthL=new THREE.Vector3(),poleW=new THREE.Vector3();
+const UP=new THREE.Vector3(0,1,0),SOUTH=new THREE.Vector3(0,-1,0);
+const fmt=(n,d=0)=>num(LANG,n,d,d);
+const deg=(x,pos,neg)=>`${fmt(Math.abs(x),1)}° ${x>=0?pos:neg}`;
+const WEST=tx("dir.west");
+const ARRIVE=.86;
+const mouse={x:0,y:0},par={x:0,y:0};
+addEventListener("pointermove",e=>{if(e.pointerType==="touch")return;mouse.x=(e.clientX/W)*2-1;mouse.y=(e.clientY/Hh)*2-1;});
+document.addEventListener("pointerleave",()=>{mouse.x=0;mouse.y=0;});
+let swayAmt=0,animE=0,last=0,sunEl=LIGHT.real.el;
+const EARTH_AZ=0; /* acimut del Sol y de la Tierra vistos desde el polo (la Tierra, hacia la cara visible) */
+/* Nothing is drawn while the page is hidden or the opaque mission screen covers the canvas (once its zoom has ended);
+   the loop keeps running so drawing resumes on return, and the first frame back does not use the time spent away */
+document.addEventListener("visibilitychange",()=>{last=0;});
+const TOUCHDOWN_MS=1600;
+const settled=now=>settledEased({now,holdUntil:td?td+TOUCHDOWN_MS:0,
+ eased:[[sunEl,LIGHT[light].el],...ZONES.map(o=>[o.hv,o===hover?1:0]),[SAT.hv,hover===SAT&&mode==="menu"?1:0]]});
+function frame(now){
+ if(document.hidden||(mode==="screen"&&!anim)){last=0;requestAnimationFrame(frame);return;}
+ /* onDemand (#144): nothing drawn and no label moved until there is activity; the loop keeps running. While the
+    bench measures (__bench.sync) it keeps drawing, so its frame times stay comparable */
+ if(!shouldRender({mode:RENDER_MODE,now,awakeUntil,animating:!!anim||!!(B&&B.sync)})){last=0;requestAnimationFrame(frame);return;}
+ /* Real interval since the previous painted frame, without the 50 ms cap of dt, for the governor (#166) */
+ const gap=last?now-last:0;
+ const t=now/1000,dt=Math.min(.05,(now-(last||now))/1000);last=now;
+ if(anim){const k=Math.min(1,(now-anim.t0)/anim.dur),e=easeIO(k);animE=anim.to.p!==undefined?e:animE;
+  for(const key in anim.to)view[key]=anim.from[key]+(anim.to[key]-anim.from[key])*e;
+  if(k>=1){const d=anim.done;anim=null;wake();d&&d();}}
+ /* No sway or parallax at rest with reduced motion or in onDemand mode, no time-based motion (rocket bob and roll,
+    flame flicker, beacon, glows, trail, landing marks, satellite drift) and the light and the hover glow go to
+    their end state in one frame, like the camera (animate()): the still image does not jump on each wake() */
+ /* RULE (tests/quality.test.mjs): inside frame() every animation is gated with `still`, never with `reduce`
+    alone: in still-image mode (#144) nothing may move either */
+ const still=reduce||RENDER_MODE==="onDemand";
+ const sway=(mode==="menu"&&!anim&&!still)?1:0;swayAmt=still?0:swayAmt+(sway-swayAmt)*.03;
+ const pk=still?0:Math.min(1,dt*2.5);par.x+=(mouse.x*swayAmt-par.x)*pk;par.y+=(mouse.y*swayAmt-par.y)*pk;
+ pivot.rotation.set(BASE.x+par.y*.03,BASE.y+swayAmt*.02*Math.sin(t*.07)+par.x*.05,0);
+ if(view.e>0){qBase.copy(pivot.quaternion);qExp.slerpQuaternions(qFrom,qTo,view.k);pivot.quaternion.slerpQuaternions(qBase,qExp,view.e);}
+ scene.updateMatrixWorld();
+
+ /* Sol y Tierra rasantes respecto al polo, fijos respecto a la Luna */
+ sunEl+=(LIGHT[light].el-sunEl)*(still?1:Math.min(1,dt*3));
+ sunL.set(Math.cos(SUN_AZ*D2R)*Math.cos(sunEl*D2R),-Math.sin(sunEl*D2R),-Math.sin(SUN_AZ*D2R)*Math.cos(sunEl*D2R)).transformDirection(moon.matrixWorld);
+ earthL.set(Math.cos(EARTH_AZ*D2R)*Math.cos(3*D2R),-Math.sin(3*D2R),-Math.sin(EARTH_AZ*D2R)*Math.cos(3*D2R)).transformDirection(moon.matrixWorld);
+ poleW.copy(SOUTH).applyMatrix4(moon.matrixWorld);
+ /* Exploring the whole globe: the Sun comes from the upper left of the screen, not grazing the pole */
+ if(view.e>0){sunL.lerp(SUN_X,view.e).normalize();earthL.lerp(SUN_X,view.e).normalize();poleW.multiplyScalar(1-view.e);}
+ sun.target.position.copy(poleW);sun.position.copy(poleW).addScaledVector(sunL,2);
+ /* La Tierra solo en Explorar, con la luz del mismo lado que la Luna; gira sobre su eje con el reloj y las nubes derivan despacio */
+ if(view.e>0)earth.userData.load();
+ earth.visible=view.e>.01&&earth.userData.ready;
+ if(earth.visible){const u=earth.userData.uniforms;u.opacity.value=view.e;u.sunDir.value.copy(sunL);u.drift.value=still?0:(t*.0006)%1;
+  earth.userData.ball.rotation.y=earthSpin(Date.now());}
+ earthshine.target.position.copy(poleW);earthshine.position.copy(poleW).addScaledVector(earthL,2);
+
+ /* Cámara: del menú a la zona (p) y, tras aterrizar, zoom al cohete (q) */
+ xzoomNow+=(xzoom-xzoomNow)*((reduce||RENDER_MODE==="onDemand")?1:Math.min(1,dt*9)); /* at once in onDemand, like the camera (animate()) */
+ camera.position.copy(CA).lerp(CB,view.p).lerp(CC,view.q).lerp(CS,view.s).lerp(v.set(0,0,1+(CE.z-1)/xzoomNow),view.e);
+ lookP.copy(LA);if(target)lookP.lerp(tgtMid,view.p);lookP.lerp(SATL,view.s).multiplyScalar(1-view.e);
+ camera.lookAt(lookP);
+ /* Sacudida breve al tocar suelo */
+ if(td&&!reduce){const a=Math.exp(-(now-td)/170)*.0009;if(a>1e-5){camera.position.x+=a*Math.sin(now*.09);camera.position.y+=a*Math.cos(now*.13);}}
+ camera.setViewOffset(W,Hh,W*view.ox,Hh*view.oy,W,Hh);
+ xOverview();mOverview();
+ /* De cerca, la cámara se adapta a la penumbra del polo, como una exposición larga */
+ renderer.toneMappingExposure=(1.3+1.1*view.p)*(1-.3*view.e);ambient.intensity=LIGHT[light].amb+.16*view.p;
+
+ if(mode!=="menu"){
+  camL.copy(camera.position);moon.worldToLocal(camL);const r=camL.length();camL.normalize();
+  $("tAlt").textContent=fmt(Math.max(0,(r-1)*RKM));
+  $("tLat").textContent=deg(Math.asin(camL.y)*R2D,"N","S");$("tLon").textContent=deg(Math.atan2(-camL.z,camL.x)*R2D,"E",WEST);
+ }
+
+ const cx=W/2,z=hover;let lockShown=false;
+ ZONES.forEach(o=>{
+  const r=o.rocket,U=r.userData;
+  o.hv+=((o===z?1:0)-o.hv)*(still?1:Math.min(1,dt*8));
+  const land=o===target?view.p:0,L=o===target?view.l:0;
+  const bob=still?0:.006*Math.sin(t*.8+o.lat)*(1-L);
+  const s=Math.min(1,o.h+bob+(ARRIVE-o.h)*land+(1-ARRIVE)*L);
+  let sc,hide=1;
+  if(o.lander){
+   /* from its point in the sky to just over the zone (p), along a curve that ends falling vertically, then straight down (l) */
+   const k=land,A=v2.copy(o.n).multiplyScalar(o.gr+LA_H);v3.copy(o.n).multiplyScalar(o.gr+LA_H+.18);
+   r.position.copy(o.hover).multiplyScalar((1-k)*(1-k)).addScaledVector(v3,2*k*(1-k)).addScaledVector(A,k*k);
+   if(L>0)r.position.copy(o.n).multiplyScalar(o.gr+LA_H*(1-L));
+   r.position.addScaledVector(o.hu,bob*(1-k));
+   r.quaternion.slerpQuaternions(o.hq,o.qz,sm(0,.85,k));
+   if(!still){r.rotateZ(.07*(1-L)*Math.sin(t*.9));r.rotateX(.05*(1-L)*Math.sin(t*.7+1));}
+   if(o!==target)hide=1-sm(0,.35,Math.max(view.p,view.s,view.e));
+   sc=Math.max(.001,(o.ms+(LZ_S-o.ms)*k)*(1+.12*o.hv)*hide);
+  }else{
+  r.position.copy(pathAt(o,s)).addScaledVector(o.n,(o.gr-1.004)*L);
+  /* La deriva lateral se anula antes que la caída: el último tramo baja en vertical sobre la zona */
+  if(L>0){const uV=(1-ARRIVE)*(1-L),uH=(1-ARRIVE)*(1-sm(0,.72,L));r.position.addScaledVector(o.a,PL*(Math.pow(uH,1.8)-Math.pow(uV,1.8)));}
+  tan.copy(pathAt(o,Math.min(1,s+.01))).sub(pathAt(o,Math.max(0,s-.01))).normalize();
+  q.setFromUnitVectors(UP,tan);r.quaternion.copy(q);
+  /* Giro de aterrizaje: de volar de morro a posarse de pie, con las patas hacia el suelo */
+  /* Mientras frena la deriva se inclina contra el avance y se endereza para el contacto */
+  if(L>0){qUp.setFromUnitVectors(UP,v.copy(o.n).addScaledVector(o.a,.3*Math.sin(Math.PI*sm(.08,.8,L))).normalize());r.quaternion.slerp(qUp,sm(.05,.6,L));}
+  if(!still){r.rotateX(.05*(1-L)*Math.sin(t*1.3+o.lon));r.rotateZ(.04*(1-L)*Math.sin(t*1.1+o.lat));}
+  sc=(1+3.6*(1-view.p))*(1+.15*o.hv)*(1-.35*land)*(1-.45*view.e);}
+  axis.set(0,1,0).applyQuaternion(r.quaternion);
+  r.scale.setScalar(sc);r.visible=sc>.002;
+  /* Al tocar suelo las patas ceden un poco y el módulo se asienta */
+  if(o===target&&td&&!reduce){const ms=now-td;r.position.addScaledVector(o.n,-RH*.02*sc*Math.exp(-ms/150)*Math.sin(ms/45));}
+  if(o===target){r.getWorldPosition(v2);v3.copy(o.n).applyMatrix4(moon.matrixWorld);tgtMid.copy(v2).lerp(v3,o.lander?.3:.55);
+   wn.copy(o.n).transformDirection(moon.matrixWorld);tgtMid.addScaledVector(wn,RH*.45*sc*L);}
+  /* Frenada: empuje máximo al girar y frenar, más suave en el tramo final y corte al tocar suelo */
+  const thrust=(.8+.6*o.hv+(o===target?.4:0))*(1+1.5*sm(0,.2,L)-.9*sm(.6,.92,L))*(1-sm(.94,1,L));
+  const fl=thrust*(still?1:(.82+.18*Math.sin(t*38+o.lat)*Math.sin(t*23)));
+  [].concat(U.flame).forEach(f=>f.scale.set(1+.15*o.hv,Math.max(.001,fl),1+.15*o.hv));
+  U.beacon.material.color.setRGB(still||Math.sin(t*4+o.lat)>.3?1:.25,.2,.15);
+  o.glow.material.opacity=(.3+.55*o.hv)*(1+.9*Math.sin(Math.PI*L))*(1-.7*sm(.9,1,L))*(still?1:(.9+.1*Math.sin(t*6)));
+  o.glow.scale.setScalar(RH*(1.5+1.2*o.hv)*(o.lander?.7:1));
+  const col=o.trail.geometry.attributes.color,N=col.count,dim=(mode==="menu"?1:.45)*(1-view.e);
+  /* lander: dashed plumb line from its pads to the zone, the dashes marching down */
+  if(o.lander){const pos=o.trail.geometry.attributes.position;v.copy(o.n).multiplyScalar(o.gr+.0005);
+   const gain=(.4+.6*o.hv+(o===target?.3:0))*hide*(mode==="menu"?1:.6)*(1-view.e);
+   for(let i=0;i<N;i++){const f=i/(N-1),ph=still?(f*13)%1:((f*13-t*.9)%1+1)%1,b=(ph<.55?1:.1)*(.35+.65*f)*gain;
+    v2.copy(r.position).lerp(v,f);pos.setXYZ(i,v2.x,v2.y,v2.z);col.setXYZ(i,o.col.r*b,o.col.g*b,o.col.b*b);}
+   pos.needsUpdate=true;o.trail.geometry.computeBoundingSphere();}
+  else for(let i=0;i<N;i++){const si=i/(N-1);let b=0;
+   if(si<=s){const rel=si/s;b=.05+.95*Math.pow(rel,2.6);
+    if(!still)b*=.65+.35*Math.max(0,Math.sin(si*90+t*9));
+    b*=1+.8*o.hv;}
+   /* what is left of the way, from the craft to its zone: faint dashes always, so each mark says whose it is */
+   else if(mode==="menu"){const ph=still?(si*36)%1:((si*36-t*1.6)%1+1)%1;b=(ph<.5?.9:0)*(.35+.65*o.hv)*(.4+.6*(si-s)/(1-s));}
+   b*=dim;col.setXYZ(i,o.col.r*b,o.col.g*b,o.col.b*b);}
+  col.needsUpdate=true;
+  const act=Math.max(o.hv,o===target?1:0);
+  o.lz.rotation.z=still?0:t*(.15+.6*o.hv);o.lz.material.opacity=(.75+.25*act)*(1-.35*view.p);o.lz.scale.setScalar((1+.25*o.hv)*(1-.55*view.p));o.pulse.scale.multiplyScalar(1);
+  o.beam.material.opacity=.55*o.hv*(still?1:(.85+.15*Math.sin(t*5)));o.beam.scale.set(1,.2+.8*o.hv,1);
+  o.beam.position.copy(o.n).multiplyScalar(1.0045+.035*(.2+.8*o.hv));
+  if(act>.3){const f=still?.35:((now/1300)+o.lat)%1;o.pulse.scale.setScalar((.5+f*1.8)*(1-.55*view.p));o.pulse.material.opacity=(1-f)*.85*act;}else o.pulse.material.opacity=0;
+  v.copy(o.n).multiplyScalar(1.004).applyMatrix4(moon.matrixWorld);
+  v.project(camera);o.sx=(v.x*.5+.5)*W;o.sy=(-v.y*.5+.5)*Hh;
+  v.copy(axis).multiplyScalar(U.mid*sc).add(r.position).applyMatrix4(moon.matrixWorld);
+  /* lander: half its width on screen, for the hit area and the label gap */
+  if(o.lander)o.pr=RH*.7*sc*Hh/(2*camera.position.distanceTo(v)*Math.tan(camera.fov*D2R/2));
+  v.project(camera);o.rx=(v.x*.5+.5)*W;o.ry=(-v.y*.5+.5)*Hh;
+  if(o===z&&mode==="menu"){lockShown=true;lockEl.style.setProperty("--lc",`var(${o.color})`);
+   lockEl.style.transform=`translate(${o.rx-36}px,${o.ry-36}px)`;
+   const alt=(r.position.length()-1)*RKM,dist=r.position.distanceTo(o.site)*RKM;
+   $("lockTxt").textContent=!o.lander?`${o.mission} · ALT ${fmt(alt)} km · LZ ${fmt(dist)} km`:W<700?"":`${o.mission} · ${tx("lock.descending")}`;}
+  const el=o.el;
+  /* a zone with a fixed side keeps its label there; the others follow the rocket, which may cross over its zone as it bobs */
+  const w=el.offsetWidth,h=el.offsetHeight,gap=o.lander?o.pr+2:22;
+  let right=o.side?o.side>0:o.rx>=o.sx;
+  /* a label that does not fit on its side goes to the other one: clamped to the edge it would cover its craft */
+  if(right?o.rx+gap+w>W-8:o.rx-gap-w<8)right=!right;
+  el.classList.toggle("l",!right);
+  let x=right?o.rx+gap:o.rx-gap-w;x=Math.max(8,Math.min(W-w-8,x));
+  let y=o.ry-h/2;y=Math.max(8,Math.min(Hh-h-8,y));
+  el.style.transform=`translate(${x}px,${y}px)`;
+ });
+ {const L=target?view.l:0;let da=0,ds=1,sa=0,ss=1;
+  if(L>0){const k=sm(.45,1,L);da=.5*k*(still?1:(.8+.2*Math.sin(t*31)));ds=.35+.5*k;
+   if(td){const f=Math.min(1,(now-td)/1600),g=Math.min(1,(now-td)/900);da=.45*(1-f)*(1-f);ds=.85+1.6*f;sa=.9*(1-g);ss=.3+2.4*g;}}
+  dust.material.opacity=da;dust.scale.setScalar(ds);shock.material.opacity=sa;shock.scale.setScalar(ss);}
+ /* 540 satellite: drifts very slowly around its resting attitude */
+ {const U=sat.userData,on=z===SAT&&mode==="menu";
+  SAT.hv+=((on?1:0)-SAT.hv)*(still?1:Math.min(1,dt*8));
+  sat.position.copy(SATP);sat.quaternion.copy(SATQ);
+  if(!still){sat.position.y+=.006*Math.sin(t*.3);sat.rotateY(.1*Math.sin(t*.17));sat.rotateX(.04*Math.sin(t*.23));}
+  sat.scale.setScalar(SATS*(1+.06*SAT.hv)*Math.max(.001,1-view.e));sat.visible=view.e<.999;
+  U.glow.material.opacity=.22*SAT.hv;U.glow.scale.setScalar(SAT_SPAN*.9);
+  /* lights: the wingtip ones stay on; the strobes flash twice and the beacon once, half a cycle later, every 3.2 s.
+     In a still image only the steady ones are lit, so no frame is caught mid-flash */
+  {const c=t%3.2,fl=still?0:(c<.07||(c>.16&&c<.23)?1:0),bc=still?0:Math.max(0,1-((t+1.6)%3.2)/.3);
+   U.nav.forEach(n=>{n.material.opacity=.85;n.scale.setScalar(.03);});
+   /* up close (the about view, view.s→1) the white flash fills the screen, so it dims and shrinks */
+   U.strobe.forEach(n=>{n.material.opacity=fl*(1-.65*view.s);n.scale.setScalar(.085*(1-.4*view.s));});
+   U.beacon.material.opacity=bc;U.beacon.scale.setScalar(.03+.035*bc);}
+  v.copy(sat.position).project(camera);SAT.sx=(v.x*.5+.5)*W;SAT.sy=(-v.y*.5+.5)*Hh;
+  SAT.px=SAT_SPAN*SATS*Hh/(2*camera.position.distanceTo(sat.position)*Math.tan(camera.fov*D2R/2));
+  if(on){lockShown=true;lockEl.style.setProperty("--lc","var(--brand)");
+   lockEl.style.transform=`translate(${SAT.sx-36}px,${SAT.sy-36}px)`;$("lockTxt").textContent="";}
+  const el=SAT.el,w=el.offsetWidth,h=el.offsetHeight;
+  el.style.transform=`translate(${Math.max(8,Math.min(W-w-8,SAT.sx-w/2))}px,${Math.max(8,Math.min(Hh-h-8,SAT.sy+SAT.px*.2+10))}px)`;}
+ /* Mapping probe: keeps flying; near the pointer it only brightens and shows its label */
+ {const U=probe.userData,fk=(1-view.p)*(1-view.s);
+  peekProbe();
+  PROBE.hv+=((PROBE.near?1:0)-PROBE.hv)*(still?1:Math.min(1,dt*8));
+  probeT=still?PO_REST:probeT+dt*PO_W;
+  spin.rotation.z=probeT;
+  const sc=PROBE_S*(1+.12*PROBE.hv)*(1-.4*view.e)*fk;probe.scale.setScalar(Math.max(.001,sc));
+  orbit.visible=fk>.01;trail.visible=!still;
+  orbitLine.material.opacity=(.3+.25*PROBE.hv)*fk*(1-.35*view.e);trail.material.opacity=.85*fk;
+  probeBeam.material.opacity=(.45+.4*PROBE.hv)*fk;footprint.material.opacity=(.4+.4*PROBE.hv)*fk;
+  U.glow.material.opacity=.3*PROBE.hv;
+  probe.getWorldPosition(v);v2.copy(v).sub(camera.position);
+  const tc=Math.max(0,Math.min(1,-camera.position.dot(v2)/v2.lengthSq())),behind=v3.copy(camera.position).addScaledVector(v2,tc).length()<.995&&tc<1;
+  PROBE.shown=orbit.visible&&!behind&&view.e<.01;
+  const dist=camera.position.distanceTo(v);v.project(camera);PROBE.sx=(v.x*.5+.5)*W;PROBE.sy=(-v.y*.5+.5)*Hh;
+  PROBE.px=PROBE_SPAN*sc*Hh/(2*dist*Math.tan(camera.fov*D2R/2));
+  /* under the probe, or over it when that would cover the dock */
+  const el=PROBE.el,w=el.offsetWidth,h=el.offsetHeight,off=Math.max(40,PROBE.px*.5+8);el.classList.toggle("away",!PROBE.shown);
+  let y=PROBE.sy+off;if(PROBE.el.classList.contains("on")&&y+h>dockEl.offsetTop-8)y=PROBE.sy-off-h;
+  el.style.transform=`translate(${Math.max(8,Math.min(W-w-8,PROBE.sx-w/2))}px,${Math.max(8,Math.min(Hh-h-8,y))}px)`;}
+ /* "Explorar la Luna" rocket: waits beside the left limb like the others; on the way out it flies past the camera and vanishes, on the way back it comes out of nowhere to its place */
+ if(XR.on){const U=xr.userData,F=XR.fly,on=z===XR&&mode==="menu"&&!F;
+  XR.hv+=((on?1:0)-XR.hv)*Math.min(1,dt*8);
+  const hide=1-sm(0,.35,Math.max(view.p,view.s));
+  let sc=XO.s*(1+.15*XR.hv)*hide,boost=0;
+  if(F){const k=Math.max(0,Math.min(1,(now-F.t0)/F.dur));
+   camera.updateMatrixWorld();XB[3].copy(XP);camera.worldToLocal(XB[3]); /* resting point, seen from the camera now */
+   if(F.out){/* from its place, towards the camera, across the middle of the screen and out past its right shoulder */
+    XB[0].copy(F.A);XB[1].set(F.A.x*.55,F.A.y*.4+.04,F.A.z*.5);XB[2].set(-.04,-.05,-.5);XB[3].set(.5,.04,.4);
+    const u=k*k*(1.6-.6*k);xrBez(u,v);xrBez(Math.min(1,u+.01),v2);v2.sub(v);
+    sc*=1-sm(.9,1,k);boost=Math.sin(Math.PI*Math.min(1,k*1.2));}
+   else{/* out of nowhere just off the right edge, close to the camera: it crosses the screen in front of it, right to left, and then goes back to its place */
+    XB[0].set(.75,.03,-.35);XB[1].set(-.4,-.09,-.55);XB[2].set(XB[3].x*.4,XB[3].y*.4+.12,XB[3].z*.45);
+    const u=1-Math.pow(1-k,2);xrBez(u,v);xrBez(Math.min(1,u+.01),v2);v2.sub(v);
+    if(u>.99)v2.copy(XB[3]).sub(XB[2]);
+    sc*=sm(0,.12,k);boost=1-sm(.55,1,k);}
+   v.applyMatrix4(camera.matrixWorld);xr.position.copy(v);
+   /* nose along the motion, but mostly across the screen: straight into the depth it would be seen end-on */
+   tan.copy(v2).transformDirection(camera.matrixWorld);v3.copy(camera.position).sub(v).normalize();tan.addScaledVector(v3,-.6*tan.dot(v3));
+   if(tan.lengthSq()>1e-12){q.setFromUnitVectors(UP,tan.normalize());if(!F.out)q.slerp(XQ,sm(.7,1,k));xr.quaternion.slerp(q,Math.min(1,dt*10));}
+   if(k>=1){XR.fly=null;XR.gone=F.out;F.done&&F.done();}}
+  else{/* at rest: hovering upright, with the same slow bob and sway as the mission rockets */
+   xr.position.copy(XP);xr.quaternion.copy(XQ);
+   if(!reduce){xr.position.addScaledVector(XUv,.006*Math.sin(t*.8+1));xr.rotateX(.05*Math.sin(t*1.3+2));xr.rotateZ(.04*Math.sin(t*1.1+1));}}
+  xr.scale.setScalar(Math.max(.001,sc));xr.visible=!XR.gone&&sc>.005;
+  const fl=(.8+.6*XR.hv+1.4*boost)*(still?1:(.82+.18*Math.sin(t*38)*Math.sin(t*23)));
+  U.flame.scale.set(1+.2*XR.hv,Math.max(.001,fl),1+.2*XR.hv);
+  U.beacon.material.color.setRGB(Math.sin(t*4)>.3?1:.25,.2,.15);
+  U.glow.material.opacity=(.3+.55*XR.hv+.4*boost)*(still?1:(.9+.1*Math.sin(t*6)));U.glow.scale.setScalar(RH*(1.5+1.2*XR.hv));
+  /* hit point: the middle of the rocket, not its feet */
+  v3.set(0,RH*.5*sc,0).applyQuaternion(xr.quaternion).add(xr.position).project(camera);XR.sx=(v3.x*.5+.5)*W;XR.sy=(-v3.y*.5+.5)*Hh;
+  XR.px=RH*sc*Hh/(2*camera.position.distanceTo(xr.position)*Math.tan(camera.fov*D2R/2));
+  if(on){lockShown=true;lockEl.style.setProperty("--lc","var(--explore)");
+   lockEl.style.transform=`translate(${XR.sx-36}px,${XR.sy-36}px)`;$("lockTxt").textContent=`${XR.mission} · ALT ${fmt((xr.position.length()-1)*RKM)} km`;}
+  const el=XR.el,w=el.offsetWidth,h=el.offsetHeight,top=xrLabelTop(camera);v3.copy(XL).project(camera);
+  el.classList.toggle("away",!!F||XR.gone);
+  const ly=Math.max(8,Math.min(Hh-h-8,top));
+  el.style.transform=`translate(${Math.max(8,Math.min(W-w-8,(v3.x*.5+.5)*W-w/2))}px,${ly}px)`;
+  /* the line from under the rocket (the tip of its flame) to the label; behind the chip while the reticle shows it */
+  {const lock=$("lock"),chipTop=XR.sy+chipProbe.offsetTop-lock.offsetHeight/2,
+    ln=rocketLine({rocketBottom:(-v2.set(0,(U.flame.position.y-XR_FLAME*(.8+.6*XR.hv))*sc,0).applyQuaternion(xr.quaternion).add(xr.position).project(camera).y*.5+.5)*Hh,boxTop:ly+XR_PAD,chipTop,chipHeight:chipProbe.offsetHeight,chipShown:on});
+   el.style.setProperty("--tk",ln.length+"px");el.style.setProperty("--tb",(XR_PAD-ROCKET_LINE_MARGIN)+"px");el.style.setProperty("--g0",ln.gapFrom+"px");el.style.setProperty("--g1",ln.gapTo+"px");}}
+ lockEl.classList.toggle("on",lockShown);
+ if(XZ.length&&view.e>0)placePins();
+ /* First frame after start() with an automatic level: measure the device, then show the Moon */
+ if(calibrating&&ready){calibrate();reveal();}
+ /* Pixel ratio governor (#166): only drawing continuously and outside the calibration */
+ if(RENDER_MODE==="continuous"&&!calibrating&&gov)governorWindow(now,gap);
+ /* onDemand (#144): the eased values (light, hover glow and lock ring, satellite, touchdown dust) keep the loop
+    awake until they reach their end state, so the still image is never one caught halfway */
+ if(!settled(now))wake();
+ renderer.render(scene,camera);requestAnimationFrame(frame);
+}
+renderDock();
+requestAnimationFrame(frame);
+/* ---------- Tutorial ---------- */
+/* One step per mission, built from ZONES so it follows the missions as they change (a mission without href is still under construction). */
+function tutorialSteps(){return[
+ {target:".brand",title:tx("tour.brand.title"),text:tx("tour.brand.text")},
+ ...ZONES.map(z=>({target:`.zl[data-zone="${z.id}"]`,zone:z,title:`${z.mission[0]+z.mission.slice(1).toLowerCase()} · ${z.name}`,text:z.text+(z.href?"":tx("tour.soon"))})),
+ {target:"#dock",title:tx("tour.dock.title"),text:tx("tour.dock.text",touch)},
+ {target:"#lightBtn",title:tx("tour.light.title"),text:tx("tour.light.text")},
+ ...(XZ.length?[{target:".zl.xr",zone:XR,title:tx("tour.xr.title"),text:tx("tour.xr.text",touch)}]:[]),
+ {target:".zl.sat",zone:SAT,title:tx("tour.sat.title"),text:tx("tour.sat.text")},
+ {target:"#tutorialBtn",title:tx("tour.again.title"),text:tx("tour.again.text")}
+];}
+/* The mission of the current step lights up as if hovered */
+let touring=false;
+const TUTORIAL={onStep:s=>{touring=true;setHover(s.zone||null);},onEnd:()=>{touring=false;setHover(null);}};
+$("tutorialBtn").addEventListener("click",()=>{if(mode==="menu"&&!anim)startTour("home",tutorialSteps(),TUTORIAL);});
+window.__go=id=>go(ZONES.find(z=>z.id===id));
+const fromHash=ZONES.find(z=>"#"+z.id===location.hash);
+if(fromHash)afterReveal(()=>go(fromHash));
+window.__about=openAbout;
+if(location.hash==="#"+SAT.id)afterReveal(openAbout);
+</script>
+
+<script type="module" src="../shared/version/badge.js"></script>
+</body></html>

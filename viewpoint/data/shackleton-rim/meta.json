@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "id": "shackleton-rim",
+  "name": {
+    "es": "Cresta de conexión de Shackleton",
+    "en": "Shackleton connecting ridge"
+  },
+  "center": {
+    "lat": -89.44027,
+    "lon": -137.12649
+  },
+  "coordinatesVerified": false,
+  "extentKm": 40,
+  "grid": {
+    "cols": 257,
+    "rows": 257,
+    "stepKm": 0.15625
+  },
+  "units": {
+    "horizontal": "km",
+    "vertical": "km"
+  },
+  "heights": {
+    "file": "terrain-lod0.bin",
+    "encoding": "uint16-le",
+    "unit": "km",
+    "scale": 0.000075709,
+    "offset": -3.003025
+  },
+  "detail": [
+    {
+      "extentKm": 20,
+      "grid": {
+        "cols": 257,
+        "rows": 257,
+        "stepKm": 0.078125
+      },
+      "heights": {
+        "file": "terrain-lod1.bin",
+        "encoding": "delta16-gzip",
+        "unit": "km",
+        "scale": 0.000049385,
+        "offset": -1.277847
+      },
+      "products": [
+        "LDEM_80S_20MPP_ADJ@20m"
+      ]
+    },
+    {
+      "extentKm": 10,
+      "grid": {
+        "cols": 513,
+        "rows": 513,
+        "stepKm": 0.01953125
+      },
+      "heights": {
+        "file": "terrain-lod2.bin",
+        "encoding": "delta16-gzip",
+        "unit": "km",
+        "scale": 0.000018703,
+        "offset": 0.733347
+      },
+      "products": [
+        "LDEM_80S_20MPP_ADJ@20m"
+      ]
+    },
+    {
+      "extentKm": 2.5,
+      "grid": {
+        "cols": 513,
+        "rows": 513,
+        "stepKm": 0.0048828125
+      },
+      "heights": {
+        "file": "terrain-lod3.bin",
+        "encoding": "delta16-gzip",
+        "unit": "km",
+        "scale": 0.000004597,
+        "offset": 1.658025
+      },
+      "products": [
+        "LOLA_5MPP_Site01@5m"
+      ],
+      "measured": 0.095,
+      "rmsM": 0.37,
+      "citation": "LOLA 5 m/px de los sitios del polo sur (PGDA/GSFC), Barker et al. 2021"
+    }
+  ],
+  "source": {
+    "type": "lola",
+    "products": [
+      "LDEM_80S_20MPP_ADJ@160m",
+      "LDEM_80S_20MPP_ADJ@20m"
+    ],
+    "demVersion": "lola-29c4a59faefe",
+    "citation": "LOLA LDEM (PGDA/GSFC), Barker et al. 2023"
+  },
+  "sceneFrame": {
+    "projection": "orthographic",
+    "radiusKm": 1737.4,
+    "centerLat": -89.44027,
+    "centerLon": -137.12649,
+    "axes": {
+      "x": "east",
+      "y": "up",
+      "z": "south"
+    }
+  },
+  "far": {
+    "file": "terrain-far.bin",
+    "extentKm": 300,
+    "grid": {
+      "cols": 257,
+      "rows": 257,
+      "stepKm": 1.171875
+    },
+    "heights": {
+      "encoding": "uint16-le",
+      "unit": "km",
+      "scale": 0.000281862,
+      "offset": -16.516167
+    }
+  },
+  "maskGrid": {
+    "file": "masks.bin",
+    "extentKm": 4,
+    "stepKm": 0.1,
+    "cols": 41,
+    "rows": 41,
+    "azimuths": 360,
+    "encoding": "int16-le",
+    "observerHeightM": 2,
+    "demVersion": "lola-c33d4bb7a8cf"
+  }
+}

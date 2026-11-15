@@ -1,0 +1,242 @@
+{
+  "generatedBy": "home/scripts/build-zones.ts",
+  "period": {
+    "start": "2027-01-01T00:00:00Z",
+    "end": "2028-01-01T00:00:00Z"
+  },
+  "mode": "limb",
+  "observerHeightM": 2,
+  "slopeBaselineM": 100,
+  "demVersion": "lola-6e9c7351a591",
+  "note": "Sol y Tierra: fracción del año 2027 con algo del disco sobre el horizonte (visibilityWindows, como /v1/windows, con terrain y un observador a 2 m). Elevación de la Tierra: track cada hora. Horizonte con relieve donde hay máscara del catálogo o DEM LOLA en caché; si no, Luna lisa (horizon.model).",
+  "zones": [
+    {
+      "id": "shackleton-ridge",
+      "lat": -89.44027,
+      "lon": -137.12649,
+      "siteId": "shackleton-rim",
+      "light": {
+        "level": "most",
+        "percent": 92.2
+      },
+      "night": {
+        "longestHours": 111.5,
+        "longestDays": 4.6
+      },
+      "earth": {
+        "level": "sometimes",
+        "percent": 55.3,
+        "elevationDeg": {
+          "min": -7.6,
+          "max": 6.2
+        }
+      },
+      "horizon": {
+        "model": "relief",
+        "source": "catalog",
+        "note": "Máscara de horizonte precalculada del catálogo: LOLA LDEM_80S_20MPP_ADJ@20m + LDEM_80S_20MPP_ADJ@160m + LDEM_60S_240MPP_ADJ@240m (preciso, observador a 2 m)."
+      },
+      "slope": {
+        "available": true,
+        "deg": 1.1,
+        "baselineM": 480,
+        "underestimated": true
+      },
+      "warnings": []
+    },
+    {
+      "id": "cabeus",
+      "lat": -84.675,
+      "lon": -48.725,
+      "light": {
+        "level": "never",
+        "percent": 0
+      },
+      "night": {
+        "longestHours": 8760.3,
+        "longestDays": 365,
+        "wholePeriod": true
+      },
+      "earth": {
+        "level": "sometimes",
+        "percent": 21.7,
+        "elevationDeg": {
+          "min": -4.1,
+          "max": 10.6
+        }
+      },
+      "horizon": {
+        "model": "relief",
+        "source": "dem",
+        "note": "Máscara de horizonte calculada con el DEM en caché: LOLA LDEM_80S_20MPP_ADJ@160m + LDEM_60S_240MPP_ADJ@240m (preciso, observador a 2 m). Horizonte híbrido: rayo directo sobre el DEM en el acimut exacto del astro cuando su margen al horizonte es menor que 0,1°."
+      },
+      "slope": {
+        "available": true,
+        "deg": 0.8,
+        "baselineM": 479,
+        "underestimated": true
+      },
+      "warnings": []
+    },
+    {
+      "id": "von-karman",
+      "lat": -45.4561,
+      "lon": 177.5885,
+      "siteId": "change4",
+      "light": {
+        "level": "half",
+        "percent": 51.6
+      },
+      "night": {
+        "longestHours": 359.3,
+        "longestDays": 15
+      },
+      "earth": {
+        "level": "never",
+        "percent": 0,
+        "elevationDeg": {
+          "min": -50.9,
+          "max": -37.7
+        }
+      },
+      "horizon": {
+        "model": "smooth",
+        "note": "El punto queda fuera de la cobertura del DEM LOLA (polo sur, hasta unos 60°S): horizonte esférico (0°)."
+      },
+      "slope": {
+        "available": false
+      },
+      "warnings": [
+        "terrain_not_applied"
+      ]
+    },
+    {
+      "id": "apollo-11",
+      "lat": 0.67408,
+      "lon": 23.47297,
+      "siteId": "apollo11",
+      "light": {
+        "level": "half",
+        "percent": 48.8
+      },
+      "night": {
+        "longestHours": 353.8,
+        "longestDays": 14.7
+      },
+      "earth": {
+        "level": "always",
+        "percent": 100,
+        "elevationDeg": {
+          "min": 58,
+          "max": 73.2
+        }
+      },
+      "horizon": {
+        "model": "smooth",
+        "note": "El punto queda fuera de la cobertura del DEM LOLA (polo sur, hasta unos 60°S): horizonte esférico (0°)."
+      },
+      "slope": {
+        "available": false
+      },
+      "warnings": [
+        "terrain_not_applied"
+      ]
+    },
+    {
+      "id": "apollo-15",
+      "lat": 26.13222,
+      "lon": 3.63386,
+      "siteId": "apollo15",
+      "light": {
+        "level": "half",
+        "percent": 48.8
+      },
+      "night": {
+        "longestHours": 356,
+        "longestDays": 14.8
+      },
+      "earth": {
+        "level": "always",
+        "percent": 100,
+        "elevationDeg": {
+          "min": 55.2,
+          "max": 70.5
+        }
+      },
+      "horizon": {
+        "model": "smooth",
+        "note": "El punto queda fuera de la cobertura del DEM LOLA (polo sur, hasta unos 60°S): horizonte esférico (0°)."
+      },
+      "slope": {
+        "available": false
+      },
+      "warnings": [
+        "terrain_not_applied"
+      ]
+    },
+    {
+      "id": "mare-crisium",
+      "lat": 18.5623,
+      "lon": 61.8103,
+      "siteId": "blueghost1",
+      "light": {
+        "level": "half",
+        "percent": 49.1
+      },
+      "night": {
+        "longestHours": 355.5,
+        "longestDays": 14.8
+      },
+      "earth": {
+        "level": "always",
+        "percent": 100,
+        "elevationDeg": {
+          "min": 16.9,
+          "max": 35.9
+        }
+      },
+      "horizon": {
+        "model": "smooth",
+        "note": "El punto queda fuera de la cobertura del DEM LOLA (polo sur, hasta unos 60°S): horizonte esférico (0°)."
+      },
+      "slope": {
+        "available": false
+      },
+      "warnings": [
+        "terrain_not_applied"
+      ]
+    },
+    {
+      "id": "north-pole",
+      "lat": 89.5,
+      "lon": 0,
+      "light": {
+        "level": "half",
+        "percent": 53.2
+      },
+      "night": {
+        "longestHours": 3159,
+        "longestDays": 131.6
+      },
+      "earth": {
+        "level": "sometimes",
+        "percent": 57.4,
+        "elevationDeg": {
+          "min": -6.6,
+          "max": 7.1
+        }
+      },
+      "horizon": {
+        "model": "smooth",
+        "note": "El punto queda fuera de la cobertura del DEM LOLA (polo sur, hasta unos 60°S): horizonte esférico (0°)."
+      },
+      "slope": {
+        "available": false
+      },
+      "warnings": [
+        "smooth_moon_polar",
+        "terrain_not_applied"
+      ]
+    }
+  ]
+}

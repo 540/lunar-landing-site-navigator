@@ -1,0 +1,244 @@
+/* =====================================================================
+   Design system tokens
+   ---------------------------------------------------------------------
+   Two levels:
+   1. Primitives: the raw palette and scales. Only used to define the
+      semantic tokens below, never in components or views.
+   2. Semantic: what each value means ("surface", "muted text", "viable").
+      Components, views and canvases (through js/common/theme.js) use only these.
+
+   To restyle the whole app, change the semantic tokens.
+   To add a theme, redefine the semantic tokens under another selector
+   (e.g. :root[data-theme="light"]) without touching any component.
+   Guide: styles/README.md · catalogue: design-system.html
+   ===================================================================== */
+
+:root {
+  /* ---------- 1. Primitives ---------- */
+
+  /* Dark theme: the night of the 540 pages (home/, discovery funnel) and neutral greys over it */
+  --night: #171717;
+  --neutral-950: #111111;
+  --neutral-900: #1b1b1b;
+  --neutral-800: #1f1f1f;
+  --neutral-750: #292929;
+  --neutral-700: #343434;
+  --gray-850: #1c1f23;      /* map background, around the relief */
+  --gray-600: #4a5059;
+  --gray-400: #9aa1ab;
+  --gray-100: #e8eaed;
+
+  --orange-400: #f0a43a;
+  --blue-400: #5b9cff;
+  --green-400: #3fbf7f;
+  --amber-400: #e6c14d;     /* yellower than the Sun (--orange-400, ΔE2000 12.5) so a warning is never read as Sun (#341) */
+  --red-400: #e5675e;
+  --violet-400: #a98bff;
+  --white: #ffffff;
+  --black: #000000;
+
+  /* Light theme: the lit side of the Moon. Warm regolith greys (the 3D Moon of home/ in sunlight) and a warm
+     charcoal ink; the hues are darkened to keep AA on light surfaces. */
+  --sunlit-50: #faf7f0;
+  --sunlit-100: #f1ebdf;
+  --sunlit-200: #e7dfd0;
+  --sunlit-300: #d4c9b5;
+  --sunlit-500: #9a9081;
+  --sunlit-700: #5a5244;
+  --sunlit-ink: #1e1b16;
+
+  --orange-700: #9a5400;
+  --orange-600: #c96a00;
+  --blue-700: #1760cf;
+  --green-700: #146c40;
+  --amber-700: #955700;
+  --red-700: #bb3329;
+  --violet-700: #6a4bd1;
+
+  /* ---------- 2. Semantic: colour ---------- */
+
+  /* Surfaces, bottom to top. The page is the lunar surface (assets/regolith.jpg: LROC albedo around
+     Copernicus and Mare Imbrium, cut from home/tex/moon-color-4k.jpg). Dark is the night side: the same
+     regolith in shadow, tinted night blue and faintly lit by the Earth; light is the same ground in sunlight. */
+  --color-bg: #0d121b;                      /* under the texture, and what canvases read as "page" */
+  --bg-image:
+    radial-gradient(1200px 720px at 100% 0%, rgba(91, 156, 255, 0.12), transparent 62%),
+    linear-gradient(180deg, #46546f, #2f3a50),
+    url("../assets/regolith.jpg") center / cover no-repeat;
+  --bg-blend: normal, multiply, normal;     /* the blue layer multiplies the regolith: shadowed ground */
+  --color-surface: rgba(19, 24, 34, 0.8);   /* boxes and cards: dark glass over the ground */
+  --color-surface-raised: rgba(38, 45, 59, 0.85); /* elements inside a box, hover */
+  --color-sunken: #121722;                  /* form fields and chart backgrounds */
+  --color-sunken-deep: #0c1018;             /* large sky chart in Plan */
+  --color-topbar: rgba(13, 17, 26, 0.78);   /* translucent top bar */
+  --color-star: var(--white);               /* stars of js/common/sky.js; off: the page is ground, not sky */
+  --sky-opacity: 0;                         /* > 0 brings the starry sky back over the ground */
+  --surface-blur: 8px;                      /* cards are glass over the regolith */
+  --text-halo: 0 0 1px rgba(13, 18, 27, 0.95), 0 0 3px rgba(13, 18, 27, 0.9), 0 0 8px rgba(13, 18, 27, 0.8); /* text straight on the ground */
+
+  /* Text */
+  --color-text: var(--gray-100);
+  --color-text-muted: var(--gray-400);
+  --color-text-inverse: var(--night);    /* text on --color-text (primary button) */
+
+  /* Borders */
+  --color-border: #2d3545;
+
+  /* Domain: what maps and charts paint */
+  --color-sun: var(--orange-400);
+  --color-sun-text: var(--orange-400);     /* text in the Sun's colour (figures, legends): AA on the surfaces */
+  --color-earth: var(--blue-400);
+  --color-terrain: var(--gray-600);
+  --color-mission: var(--color-text);      /* the mission on Plan's timeline: neutral, so it is never read as Sun or as a verdict */
+
+  /* Status (verdict viable / marginal / not viable). The canonical ones: the Mirador, the game and the lander take them
+     from here (#341). */
+  --color-ok: var(--green-400);
+  --color-warn: var(--amber-400);
+  --color-bad: var(--red-400);
+  --color-ok-soft: rgba(63, 191, 127, 0.14);
+  --color-warn-soft: rgba(230, 193, 77, 0.14);
+  --color-bad-soft: rgba(229, 103, 94, 0.14);
+
+  /* Explanation mode */
+  --color-explain: var(--violet-400);
+  --color-explain-soft: rgba(169, 139, 255, 0.12);
+  --color-scrim: rgba(10, 11, 14, 0.66);    /* dims the page behind the guided tour */
+  --color-on-accent: var(--white);          /* text on --color-explain (the ? buttons) */
+
+  /* Interaction */
+  --color-link: var(--blue-400);
+  --color-focus: var(--blue-400);
+
+  /* Maps: the relief is an image (LOLA shading), dark in both themes, so what is painted
+     over it does not change with the theme either. */
+  --color-map-bg: var(--gray-850);              /* around and outside the relief, and night shadows */
+  --color-map-line: rgba(255, 255, 255, 0.25);  /* latitude rings, meridians, hatching */
+  --color-map-text: rgba(255, 255, 255, 0.75);  /* latitudes and the search radius */
+  --color-map-text-soft: rgba(255, 255, 255, 0.55); /* crater names, unselected rings */
+  --color-map-mark: var(--white);               /* ring around site dots, labels */
+  --color-map-label-bg: rgba(0, 0, 0, 0.6);     /* box behind a site label */
+  --color-map-sun: var(--orange-400);          /* the Sun and the Earth drawn over the relief or space */
+  --color-map-earth: var(--blue-400);
+  --color-map-ok: var(--green-400);             /* verdict dots over the relief (#332): the -400 tones in both themes */
+  --color-map-warn: var(--amber-400);
+  --color-map-bad: var(--red-400);
+  --color-map-muted: var(--gray-400);           /* «no-data» dot: muted, but not the light theme's text tone */
+  --color-moon-shadow: rgba(10, 14, 22, 0.94);  /* the shadow of the light / dark toggle Moon */
+  --color-space: var(--black);                  /* the 3D sky (js/common/sky3d.js): black space in both themes */
+
+  /* ---------- 2. Semantic: typography ---------- */
+
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+
+  /* Scale (body is 14 px; 1 rem = 16 px) */
+  --text-3xs: 0.66rem;  /* 10.5 px · badges, sweep table headers */
+  --text-2xs: 0.72rem;  /* 11.5 px · eyebrows, notes */
+  --text-xs: 0.74rem;   /* 12 px   · hints, legends */
+  --text-sm: 0.8rem;    /* 13 px   · reasons, section titles */
+  --text-md: 0.875rem;  /* 14 px   · body */
+  --text-lg: 1rem;      /* 16 px   · large button */
+  --text-xl: 1.1rem;    /* 17.5 px · metric value, card titles */
+  --text-2xl: 1.45rem;  /* 23 px   · key figure */
+  --text-3xl: 1.9rem;   /* 30 px   · view headline */
+  --text-4xl: 2.1rem;   /* 34 px   · recommended site */
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --leading: 1.45;
+  --leading-tight: 1.1;
+  --tracking-caps: 0.08em;
+
+  /* ---------- 2. Semantic: space, shape and layers ---------- */
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-pill: 999px;
+
+  --shadow-box: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+  --shadow-float: 0 6px 20px rgba(0, 0, 0, 0.45);   /* tooltips */
+  --shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.45);    /* tour bubble */
+
+  --z-topbar: 20;
+  --z-panel: 30;
+  --z-tour: 40;
+
+  /* Layout */
+  --page-width: 1480px;
+  --sidebar-width: 380px;
+  --form-width: 360px;
+  --explain-width: 400px;
+  --topbar-height: 72px;
+
+  color-scheme: dark;
+}
+
+/* ---------- Light theme ----------
+   Only the semantic colour tokens change. js/theme-init.js sets data-theme on <html>
+   before the page paints (the saved choice, or the system's), and the top-bar button toggles it. */
+:root[data-theme="light"] {
+  /* The lit side of the Moon: the regolith as it is, warm in sunlight (like the 3D Moon of home/), with the Sun
+     high above the page and the limb darkening at the edges. Bone-coloured glass cards and warm charcoal ink.
+     The maps stay dark: windows onto space. */
+  --color-bg: var(--sunlit-500);
+  --bg-image:
+    radial-gradient(1100px 460px at 50% 0%, rgba(255, 250, 240, 0.78), rgba(255, 250, 240, 0.35) 45%, transparent 75%),
+    radial-gradient(140% 120% at 50% 30%, transparent 55%, rgba(48, 40, 28, 0.28) 100%),
+    linear-gradient(rgba(250, 244, 232, 0.2), rgba(250, 244, 232, 0.2)),
+    linear-gradient(#f4ead8, #e6dac4),
+    url("../assets/regolith.jpg") center / cover no-repeat;
+  --bg-blend: normal, normal, normal, multiply, normal; /* warm layer multiplies the regolith; a faint glare lifts the maria */
+  --color-surface: rgba(250, 247, 240, 0.86);   /* boxes and cards: bone-coloured glass */
+  --surface-blur: 10px;
+  --text-halo: 0 0 1px rgba(250, 246, 238, 1), 0 0 3px rgba(250, 246, 238, 0.95), 0 0 8px rgba(250, 246, 238, 0.85);
+  --color-surface-raised: var(--sunlit-100);
+  --color-sunken: var(--sunlit-50);
+  --color-sunken-deep: var(--sunlit-200);
+  --color-topbar: rgba(246, 241, 231, 0.84);
+
+  --color-text: var(--sunlit-ink);
+  --color-text-muted: var(--sunlit-700);
+  --color-text-inverse: var(--sunlit-50);
+
+  --color-border: var(--sunlit-300);
+
+  --color-sun: var(--orange-600);         /* brighter than the AA text tone: the Sun is drawn, not read */
+  --color-sun-text: var(--orange-700);
+  --color-earth: var(--blue-700);
+  --color-terrain: var(--sunlit-500);
+
+  --color-ok: var(--green-700);
+  --color-warn: var(--amber-700);
+  --color-bad: var(--red-700);
+  --color-ok-soft: rgba(20, 108, 64, 0.1);
+  --color-warn-soft: rgba(149, 87, 0, 0.1);
+  --color-bad-soft: rgba(187, 51, 41, 0.1);
+
+  --color-explain: var(--violet-700);
+  --color-explain-soft: rgba(106, 75, 209, 0.1);
+  --color-scrim: rgba(22, 24, 28, 0.45);
+
+  --color-link: var(--blue-700);
+  --color-focus: var(--blue-700);
+
+  --shadow-box: 0 1px 2px rgba(40, 32, 20, 0.12), 0 10px 28px rgba(40, 32, 20, 0.14);
+  --shadow-float: 0 6px 20px rgba(40, 32, 20, 0.24);
+  --shadow-pop: 0 12px 32px rgba(40, 32, 20, 0.28);
+
+  color-scheme: light;
+}

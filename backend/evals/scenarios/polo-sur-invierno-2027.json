@@ -1,0 +1,12 @@
+{
+  "name": "polo-sur-invierno-2027",
+  "description": "La misma misión en pleno invierno austral (junio-julio de 2027). Sirve para ver cómo la estación cambia el mejor sitio.",
+  "region": { "latMin": -90, "latMax": -75, "lonMin": -180, "lonMax": 180 },
+  "dates": ["2027-06-10", "2027-06-24", "2027-07-08"],
+  "missionDays": 14,
+  "stepMinutes": 60,
+  "aggregate": "worst",
+  "constraints": { "minEnergy": 0.3, "minEarthFraction": 0.3 },
+  "search": { "spacingKm": 25 },
+  "baselines": ["shackleton-rim", "im2-alunizaje", "chandrayaan3"]
+}

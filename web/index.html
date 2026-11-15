@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <script src="js/theme-init.js"></script>
+  <title>Lunar Landing Site Navigator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <!-- Design system: components.css, then base.css (which imports tokens.css). Guide: styles/README.md -->
+  <!-- three.js 0.160, as in viewpoint/: only the 3D sky uses it, and it is loaded on demand (js/common/sky3d.js) -->
+  <script type="importmap">
+  {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
+  </script>
+  <link rel="stylesheet" href="styles/components.css">
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/plan.css">
+  <link rel="stylesheet" href="styles/advanced.css">
+  <link rel="stylesheet" href="styles/replan.css">
+  <link rel="stylesheet" href="styles/sources.css">
+  <link rel="stylesheet" href="styles/tour.css">
+  <link rel="stylesheet" href="motion/motion.css">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png">
+  <link rel="apple-touch-icon" href="assets/icon-180.png">
+</head>
+<body>
+  <div class="sky" aria-hidden="true"><canvas id="sky"></canvas></div>
+  <header class="topbar">
+    <a class="brand" href="../home/" title="Volver a la Luna" data-i18n-title="html.brand.title"><span class="moon" aria-hidden="true"></span><h1>Lunar Landing Site Navigator</h1></a>
+    <nav class="tabs" aria-label="Vistas" data-i18n-aria-label="html.tabs.label">
+      <a href="#plan" data-view="plan" data-i18n="html.tabs.plan">Planificar</a>
+      <a href="#sources" data-view="sources" data-i18n="html.tabs.sources">Fuentes de datos</a>
+    </nav>
+    <div class="right">
+      <span class="badge badge--outline" data-tone="warn" id="data-badge" role="status" data-i18n="html.badge">Datos de ejemplo</span>
+      <button class="btn history-btn" id="btn-history" type="button" aria-haspopup="dialog" aria-label="Historial de misiones" title="Misiones que has planificado en este navegador" data-i18n-aria-label="html.history.label" data-i18n-title="html.history.title">
+        <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.2 8a5.8 5.8 0 1 0 1.9-4.3"/><path d="M2 2.4v2.8h2.8"/><path d="M8 5v3.2l2 1.3"/></svg>
+        <span class="history-btn__label" data-i18n="html.history.button">Historial</span>
+      </button>
+      <button class="btn tour-btn" id="btn-tour" type="button" aria-label="Ver el tutorial de esta vista" title="Repetir el tutorial de esta vista" data-i18n-aria-label="html.tour.label" data-i18n-title="html.tour.title">
+        <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6.25"/><path d="M10.7 5.3 9.2 9.2 5.3 10.7 6.8 6.8z"/></svg>
+        <span class="tour-btn__label" data-i18n="html.tour.button">Tutorial</span>
+      </button>
+      <button class="btn theme-btn" id="btn-theme" type="button" aria-label="Ver la cara iluminada (modo claro)" title="Ver la cara iluminada (modo claro)">
+        <span class="theme-btn__moon" aria-hidden="true"></span>
+      </button>
+      <button class="btn btn--explain" id="btn-explain" type="button" aria-pressed="false"><span data-i18n-html="html.explain.button"><span class="wide-only">Modo </span>explicación</span></button>
+    </div>
+  </header>
+  <dialog class="history-dialog" id="history-dialog" aria-labelledby="history-title">
+    <div class="history-dialog__body">
+      <header class="history-dialog__head">
+        <h2 class="eyebrow" id="history-title" data-i18n="html.history.label">Historial de misiones</h2>
+        <button class="btn" id="history-close" type="button" aria-label="Cerrar el historial (Esc)" data-i18n-aria-label="html.history.closeLabel" data-i18n="html.close">Cerrar</button>
+      </header>
+      <p class="hint" data-i18n="html.history.hint">Cada plan que calculas en Planificar se guarda aquí, en este navegador. Al abrir una misión se vuelve a buscar con sus parámetros: el veredicto puede cambiar si los datos son otros.</p>
+      <p class="empty" id="history-empty" data-i18n="html.history.empty">Aún no hay misiones. Planifica una y aparecerá aquí.</p>
+      <ol class="history-list" id="history-list" aria-label="Misiones, de la más reciente a la más antigua" data-i18n-aria-label="html.history.list"></ol>
+      <button class="btn history-dialog__clear" id="history-clear" type="button" data-i18n="html.history.clear">Borrar historial</button>
+    </div>
+  </dialog>
+  <div class="explain-banner" data-i18n-html="html.explain.banner">Modo explicación: pulsa cualquier <b>?</b> morado para ver qué es cada cosa, qué te dice, de dónde sale hoy y de dónde saldrá en el producto real.</div>
+
+  <div class="app no-sidebar" id="app">
+    <!-- ============ Sidebar (shared by Advanced and Replan) · hidden from the start: no view shows it now (app.js), and painting it until the JS loads made the page jump ============ -->
+    <aside class="sidebar" id="sidebar" hidden>
+      <section class="box" aria-labelledby="t-mission">
+        <div class="box__head"><h2 id="t-mission">Misión</h2></div>
+        <div class="field" data-explain="profile">
+          <label for="profile">Perfil de misión</label>
+          <select id="profile"></select>
+          <span class="hint" id="profile-source"></span>
+        </div>
+        <div class="field" data-explain="date">
+          <label for="date">Alunizaje previsto (UTC)</label>
+          <input id="date" type="datetime-local">
+        </div>
+        <div class="field" data-explain="delay">
+          <label for="delay">Retraso: <b class="num" id="delay-value">+0 días</b></label>
+          <input id="delay" type="range" min="0" max="60" value="0">
+        </div>
+        <div class="grid" style="--cols: 3" data-explain="requirements">
+          <div class="field"><label for="days">Duración (d)</label><input id="days" type="number" min="0.5" max="30" step="0.5"></div>
+          <div class="field"><label for="battery">Aguanta sin Sol (h)</label><input id="battery" type="number" min="0" max="720" step="1"></div>
+          <div class="field"><label for="min-earth">Tierra (%)</label><input id="min-earth" type="number" min="0" max="100" step="5"></div>
+          <div class="field"><label for="max-earth-gap">Máx. sin Tierra seguido (h)</label><input id="max-earth-gap" type="number" min="0" max="720" step="1"></div>
+          <div class="field"><label for="panel-height">Altura del panel (m)</label><input id="panel-height" type="number" min="0" max="100" step="0.5" value="2"></div>
+          <div class="field"><label for="antenna-height">Altura de la antena (m)</label><input id="antenna-height" type="number" min="0" max="100" step="0.5" value="2"></div>
+          <div class="field"><label for="transit">Tránsito (d)</label><input id="transit" type="number" min="0" max="180" step="0.5"></div>
+        </div>
+      </section>
+    </aside>
+
+    <main class="main" id="main">
+      <div class="loading" id="data-loading" role="status" aria-live="polite" hidden>
+        <span class="loading__spinner" aria-hidden="true"></span>
+        <p class="loading__text" data-i18n="html.loading">Calculando las ventanas de Sol y de Tierra…</p>
+        <p class="loading__slow" id="data-loading-slow" data-i18n="html.loadingSlow" hidden>La primera consulta a la API de datos puede tardar unos segundos.</p>
+        <p class="loading__error" id="data-loading-error" hidden></p>
+        <button type="button" class="btn btn--small" id="data-loading-retry" data-i18n="html.retry" hidden>Reintentar</button>
+      </div>
+
+      <!-- ============ View: Plan ============ -->
+      <section id="view-plan" class="plan-view is-intro" hidden>
+        <div class="plan-head">
+          <span class="eyebrow" data-i18n="html.plan.eyebrow">Planificador de misión</span>
+          <h1 class="headline" data-i18n="html.plan.headline">¿Dónde y cuándo aterrizo?</h1>
+          <p class="plan-intro" data-i18n="html.plan.intro">Elige tu nave, dónde y cuándo puedes aterrizar. Te digo el mejor sitio y la mejor fecha, y luego puedes investigarlo a fondo.</p>
+        </div>
+        <div class="plan-layout">
+          <form class="box plan-form" id="plan-form" aria-label="Características de la misión" data-i18n-aria-label="html.plan.form">
+            <ol class="plan-steps" id="plan-steps" aria-label="Pasos" data-i18n-aria-label="html.plan.steps"></ol>
+            <p class="sr-only" id="plan-profile-live" aria-live="polite"></p>
+            <fieldset class="field-group" id="plan-step-1" data-explain="plan-lander" data-step="1">
+              <legend data-i18n="html.plan.lander">Tu nave</legend>
+              <div class="options" id="plan-profiles" role="radiogroup" aria-label="Perfil de nave" data-i18n-aria-label="html.plan.profile"></div>
+            </fieldset>
+            <fieldset class="field-group" id="plan-step-2" data-explain="requirements" data-step="2">
+              <legend data-i18n="html.plan.requirements">Requisitos</legend>
+              <div class="grid" style="--cols: 3">
+                <div class="field" id="plan-class-field" hidden><label for="plan-class" data-i18n="html.plan.craftClass">Clase de nave</label><select id="plan-class" aria-describedby="plan-class-note"><option value="">Sin indicar</option></select><small class="hint" id="plan-class-note" data-i18n="html.plan.craftClassNote">Solo ajusta qué valores son creíbles; no cambia el cálculo.</small></div>
+                <div class="field" id="plan-autonomy-field" hidden><label for="plan-autonomy" data-i18n="html.plan.autonomy">Autonomía sin Sol</label><select id="plan-autonomy" aria-describedby="plan-autonomy-note"><option value="hours" data-i18n="html.plan.autonomyHours">En horas</option><option value="battery" data-i18n="html.plan.autonomyBattery">Con la batería</option></select><small class="hint" id="plan-autonomy-note" data-i18n="html.plan.autonomyNote">Con la batería, las horas sin Sol se calculan solas.</small></div>
+                <div class="field"><label for="plan-days" data-i18n="html.plan.days">Días en superficie</label><input id="plan-days" type="number" min="0.5" max="30" step="0.5" aria-describedby="plan-days-checks"><div class="coherence" id="plan-days-checks" aria-live="polite"></div></div>
+                <div class="field"><label for="plan-battery" data-i18n="html.plan.battery">Aguanta sin Sol (h)</label><input id="plan-battery" type="number" min="0" max="720" aria-describedby="plan-battery-checks"><small class="hint" id="plan-battery-calc" aria-live="polite"></small><div class="coherence" id="plan-battery-checks" aria-live="polite"></div></div>
+                <div class="field"><label for="plan-earth" data-i18n="html.plan.earth">Tierra mínima (%)</label><input id="plan-earth" type="number" min="0" max="100" step="5" aria-describedby="plan-earth-checks"><div class="coherence" id="plan-earth-checks" aria-live="polite"></div></div>
+                <div class="field"><label for="plan-earth-gap" data-i18n="html.plan.earthGap">Máx. sin Tierra seguido (h)</label><input id="plan-earth-gap" type="number" min="0" max="720" step="1" aria-describedby="plan-earth-gap-checks"><div class="coherence" id="plan-earth-gap-checks" aria-live="polite"></div></div>
+                <div class="field"><label for="plan-panel-height" data-i18n="html.plan.panelHeight">Altura del panel solar (m)</label><input id="plan-panel-height" type="number" min="0" max="100" step="0.5" value="2" aria-describedby="plan-heights-note plan-panel-height-checks"><div class="coherence" id="plan-panel-height-checks" aria-live="polite"></div></div>
+                <div class="field"><label for="plan-antenna-height" data-i18n="html.plan.antennaHeight">Altura de la antena (m)</label><input id="plan-antenna-height" type="number" min="0" max="100" step="0.5" value="2" aria-describedby="plan-heights-note plan-antenna-height-checks"><div class="coherence" id="plan-antenna-height-checks" aria-live="polite"></div></div>
+                <div class="field"><label for="plan-panel" data-i18n="html.plan.panel">Orientación del panel solar</label><select id="plan-panel" aria-describedby="plan-panel-note plan-panel-checks"></select><div class="coherence" id="plan-panel-checks" aria-live="polite"></div></div>
+                <div class="field"><label for="plan-transit" data-i18n="html.plan.transit">Tránsito Tierra–Luna (d)</label><input id="plan-transit" type="number" min="0" max="180" step="0.5" aria-describedby="plan-transit-source plan-transit-checks"><div class="coherence" id="plan-transit-checks" aria-live="polite"></div></div>
+              </div>
+              <div class="grid plan-battery-group" id="plan-battery-group" style="--cols: 3" data-explain="battery" hidden>
+                <div class="field"><label for="plan-battery-wh" data-i18n="html.plan.batteryWh">Capacidad (Wh)</label><input id="plan-battery-wh" type="number" min="0" step="100" aria-describedby="plan-battery-wh-checks"><div class="coherence" id="plan-battery-wh-checks" aria-live="polite"></div></div>
+                <div class="field"><label for="plan-battery-load" data-i18n="html.plan.batteryLoad">Carga de supervivencia (W)</label><input id="plan-battery-load" type="number" min="0" step="1" aria-describedby="plan-battery-load-checks"><div class="coherence" id="plan-battery-load-checks" aria-live="polite"></div></div>
+                <div class="field"><label for="plan-battery-dod" data-i18n="html.plan.batteryDod">Profundidad de descarga (0–1)</label><input id="plan-battery-dod" type="number" min="0" max="1" step="0.05" aria-describedby="plan-battery-dod-checks"><div class="coherence" id="plan-battery-dod-checks" aria-live="polite"></div></div>
+                <div class="field"><label for="plan-battery-spec" data-i18n="html.plan.batterySpec">Energía específica del pack (Wh/kg)</label><input id="plan-battery-spec" type="number" min="0" step="10" placeholder="200" aria-describedby="plan-battery-spec-checks"><div class="coherence" id="plan-battery-spec-checks" aria-live="polite"></div></div>
+                <div class="field"><label for="plan-battery-kg" data-i18n="html.plan.batteryKg">Masa de la batería (kg)</label><input id="plan-battery-kg" type="number" min="0" step="1" aria-describedby="plan-battery-kg-checks"><div class="coherence" id="plan-battery-kg-checks" aria-live="polite"></div></div>
+                <div class="field"><label for="plan-dry-mass" data-i18n="html.plan.dryMass">Masa seca de la nave (kg)</label><input id="plan-dry-mass" type="number" min="0" step="10" aria-describedby="plan-dry-mass-checks"><div class="coherence" id="plan-dry-mass-checks" aria-live="polite"></div></div>
+                <p class="hint" id="plan-battery-mass" aria-live="polite"></p>
+              </div>
+              <p class="hint" id="plan-heights-note" aria-live="polite"></p>
+              <p class="hint" id="plan-panel-note" aria-live="polite"></p>
+              <p class="hint" id="plan-transit-source" data-i18n="html.plan.transitNote">Solo cambia la fecha de lanzamiento, no el veredicto.</p>
+              <p class="plan-step-error plan-req-error" id="plan-req-error" role="alert"></p>
+            </fieldset>
+            <fieldset class="field-group" id="plan-step-3" data-explain="plan-zone" data-step="3">
+              <legend data-i18n="html.plan.where">¿Dónde?</legend>
+              <div class="site-options" id="plan-sites" role="radiogroup" aria-label="Sitio de aterrizaje" data-i18n-aria-label="html.plan.site"></div>
+              <div class="grid plan-own" id="plan-own" hidden>
+                <div class="field"><label for="plan-own-lat" data-i18n="html.plan.ownLat">Latitud (°, de −90 a 90)</label><input id="plan-own-lat" type="text" inputmode="decimal" autocomplete="off" placeholder="−89,45" data-i18n-placeholder="html.plan.ownLatPh" aria-describedby="plan-own-lat-error"><small class="field-error text-bad" id="plan-own-lat-error" aria-live="polite"></small></div>
+                <div class="field"><label for="plan-own-lon" data-i18n="html.plan.ownLon">Longitud (°, de −180 a 180)</label><input id="plan-own-lon" type="text" inputmode="decimal" autocomplete="off" placeholder="−137,3" data-i18n-placeholder="html.plan.ownLonPh" aria-describedby="plan-own-lon-error"><small class="field-error text-bad" id="plan-own-lon-error" aria-live="polite"></small></div>
+                <p class="hint plan-own-hint" data-i18n="html.plan.ownHint">Sur y oeste, en negativo.</p>
+              </div>
+            </fieldset>
+            <fieldset class="field-group" id="plan-step-4" data-explain="plan-window" data-step="4">
+              <legend data-i18n="html.plan.when">¿Cuándo? (UTC)</legend>
+              <div class="grid">
+                <div class="field"><label for="plan-from-btn" data-i18n="html.plan.from">No antes de</label><button type="button" class="date-btn" id="plan-from-btn" data-edge="from" aria-controls="plan-calendar"></button><input id="plan-from" type="hidden"></div>
+                <div class="field"><label for="plan-to-btn" data-i18n="html.plan.to">No después de</label><button type="button" class="date-btn" id="plan-to-btn" data-edge="to" aria-controls="plan-calendar"></button><input id="plan-to" type="hidden"></div>
+              </div>
+              <div class="day-picker" id="plan-calendar" data-explain="plan-calendar"></div>
+            </fieldset>
+            <div class="plan-step-nav" id="plan-step-nav">
+              <button type="button" class="btn" id="plan-step-back" data-i18n="html.plan.back">← Atrás</button>
+              <p class="plan-step-error" id="plan-step-error" role="alert"></p>
+              <button type="button" class="btn btn--primary" id="plan-step-next" data-i18n="html.plan.next">Siguiente →</button>
+            </div>
+          </form>
+          <div class="plan-results">
+          <div class="box box--roomy plan-result-card">
+            <div class="plan-result" data-explain="best">
+              <span class="eyebrow" id="res-eyebrow" data-i18n="html.plan.best">Mejor opción</span>
+              <div class="res-title"><h2 class="featured" id="res-site" tabindex="-1"></h2><span class="badge badge--pill badge--large res-verdict" id="res-verdict" tabindex="0" aria-describedby="res-verdict-pop"></span><div class="day-pop verdict-pop" id="res-verdict-pop" role="tooltip" hidden></div></div>
+              <p class="res-line"><span class="num" id="res-date"></span> <button type="button" class="btn res-change-dates" id="res-change-dates" aria-controls="plan-step-4" data-i18n="html.plan.changeDates">Cambiar fechas</button></p>
+              <p class="hint res-origin" id="res-origin" hidden></p>
+              <p class="hint res-skipped" id="res-skipped" data-tone="warn" hidden></p>
+              <p class="hint res-reason" id="res-reason"></p>
+            </div>
+            <p class="res-next" id="res-next" hidden></p>
+            <div class="res-body" id="res-body">
+              <figure class="res-timeline res-when" id="res-when-line" data-explain="timeline">
+                <figcaption class="timeline-head">
+                  <span class="eyebrow" data-i18n="html.plan.whenLand">¿Cuándo aterrizar?</span>
+                  <span class="hint" id="tl-range"></span>
+                  <div class="segmented when-mode" role="group" aria-label="Ver los aterrizajes como" data-i18n-aria-label="html.plan.whenMode">
+                    <button type="button" data-when="line" aria-pressed="true" data-i18n="html.plan.line">Línea</button>
+                    <button type="button" data-when="circle" aria-pressed="false" data-i18n="html.plan.circle">Círculo</button>
+                  </div>
+                </figcaption>
+                <div class="timeline" id="timeline">
+                  <span class="timeline__label" id="tl-landing-label" data-i18n="html.plan.tlLand">Aterrizar</span>
+                  <div class="timeline__track timeline__landing" id="tl-landing" role="group" aria-labelledby="tl-landing-label" aria-describedby="tl-landing-summary"></div>
+                  <span class="timeline__label"><span data-i18n="html.plan.tlSun">Sol</span> <small class="num" id="tl-sun-scale"></small></span>
+                  <div class="timeline__track timeline__sun"><svg id="tl-sun" class="timeline__svg" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+                  <span class="timeline__label" data-i18n="html.plan.tlEarth">Tierra</span>
+                  <div class="timeline__track timeline__earth"><svg id="tl-earth" class="timeline__svg" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+                  <span class="timeline__label" id="tl-mission-label" data-i18n="html.plan.tlMission">Misión</span>
+                  <div class="timeline__track timeline__mission-track" id="tl-mission-track">
+                    <div class="timeline__ghost" id="tl-ghost" hidden></div>
+                    <div class="timeline__mission" id="tl-mission" role="slider" tabindex="0" aria-labelledby="tl-mission-label" aria-describedby="tl-help"><i class="timeline__handle"></i></div>
+                  </div>
+                  <div class="timeline__axis" id="tl-axis" aria-hidden="true"></div>
+                  <div class="timeline__overlay" aria-hidden="true"><div class="timeline__span" id="tl-span"></div><div class="timeline__now" id="tl-now"></div></div>
+                </div>
+                <p class="sr-only" id="tl-help" data-i18n="html.plan.tlHelp">Flechas: mueve el aterrizaje hora a hora; con Mayús, día a día. Inicio y Fin: primer y último día de la ventana.</p>
+                <p class="sr-only" id="tl-landing-summary"></p>
+                <p class="sr-only" id="tl-live" aria-live="polite"></p>
+                <p class="timeline-summary" id="tl-summary"></p>
+                <div class="legend timeline-legend"><span><i style="--c: linear-gradient(to right, var(--color-ok) 33%, var(--color-warn) 33% 66%, var(--color-bad) 66%)"></i><span data-i18n="html.plan.legendLand">Aterrizar: vale · justo · no vale</span></span><span><i style="--c: var(--color-sun)"></i><span data-i18n="html.plan.legendSun">Altura del Sol</span></span><span><i style="--c: var(--color-earth)"></i><span data-i18n="html.plan.legendEarth">Tierra a la vista</span></span><span><i style="--c: var(--color-mission)"></i><span data-i18n="html.plan.legendMission">Tu misión</span></span></div>
+              </figure>
+              <!-- The lunar clock is the answer: the figures around it read its rings, and the delay is drawn on it. -->
+              <figure class="res-clock res-when" id="res-when-circle" data-explain="clock" hidden>
+                <figcaption class="timeline-head clock-head">
+                  <span class="eyebrow" data-i18n="html.plan.whenLand">¿Cuándo aterrizar?</span>
+                  <div class="segmented when-mode" role="group" aria-label="Ver los aterrizajes como" data-i18n-aria-label="html.plan.whenMode">
+                    <button type="button" data-when="line" aria-pressed="true" data-i18n="html.plan.line">Línea</button>
+                    <button type="button" data-when="circle" aria-pressed="false" data-i18n="html.plan.circle">Círculo</button>
+                  </div>
+                </figcaption>
+                <canvas id="clock" width="460" height="460" tabindex="0" role="slider" aria-label="Reloj lunar de 30 días" data-i18n-aria-label="html.plan.clock" aria-describedby="clock-help clock-summary"></canvas>
+                <p class="sr-only" id="clock-help" data-i18n="html.plan.clockHelp">Flechas izquierda y derecha: mueve el aterrizaje. Inicio y Fin: primer y último día de la ventana.</p>
+                <p class="sr-only" id="clock-live" aria-live="polite"></p>
+                <p class="sr-only" id="clock-summary"></p>
+              </figure>
+              <div class="res-readout">
+                <div class="readout" id="res-figures"></div>
+                <p class="hint res-energy" id="res-energy" aria-live="polite"></p>
+                <div class="plan-replan" aria-labelledby="plan-replan-title">
+                  <div class="plan-replan__text">
+                    <b class="eyebrow" id="plan-replan-title" data-i18n="html.plan.delayTitle">¿Y si se retrasa el lanzamiento?</b>
+                    <span class="plan-replan__margin" id="plan-replan-margin" aria-live="polite"></span>
+                  </div>
+                  <div class="rp-chips" role="group" aria-labelledby="plan-replan-title">
+                    <button type="button" class="btn btn--small" data-replan-delay="1">+1 d</button>
+                    <button type="button" class="btn btn--small" data-replan-delay="3">+3 d</button>
+                    <button type="button" class="btn btn--small" data-replan-delay="7">+7 d</button>
+                    <button type="button" class="btn btn--small" data-replan-delay="14">+14 d</button>
+                  </div>
+                  <a class="plan-replan__go" href="#replan" data-replan-delay="0" data-i18n="html.plan.replan">Replanificar →</a>
+                </div>
+              </div>
+              <div class="res-side">
+                <section class="res-alts" id="res-alts" aria-labelledby="res-alts-title" hidden>
+                  <span class="eyebrow" id="res-alts-title" data-i18n="html.plan.alts">Alternativas</span>
+                  <ol class="alts" id="res-alts-list"></ol>
+                </section>
+                <div class="res-sky">
+                  <div class="box__head sky-head">
+                    <span class="eyebrow" data-i18n="html.plan.sky">El cielo desde el sitio</span><span class="hint" id="plan-sky-hint" data-i18n="html.plan.skyHint">360°, altura no a escala</span>
+                    <div class="segmented sky-mode" id="plan-sky-mode" role="group" aria-label="Vista del cielo" data-i18n-aria-label="html.plan.skyMode">
+                      <button type="button" data-mode="2d" aria-pressed="true" aria-label="Cielo en 2D" data-i18n-aria-label="html.plan.sky2d">2D</button>
+                      <button type="button" data-mode="polar" aria-pressed="false" aria-label="Brújula del cielo, vista desde arriba" data-i18n-aria-label="html.plan.skyPolarLabel" data-i18n="html.plan.skyPolar">Brújula</button>
+                      <button type="button" data-mode="3d" aria-pressed="false" aria-label="Cielo en 3D, con el relieve" data-i18n-aria-label="html.plan.sky3d">3D</button>
+                    </div>
+                  </div>
+                  <div class="sky-error" id="plan-sky-error" role="alert" hidden>
+                    <p id="plan-sky-error-text"></p>
+                    <button type="button" class="btn btn--small" id="plan-sky-retry" data-i18n="html.retry">Reintentar</button>
+                  </div>
+                  <div class="chart" id="plan-sky-chart" data-explain="panorama">
+                    <canvas id="plan-panorama" aria-label="Cielo desde el sitio" data-i18n-aria-label="html.plan.panorama"></canvas>
+                    <div class="sky3d" id="plan-sky3d" hidden></div>
+                  </div>
+                  <p class="sky-notice" id="plan-sky-notice" role="status" hidden></p>
+                  <div class="player" data-explain="time">
+                    <button class="player__play" id="plan-play" type="button" aria-label="Reproducir la misión" data-i18n-aria-label="html.plan.play">▶</button>
+                    <input id="plan-hour" type="range" min="0" max="240" value="0" aria-label="Momento de la misión (la raya vertical de la línea de tiempo)" data-i18n-aria-label="html.plan.hour">
+                    <span class="player__text" id="plan-hour-value"></span>
+                  </div>
+                  <p class="plan-until" id="plan-until" aria-live="polite"></p>
+                </div>
+                <div class="res-actions">
+                  <a class="btn" id="res-3d" href="../viewpoint/" data-i18n="html.plan.view3d">Ver en 3D</a>
+                  <a class="btn btn--primary" id="res-advanced" href="#advanced" data-i18n="html.plan.advanced">Investigar en la vista avanzada →</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ View: Advanced ============ -->
+      <section id="view-advanced" class="adv" hidden>
+        <!-- Left column: the mission and, below it, the south pole -->
+        <div class="adv-side">
+          <div class="box mission-box">
+            <!-- The same chips as the top of Plan: each one opens its step there -->
+            <ol class="plan-steps adv-steps" id="mission-details" aria-label="Tu misión" data-i18n-aria-label="advanced.h.mission" data-explain="mission-details"></ol>
+            <label class="priority" data-explain="plan-priority">
+              <span class="eyebrow" data-i18n="advanced.h.sortBy">Ordenar por</span>
+              <select id="priority-options" aria-label="Qué priorizas al ordenar los sitios" data-i18n-aria-label="advanced.h.priority"></select>
+            </label>
+          </div>
+          <div class="box top-map-box" data-explain="top-map">
+            <div class="box__head">
+              <h2 data-i18n="advanced.h.southPole">Polo sur</h2>
+              <div class="segmented" role="group" aria-label="Encuadre del mapa" data-i18n-aria-label="advanced.h.framing">
+                <button type="button" data-zoom="0" aria-pressed="true" data-i18n="advanced.h.pole">Polo</button>
+                <button type="button" data-zoom="1" aria-pressed="false" data-i18n="advanced.h.zoomIn">Acercar</button>
+              </div>
+            </div>
+            <div class="segmented map-layers" role="group" aria-label="Qué muestra el mapa" data-i18n-aria-label="advanced.h.layers" data-explain="light-map">
+              <button type="button" data-light="1" aria-pressed="true" data-i18n="advanced.h.lightLayer">Luz en tu misión</button>
+              <button type="button" data-light="0" aria-pressed="false" data-i18n="advanced.h.reliefLayer">Solo relieve</button>
+            </div>
+            <div class="top-map-wrap">
+              <canvas id="top-map" aria-describedby="map-note" aria-label="Mapa del polo sur lunar con el top 3 de sitios numerado y la dirección del Sol y de la Tierra desde el sitio elegido" data-i18n-aria-label="advanced.h.mapLabel"></canvas>
+              <div class="float-tip" id="map-tip" hidden></div>
+            </div>
+            <div class="light-legend" id="light-legend">
+              <span data-i18n="advanced.h.noSun">Sin Sol</span><i aria-hidden="true"></i><span data-i18n="advanced.h.allSun">Sol toda la misión</span>
+            </div>
+            <div class="legend map-legend">
+              <span><i class="ray" style="--c: var(--color-sun)"></i><span data-i18n="advanced.h.toSun">Hacia el Sol</span></span>
+              <span><i class="ray" style="--c: var(--color-earth)"></i><span data-i18n="advanced.h.toEarth">Hacia la Tierra</span></span>
+              <span><i class="ray ray--hidden" style="--c: var(--color-text-muted)"></i><span data-i18n="advanced.h.blocked">Tapado por el relieve</span></span>
+            </div>
+            <p class="hint" id="map-note"></p>
+          </div>
+        </div>
+
+        <!-- Right column: the top 3 -->
+        <div class="adv-main" id="adv-main">
+          <div class="segmented adv-modes" role="group" aria-label="Qué se compara en Avanzado" data-i18n-aria-label="advanced.h.modes">
+            <button type="button" data-mode="top" aria-pressed="true" data-i18n="advanced.h.top3">Top 3 de sitios</button>
+            <button type="button" data-mode="scenarios" aria-pressed="false" data-i18n="advanced.h.compare">Comparar escenarios</button>
+          </div>
+          <!-- Second mode: 2 to 4 scenarios (site + landing date) side by side -->
+          <section class="box scenarios" id="scenarios" aria-labelledby="scenarios-title">
+            <div class="scenarios-head" data-explain="scenarios">
+              <div><h2 class="box-title" id="scenarios-title" data-i18n="advanced.h.compare">Comparar escenarios</h2><p class="hint" id="scenarios-hint"></p></div>
+              <button type="button" class="btn" id="scenario-add" data-i18n="advanced.h.addScenario">+ Añadir escenario</button>
+            </div>
+            <div class="table-scroll">
+              <table class="scenario-table" id="scenario-table" aria-describedby="scenarios-hint">
+                <thead id="scenario-head"></thead>
+                <tbody id="scenario-body"></tbody>
+              </table>
+            </div>
+            <p class="hint" id="scenarios-note"></p>
+          </section>
+          <div class="top-title" data-explain="top3"><h2 class="sr-only" data-i18n="advanced.h.top3Title">Top 3 de sitios donde aterrizar</h2><p class="hint" id="ranking-info"></p>
+            <details class="others" id="other-sites" data-explain="ranking" hidden></details>
+            <button type="button" class="btn btn--small" id="csv-sites" title="La comparación de todos los sitios, cada uno en su mejor fecha, para Excel u hojas de cálculo" data-i18n-title="advanced.h.csvSitesTitle">CSV</button></div>
+          <p class="empty" id="adv-loading" hidden data-i18n="advanced.h.loading">Calculando con el relieve LOLA…</p>
+          <div class="podium" id="podium" role="tablist" aria-label="Top 3 de sitios" data-i18n-aria-label="advanced.h.top3"></div>
+
+          <div class="box window-box" id="window-box">
+            <div class="window-head" data-explain="landing-strip">
+              <h3 id="window-title" data-i18n="advanced.h.when">¿Cuándo se puede aterrizar?</h3>
+              <div class="legend">
+                <span><i class="sq" style="--c: var(--color-ok)"></i><span data-i18n="advanced.h.viable">Viable</span></span>
+                <span><i class="sq" style="--c: var(--color-warn)"></i><span data-i18n="advanced.h.marginal">Justo</span></span>
+                <span><i class="sq sq--faint" style="--c: var(--color-bad)"></i><span data-i18n="advanced.h.notViable">No viable</span></span>
+                <span><b class="legend-mark">▾</b><span data-i18n="advanced.h.bestDate">Mejor fecha</span></span>
+              </div>
+            </div>
+            <div class="strips" id="strips"></div>
+            <div class="float-tip" id="strip-tip" hidden></div>
+          </div>
+
+          <article class="box detail" id="detail" role="tabpanel" aria-label="Detalle del sitio elegido" data-i18n-aria-label="advanced.detailSite">
+            <div class="detail-info">
+            <header class="detail-head" id="detail-head"></header>
+            <div id="detail-figures"></div>
+            <section class="around" id="detail-around" data-explain="around" aria-live="polite"></section>
+            <footer class="detail-foot" id="detail-foot"></footer>
+            </div>
+            <div class="detail-viz">
+            <div class="detail-charts" id="detail-charts">
+              <div class="chart" data-explain="panorama">
+                <div class="chart-head sky-head">
+                  <span class="eyebrow" data-i18n="advanced.h.sky">El cielo desde el sitio · 360°</span><span class="hint" id="sky-note"></span>
+                  <div class="segmented sky-mode" id="adv-sky-mode" role="group" aria-label="Vista del cielo" data-i18n-aria-label="advanced.h.skyMode">
+                    <button type="button" data-mode="2d" aria-pressed="true" aria-label="En 2D: el cielo 360° y la misión hora a hora" data-i18n-aria-label="advanced.h.sky2d">2D</button>
+                    <button type="button" data-mode="3d" aria-pressed="false" aria-label="En 3D: el cielo con el relieve, en lugar de las dos gráficas" data-i18n-aria-label="advanced.h.sky3d">3D</button>
+                  </div>
+                </div>
+                <canvas id="adv-sky" aria-label="Sol y Tierra sobre el horizonte del sitio elegido" data-i18n-aria-label="advanced.h.skyLabel"></canvas>
+                <div class="sky3d" id="adv-sky3d" hidden></div>
+                <p class="sky-notice" id="adv-sky-notice" role="status" hidden></p>
+              </div>
+              <div class="chart" data-explain="line">
+                <div class="chart-head"><span class="eyebrow" id="line-title">La misión, hora a hora</span><span class="hint" data-i18n="advanced.h.drag">arrastra para moverte</span>
+                  <button type="button" class="btn btn--small" id="csv-hours" title="El Sol y la Tierra de cada hora de la misión, para Excel u hojas de cálculo" data-i18n-title="advanced.h.csvHoursTitle" data-i18n="advanced.h.csvDownload">Descargar CSV</button></div>
+                <div class="spans" id="spans"></div>
+                <canvas id="adv-line" title="Arrastra para moverte por la misión" data-i18n-title="advanced.h.lineTitle" aria-label="Altura del Sol y de la Tierra sobre el relieve durante la misión" data-i18n-aria-label="advanced.h.lineLabel"></canvas>
+              </div>
+            </div>
+            <div class="player" data-explain="time">
+              <button class="player__play" id="play" type="button" aria-label="Reproducir la misión" data-i18n-aria-label="advanced.h.play">▶</button>
+              <input id="hour" type="range" min="0" max="240" value="0" aria-label="Momento de la misión" data-i18n-aria-label="advanced.h.hour">
+              <span class="player__text" id="hour-value"></span>
+            </div>
+            <p class="now num" id="adv-now" aria-live="off"></p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============ View: Replan ============ -->
+      <section id="view-replan" class="main replan" hidden>
+        <header class="rp-head">
+          <span class="section-title" data-i18n="replan.html.title">Replanificar</span>
+          <p class="hint" id="rp-trail" data-explain="original-plan"></p>
+          <p class="hint rp-head__sample" id="rp-sample" data-i18n-html="replan.html.sample" hidden>Plan de ejemplo: aún no has adoptado ninguno en <a href="#plan">Planificar</a>.</p>
+          <div class="rp-delay" data-explain="replan-window">
+            <span class="rp-delay__label" id="rp-chips-label" data-i18n="replan.html.delayQuestion">¿Cuánto se retrasa el lanzamiento?</span>
+            <div class="rp-chips" id="rp-chips" role="group" aria-labelledby="rp-chips-label">
+              <button type="button" class="btn" data-delay="0" data-i18n="replan.html.noDelay">Sin retraso</button>
+              <button type="button" class="btn" data-delay="1">+1 d</button>
+              <button type="button" class="btn" data-delay="3">+3 d</button>
+              <button type="button" class="btn" data-delay="7">+7 d</button>
+              <button type="button" class="btn" data-delay="14">+14 d</button>
+            </div>
+            <p class="hint rp-delay__landing" id="rp-delay-landing" aria-live="polite"></p>
+          </div>
+        </header>
+
+        <section class="rp-answer" id="rp-answer" aria-live="polite">
+          <h2 class="rp-answer__status" id="rp-status" tabindex="-1" data-i18n="replan.html.calculating">Calculando…</h2>
+          <p class="rp-answer__reason" id="rp-status-reason"></p>
+          <div class="rp-answer__rec" id="rp-head-actions"></div>
+          <div class="rp-sim" id="rp-sim" hidden>
+            <div class="rp-sim__head">
+              <b data-i18n="replan.html.simTitle">La misión, hora a hora</b>
+              <span class="num rp-sim__clock" id="rp-sim-clock" aria-live="off"></span>
+              <button type="button" class="btn" id="rp-sim-replay" data-i18n="replan.html.replay">↻ Repetir</button>
+            </div>
+            <div class="rp-sim__rows" id="rp-sim-rows"></div>
+            <div class="legend"><span><i style="--c: var(--color-sun)"></i><span data-i18n="replan.html.legendSun">Sol a la vista</span></span><span><i style="--c: var(--color-terrain)"></i><span data-i18n="replan.html.legendDark">Sin Sol: gasta batería</span></span><span><i style="--c: var(--color-bad)"></i><span data-i18n="replan.html.legendEmpty">Sin batería</span></span><span><i style="--c: var(--color-earth)"></i><span data-i18n="replan.html.legendEarth">Tierra a la vista</span></span></div>
+            <p class="rp-sim__why" id="rp-sim-why"></p>
+            <div class="rp-3d" id="rp-3d">
+              <span class="rp-3d__label" id="rp-3d-label" data-i18n="replan.html.3dLabel">Ver el relieve en 3D, con el Sol y la Tierra:</span>
+              <div class="segmented" role="group" aria-labelledby="rp-3d-label" id="rp-3d-choice"></div>
+              <a class="btn" id="rp-3d-link" target="_blank" rel="noopener" data-i18n="replan.html.3dLink">Ver en 3D ↗</a>
+              <p class="hint rp-3d__note" id="rp-3d-note"></p>
+            </div>
+          </div>
+        </section>
+
+        <section class="rp-outcomes" id="rp-outcomes"></section>
+
+        <details class="rp-details" id="rp-details">
+          <summary><span data-i18n="replan.html.details">Ver detalles</span> <span class="hint" data-i18n="replan.html.detailsHint">cuándo vale cada sitio, región, nave y fecha límite</span></summary>
+
+        <div class="rp-layout">
+
+          <div class="rp-main">
+            <section class="box rp-calendar-box" data-explain="sweep" aria-labelledby="rp-cal-title">
+              <div class="box__head">
+                <h3 class="section-title" id="rp-cal-title" data-i18n="replan.html.calTitle">Cuándo se puede aterrizar</h3>
+                <span class="hint" id="rp-cal-hint"></span>
+              </div>
+              <div class="rp-cal-legend" id="rp-cal-legend" aria-label="Leyenda" data-i18n-aria-label="replan.html.legend"></div>
+              <div class="table-scroll"><div class="rp-tl" id="rp-calendar"></div></div>
+              <p class="rp-tl__info" id="rp-tl-info" aria-live="polite"></p>
+              <p class="hint" id="rp-horizon"></p>
+            </section>
+          </div>
+          <aside class="box rp-controls" data-explain="changes" aria-labelledby="rp-controls-title">
+            <h3 class="section-title" id="rp-controls-title" data-i18n="replan.html.controlsTitle">Datos del cambio</h3>
+            <div class="field rp-field-short"><label for="rp-delay" data-i18n="replan.html.delayLabel">Retraso del lanzamiento (días)</label><input id="rp-delay" type="number" min="0" max="120" step="0.5" value="0" aria-describedby="rp-delay-help"><p class="hint" id="rp-delay-help" data-i18n="replan.html.delayHelp">Respecto al lanzamiento del plan original.</p></div>
+            <div class="field">
+              <label for="rp-not-after" data-i18n="replan.html.notAfter">Aterrizar como tarde el</label>
+              <input id="rp-not-after" type="date" aria-describedby="rp-not-after-help">
+              <p class="hint" id="rp-not-after-help" data-i18n="replan.html.notAfterHelp">Pasada esta fecha la misión ya no tiene sentido. Por defecto, 60 días tras el original.</p>
+            </div>
+            <details class="rp-fold" id="rp-craft" data-explain="requirements">
+              <summary><span class="rp-fold__title" data-i18n="replan.html.craft">Nave</span> <span class="rp-fold__summary" id="rp-craft-summary"></span> <span class="rp-fold__edit" data-i18n="replan.html.edit">Editar</span></summary>
+              <div class="rp-fold__body">
+                <div class="field"><label for="rp-battery" data-i18n="replan.html.battery">Batería: aguanta sin Sol (h)</label><input id="rp-battery" type="number" min="0" max="720" step="1" aria-describedby="rp-battery-help"><p class="hint" id="rp-battery-help" data-i18n="replan.html.batteryHelp">Horas a oscuras que resiste.</p></div>
+                <div class="field"><label for="rp-days" data-i18n="replan.html.days">Duración en la Luna (días)</label><input id="rp-days" type="number" min="1" max="30" step="0.5" aria-describedby="rp-days-help"><p class="hint" id="rp-days-help" data-i18n="replan.html.daysHelp">Desde el aterrizaje hasta el final de la misión.</p></div>
+                <div class="field"><label for="rp-earth" data-i18n="replan.html.earth">Comunicación mínima con la Tierra (%)</label><input id="rp-earth" type="number" min="0" max="100" step="5" aria-describedby="rp-earth-help"><p class="hint" id="rp-earth-help" data-i18n="replan.html.earthHelp">% del tiempo con la Tierra a la vista.</p></div>
+                <div class="field"><label for="rp-earth-gap" data-i18n="replan.html.earthGap">Máximo seguido sin la Tierra (h)</label><input id="rp-earth-gap" type="number" min="0" max="720" step="1" aria-describedby="rp-earth-gap-help"><p class="hint" id="rp-earth-gap-help" data-i18n="replan.html.earthGapHelp">Horas seguidas sin comunicación que admite la misión.</p></div>
+                <div class="field"><label for="rp-transit" data-i18n="replan.html.transit">Tránsito Tierra–Luna (días)</label><input id="rp-transit" type="number" min="0" max="180" step="0.5" aria-describedby="rp-transit-help"><p class="hint" id="rp-transit-help" data-i18n="replan.html.transitHelp">Del lanzamiento al aterrizaje. Solo cambia la fecha de lanzamiento.</p></div>
+              </div>
+            </details>
+            <details class="rp-fold" id="rp-advanced">
+              <summary><span class="rp-fold__title" data-i18n="replan.html.advanced">Avanzado</span> <span class="rp-fold__summary" data-i18n="replan.html.advancedSummary">hora exacta y radio de búsqueda</span></summary>
+              <div class="rp-fold__body">
+                <div class="field"><label for="rp-not-before" data-i18n="replan.html.notBefore">No antes de (UTC)</label><input id="rp-not-before" type="datetime-local" aria-describedby="rp-not-before-help"><p class="hint" id="rp-not-before-help" data-i18n="replan.html.notBeforeHelp">El retraso con hora exacta: la nave no puede aterrizar antes de este momento.</p></div>
+                <div class="field" data-explain="radius"><label for="rp-radius"><span data-i18n="replan.html.radius">Radio de la región:</span> <b class="num" id="rp-radius-value">60 km</b></label><input id="rp-radius" type="range" min="5" max="250" step="5" value="60" aria-describedby="rp-radius-help"><p class="hint" id="rp-radius-help" data-i18n="replan.html.radiusHelp">Distancia máxima desde el sitio original para buscar otros sitios (B y C).</p></div>
+              </div>
+            </details>
+            <figure class="rp-region-box">
+              <figcaption class="section-title" data-i18n="replan.html.region">Región</figcaption>
+              <canvas class="rp-region__map" id="rp-region-map" role="img" aria-label="Mapa del polo sur con la región" data-i18n-aria-label="replan.html.regionMap"></canvas>
+              <div class="rp-region__legend legend" id="rp-region-legend" aria-hidden="true"></div>
+              <div class="rp-region__list" id="rp-region-list"></div>
+            </figure>
+          </aside>
+        </div>
+        </details>
+      </section>
+
+      <!-- ============ View: Sources ============ -->
+      <section id="view-sources" class="sources" hidden data-explain="sources"></section>
+    </main>
+  </div>
+
+  <aside class="explain-card" id="explain-card" aria-live="polite"></aside>
+
+  <script type="module" src="js/app.js"></script>
+  <script type="module" src="../shared/version/badge.js"></script>
+</body>
+</html>

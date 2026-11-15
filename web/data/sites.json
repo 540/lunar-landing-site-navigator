@@ -1,0 +1,141 @@
+{
+  "generatedBy": "web/scripts/build-sites.mjs",
+  "from": "backend/src/sites.ts",
+  "sites": [
+    {
+      "id": "apollo11",
+      "name": "Apollo 11",
+      "region": "Mare Tranquillitatis",
+      "program": "Apollo",
+      "lat": 0.67408,
+      "lon": 23.47297,
+      "verified": true
+    },
+    {
+      "id": "apollo12",
+      "name": "Apollo 12",
+      "region": "Oceanus Procellarum",
+      "program": "Apollo",
+      "lat": -3.01239,
+      "lon": -23.42157,
+      "verified": true
+    },
+    {
+      "id": "apollo14",
+      "name": "Apollo 14",
+      "region": "Fra Mauro",
+      "program": "Apollo",
+      "lat": -3.6453,
+      "lon": -17.47136,
+      "verified": true
+    },
+    {
+      "id": "apollo15",
+      "name": "Apollo 15",
+      "region": "Hadley-Apennino",
+      "program": "Apollo",
+      "lat": 26.13222,
+      "lon": 3.63386,
+      "verified": true
+    },
+    {
+      "id": "apollo16",
+      "name": "Apollo 16",
+      "region": "Descartes",
+      "program": "Apollo",
+      "lat": -8.97301,
+      "lon": 15.50019,
+      "verified": true
+    },
+    {
+      "id": "apollo17",
+      "name": "Apollo 17",
+      "region": "Taurus-Littrow",
+      "program": "Apollo",
+      "lat": 20.1908,
+      "lon": 30.77168,
+      "verified": true
+    },
+    {
+      "id": "im1",
+      "name": "IM-1 Odysseus",
+      "region": "Malapert A",
+      "program": "CLPS",
+      "lat": -80.13,
+      "lon": 1.44,
+      "verified": true
+    },
+    {
+      "id": "im2-objetivo",
+      "name": "IM-2 Athena (objetivo)",
+      "region": "Mons Mouton",
+      "program": "CLPS",
+      "lat": -84.7754,
+      "lon": 29.128,
+      "verified": true
+    },
+    {
+      "id": "im2-alunizaje",
+      "name": "IM-2 Athena (alunizaje real)",
+      "region": "Mons Mouton",
+      "program": "CLPS",
+      "lat": -84.7906,
+      "lon": 29.1957,
+      "verified": true
+    },
+    {
+      "id": "blueghost1",
+      "name": "Blue Ghost M1",
+      "region": "Mare Crisium",
+      "program": "CLPS",
+      "lat": 18.5623,
+      "lon": 61.8103,
+      "verified": true
+    },
+    {
+      "id": "chandrayaan3",
+      "name": "Chandrayaan-3",
+      "region": "Shiv Shakti",
+      "program": "ISRO",
+      "lat": -69.3741,
+      "lon": 32.32,
+      "verified": true
+    },
+    {
+      "id": "slim",
+      "name": "SLIM",
+      "region": "Cráter Shioli",
+      "program": "JAXA",
+      "lat": -13.316,
+      "lon": 25.251,
+      "verified": true
+    },
+    {
+      "id": "change4",
+      "name": "Chang'e 4",
+      "region": "Von Kármán",
+      "program": "CNSA",
+      "lat": -45.4561,
+      "lon": 177.5885,
+      "verified": true
+    },
+    {
+      "id": "change6",
+      "name": "Chang'e 6",
+      "region": "Apollo (cuenca)",
+      "program": "CNSA",
+      "lat": -41.6385,
+      "lon": -153.9852,
+      "verified": true
+    },
+    {
+      "id": "shackleton-rim",
+      "name": "Cresta de conexión de Shackleton",
+      "region": "Polo sur",
+      "program": "Artemis (zona)",
+      "lat": -89.44027,
+      "lon": -137.12649,
+      "verified": false
+    }
+  ]
+}

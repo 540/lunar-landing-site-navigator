@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "id": "lola-shackleton",
+  "name": {
+    "es": "Cresta de Shackleton",
+    "en": "Shackleton ridge"
+  },
+  "siteId": "shackleton-rim",
+  "source": {
+    "type": "lola",
+    "products": [
+      "LDEM_80S_20MPP_ADJ@160m",
+      "LDEM_80S_20MPP_ADJ@20m"
+    ],
+    "demVersion": "lola-1bfa9a462f5d",
+    "citation": "LOLA LDEM (PGDA/GSFC), Barker et al. 2023"
+  },
+  "center": {
+    "lat": -89.44027,
+    "lon": -137.12649
+  },
+  "grid": {
+    "n": 48,
+    "cellM": 250
+  },
+  "start": {
+    "x": 11,
+    "y": 2
+  },
+  "pad": {
+    "x": 11,
+    "y": 30
+  },
+  "startUtc": "2027-10-04T00:00:00.000Z",
+  "hours": 336,
+  "facts": {
+    "earthFirstDay": 6,
+    "earthLastDay": 14,
+    "sunMaxElDeg": 1.4,
+    "sunAzPer48hDeg": 24.3,
+    "earthElRangeDeg": [
+      -6.9,
+      5.9
+    ],
+    "padKm": 7,
+    "startMaskNorthDeg": -0.7
+  },
+  "files": {
+    "cells": {
+      "file": "cells.bin",
+      "type": "float32",
+      "endian": "little",
+      "unit": "m",
+      "length": 2304,
+      "layout": "cells[i], i = y * n + x"
+    },
+    "sun": {
+      "file": "sun.bin",
+      "type": "uint8",
+      "scale": 255,
+      "length": 774144,
+      "layout": "sun[h * n * n + i]"
+    },
+    "earth": {
+      "file": "earth.bin",
+      "type": "bits",
+      "bitOrder": "lsb-first",
+      "length": 774144,
+      "layout": "bit h * n * n + i"
+    },
+    "masks": {
+      "file": "masks.bin",
+      "type": "int16",
+      "endian": "little",
+      "scale": 100,
+      "unit": "deg",
+      "length": 165888,
+      "azimuths": 72,
+      "layout": "masks[i * 72 + k], azimuth k * 5° from north towards east"
+    },
+    "series": {
+      "file": "series.json",
+      "format": "viewpoint series (version, siteId, start, stepMinutes, count, source, sun: { az, el }, earth: { az, el })",
+      "stepMinutes": 60,
+      "count": 1056,
+      "layout": "row h = startUtc + h hours; the game uses the first hours rows"
+    },
+    "map": {
+      "file": "map.png",
+      "width": 512,
+      "height": 512
+    },
+    "normals": {
+      "file": "map-normals.png",
+      "width": 1024,
+      "height": 1024,
+      "encoding": "RGB = (n + 1) / 2 × 255; x east, y south (image down), z up",
+      "pixelM": 11.71875
+    },
+    "albedo": {
+      "file": "map-albedo.png",
+      "width": 1024,
+      "height": 1024,
+      "encoding": "grey 0..255 = albedo 0..1"
+    },
+    "horizon": {
+      "file": "map-horizon.png",
+      "size": 256,
+      "directions": 48,
+      "cols": 8,
+      "rows": 6,
+      "offset": -2,
+      "step": 0.05,
+      "encoding": "grey PNG: degrees = offset + value × step",
+      "layout": "tile d at column d % cols, row floor(d / cols); azimuth d × 360 / directions from north towards east; pixel (x, y) of a tile = map point (x, y), centres at (x + 0.5) / size"
+    },
+    "horizonLow": {
+      "file": "map-horizon-low.png",
+      "size": 128,
+      "directions": 24,
+      "cols": 6,
+      "rows": 4,
+      "offset": -2,
+      "step": 0.05,
+      "encoding": "grey PNG: degrees = offset + value × step",
+      "layout": "tile d at column d % cols, row floor(d / cols); azimuth d × 360 / directions from north towards east; pixel (x, y) of a tile = map point (x, y), centres at (x + 0.5) / size"
+    },
+    "ao": {
+      "file": "map-ao.png",
+      "width": 1024,
+      "height": 1024,
+      "encoding": "grey 0..255 = occlusion 0.55..1.12",
+      "min": 0.55,
+      "max": 1.12
+    }
+  },
+  "sources": [
+    "Relieve: LOLA (LDEM_80S_20MPP_ADJ@160m, LDEM_80S_20MPP_ADJ@20m, demVersion lola-1bfa9a462f5d), LOLA LDEM (PGDA/GSFC), Barker et al. 2023. Alturas en el centro de cada celda y máscaras del horizonte con buildMask (observador a 2 m, preciso), giradas a los ejes del centro y remuestreadas a 72 azimuts.",
+    "Texturas del mapa: normales y oclusión de las alturas del DEM a 1024 × 1024 píxeles; albedo uniforme (0.6), porque LOLA no da reflectancia.",
+    "Efemérides: series() de backend/src (astronomy-engine) para shackleton-rim, hora a hora desde startUtc.",
+    "Fecha de inicio: fija en pipeline/game-scenarios.json (2027-10-04T00:00:00.000Z).",
+    "Fecha, salida y plataforma: el mejor candidato de pipeline/game-candidates.mjs (J9.3) con la regla de los paquetes de #293; se puede afinar con más fechas y salidas."
+  ]
+}

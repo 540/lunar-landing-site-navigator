@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "id": "im2-objetivo",
+  "name": {
+    "es": "Mons Mouton · IM-2 Athena (objetivo)",
+    "en": "Mons Mouton · IM-2 Athena (target)"
+  },
+  "center": {
+    "lat": -84.7754,
+    "lon": 29.128
+  },
+  "coordinatesVerified": true,
+  "extentKm": 40,
+  "grid": {
+    "cols": 257,
+    "rows": 257,
+    "stepKm": 0.15625
+  },
+  "units": {
+    "horizontal": "km",
+    "vertical": "km"
+  },
+  "heights": {
+    "file": "terrain-lod0.bin",
+    "encoding": "uint16-le",
+    "unit": "km",
+    "scale": 0.000087357,
+    "offset": 0.936785
+  },
+  "detail": [
+    {
+      "extentKm": 20,
+      "grid": {
+        "cols": 257,
+        "rows": 257,
+        "stepKm": 0.078125
+      },
+      "heights": {
+        "file": "terrain-lod1.bin",
+        "encoding": "delta16-gzip",
+        "unit": "km",
+        "scale": 0.000021921,
+        "offset": 4.497024
+      },
+      "products": [
+        "LDEM_80S_20MPP_ADJ@20m"
+      ]
+    },
+    {
+      "extentKm": 10,
+      "grid": {
+        "cols": 513,
+        "rows": 513,
+        "stepKm": 0.01953125
+      },
+      "heights": {
+        "file": "terrain-lod2.bin",
+        "encoding": "delta16-gzip",
+        "unit": "km",
+        "scale": 0.000007546,
+        "offset": 4.863476
+      },
+      "products": [
+        "LDEM_80S_20MPP_ADJ@20m"
+      ]
+    }
+  ],
+  "source": {
+    "type": "lola",
+    "products": [
+      "LDEM_80S_20MPP_ADJ@160m",
+      "LDEM_80S_20MPP_ADJ@20m"
+    ],
+    "demVersion": "lola-a2b1f19055d0",
+    "citation": "LOLA LDEM (PGDA/GSFC), Barker et al. 2023"
+  },
+  "sceneFrame": {
+    "projection": "orthographic",
+    "radiusKm": 1737.4,
+    "centerLat": -84.7754,
+    "centerLon": 29.128,
+    "axes": {
+      "x": "east",
+      "y": "up",
+      "z": "south"
+    }
+  },
+  "far": {
+    "file": "terrain-far.bin",
+    "extentKm": 300,
+    "grid": {
+      "cols": 257,
+      "rows": 257,
+      "stepKm": 1.171875
+    },
+    "heights": {
+      "encoding": "uint16-le",
+      "unit": "km",
+      "scale": 0.00034795,
+      "offset": -16.060116
+    }
+  },
+  "maskGrid": {
+    "file": "masks.bin",
+    "extentKm": 4,
+    "stepKm": 0.1,
+    "cols": 41,
+    "rows": 41,
+    "azimuths": 360,
+    "encoding": "int16-le",
+    "observerHeightM": 2,
+    "demVersion": "lola-c33d4bb7a8cf"
+  }
+}

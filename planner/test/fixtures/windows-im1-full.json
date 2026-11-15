@@ -1,0 +1,144 @@
+{
+    "site": {
+        "id": "im1",
+        "name": "IM-1 Odysseus",
+        "region": "Malapert A",
+        "program": "CLPS",
+        "latDeg": -80.13,
+        "lonDeg": 1.44,
+        "heightKm": 0,
+        "coordinatesVerified": true,
+        "custom": false,
+        "horizonModel": "sphere"
+    },
+    "start": "2027-01-01T00:00:00.000Z",
+    "end": "2027-07-01T00:00:00.000Z",
+    "mode": "full",
+    "sun": {
+        "summary": {
+            "count": 6,
+            "totalHours": 1981.114,
+            "fractionOfTime": 0.4561,
+            "longestWindowHours": 361.251
+        },
+        "windows": [
+            {
+                "start": "2027-01-14T20:55:01.611Z",
+                "end": "2027-01-29T22:10:06.006Z",
+                "durationHours": 361.251,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-02-13T20:44:54.287Z",
+                "end": "2027-02-28T02:58:38.701Z",
+                "durationHours": 342.229,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-03-15T19:31:40.635Z",
+                "end": "2027-03-29T08:45:59.326Z",
+                "durationHours": 325.239,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-04-14T14:22:09.346Z",
+                "end": "2027-04-27T17:27:52.998Z",
+                "durationHours": 315.095,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-05-14T03:42:44.209Z",
+                "end": "2027-05-27T06:06:06.064Z",
+                "durationHours": 314.389,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-06-12T11:38:46.904Z",
+                "end": "2027-06-25T22:33:23.467Z",
+                "durationHours": 322.91,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            }
+        ]
+    },
+    "earth": {
+        "summary": {
+            "count": 1,
+            "totalHours": 4344,
+            "fractionOfTime": 1,
+            "longestWindowHours": 4344
+        },
+        "windows": [
+            {
+                "start": "2027-01-01T00:00:00.000Z",
+                "end": "2027-07-01T00:00:00.000Z",
+                "durationHours": 4344,
+                "startsBeforeRange": true,
+                "endsAfterRange": true
+            }
+        ]
+    },
+    "sunAndEarth": {
+        "summary": {
+            "count": 6,
+            "totalHours": 1981.114,
+            "fractionOfTime": 0.4561,
+            "longestWindowHours": 361.251
+        },
+        "windows": [
+            {
+                "start": "2027-01-14T20:55:01.611Z",
+                "end": "2027-01-29T22:10:06.006Z",
+                "durationHours": 361.251,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-02-13T20:44:54.287Z",
+                "end": "2027-02-28T02:58:38.701Z",
+                "durationHours": 342.229,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-03-15T19:31:40.635Z",
+                "end": "2027-03-29T08:45:59.326Z",
+                "durationHours": 325.239,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-04-14T14:22:09.346Z",
+                "end": "2027-04-27T17:27:52.998Z",
+                "durationHours": 315.095,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-05-14T03:42:44.209Z",
+                "end": "2027-05-27T06:06:06.064Z",
+                "durationHours": 314.389,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-06-12T11:38:46.904Z",
+                "end": "2027-06-25T22:33:23.467Z",
+                "durationHours": 322.91,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            }
+        ]
+    },
+    "warnings": [
+        {
+            "code": "smooth_moon_polar",
+            "message": "Sin relieve (terrain=1): horizonte de Luna lisa a 0\u00b0 a m\u00e1s de 80\u00b0 de latitud. En los polos el relieve decide la luz y la visibilidad de la Tierra; estas cifras son optimistas o, en un cr\u00e1ter, directamente falsas."
+        }
+    ]
+}

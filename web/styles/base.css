@@ -1,0 +1,139 @@
+/* Shared page styles: reset, typography, top bar, layout with sidebar, map and explanation mode.
+   Reusable components (buttons, boxes, fields, badges, metrics…) live in components.css;
+   view-specific styles in plan.css, advanced.css, replan.css and sources.css.
+   Tokens are imported here so any page that links base.css (views, motion lab) gets them. */
+@import url("tokens.css");
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); font-size: 14px; line-height: var(--leading); }
+/* The lunar ground, fixed behind everything. A fixed layer rather than background-attachment: fixed, which iOS
+   ignores (the texture would stretch over the whole page height). */
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--bg-image), var(--color-bg); background-blend-mode: var(--bg-blend), normal; }
+
+/* Theme change (js/common/theme.js): the new face of the Moon sweeps over the page from the toggle, with a soft
+   terminator instead of a hard edge. --vt-x, --vt-y (the toggle) and --vt-r (farthest corner) are set from JS. */
+@property --terminator { syntax: "<length>"; inherits: false; initial-value: 0px; }
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+::view-transition-new(root) {
+  --soft: 160px;
+  -webkit-mask-image: radial-gradient(circle at var(--vt-x) var(--vt-y), #000 var(--terminator), transparent calc(var(--terminator) + var(--soft)));
+  mask-image: radial-gradient(circle at var(--vt-x) var(--vt-y), #000 var(--terminator), transparent calc(var(--terminator) + var(--soft)));
+  animation: terminator-sweep 0.9s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+@keyframes terminator-sweep { from { --terminator: calc(var(--soft) * -1); } to { --terminator: var(--vt-r); } }
+
+h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; }
+/* h2 is a section title by default (same look as .section-title in components.css). */
+h2 { font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-text-muted); font-weight: var(--weight-semibold); }
+h3 { font-size: 0.98rem; }
+p { margin: 0; }
+a { color: var(--color-link); }
+button, select, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* Text helpers */
+.eyebrow { font-family: var(--font-data); font-size: 0.68rem; letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--color-text-muted); }
+.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.hint { font-size: var(--text-xs); color: var(--color-text-muted); }
+.reason { font-size: var(--text-sm); color: var(--color-text-muted); }
+.text-ok { color: var(--color-ok); } .text-bad { color: var(--color-bad); } .text-warn { color: var(--color-warn); }
+
+/* Top bar */
+.topbar { position: sticky; top: 0; z-index: var(--z-topbar); background: var(--color-topbar); backdrop-filter: blur(8px); border-bottom: 1px solid var(--color-border); display: flex; flex-wrap: wrap; align-items: center; gap: 10px var(--space-6); padding: 10px var(--space-5); }
+.brand { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
+.brand h1 { font-size: 1.05rem; }
+.brand .moon { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 65% 40%, var(--color-surface) 0 38%, transparent 40%), var(--color-terrain); }
+/* Starry background (js/common/sky.js), behind everything; off while the page background is the lunar ground */
+.sky { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: var(--sky-opacity); }
+.sky canvas { width: 100%; height: 100%; display: block; }
+.app, .explain-banner { position: relative; z-index: 1; }
+.topbar .right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+/* Light / dark toggle: a small Moon (the page's own regolith) whose shadow moves like a phase. Dark theme is the
+   far side, in shadow but for a thin crescent; light theme is the lit side, full. On hover the terminator creeps
+   in a little; the click sweeps it all the way, in step with the page (see the theme change above). Icon only, as tall as the text buttons next to it. */
+.theme-btn { align-self: stretch; padding: 0; width: 36px; display: grid; place-items: center; }
+.topbar .lang-toggle { align-self: stretch; flex: none; }
+.topbar .lang-toggle button { font-weight: 600; letter-spacing: 0.04em; }
+.theme-btn__moon {
+  position: relative; width: 20px; height: 20px; border-radius: 50%; overflow: hidden;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 252, 245, 0.6), transparent 65%), url("../assets/regolith.jpg") 92% 12% / 500% auto, #fff8ea;
+  background-blend-mode: normal, multiply, normal;
+  box-shadow: inset -1px -1px 3px rgba(40, 32, 20, 0.25), 0 0 0 1px var(--color-border);
+}
+.theme-btn__moon::after {
+  content: ""; position: absolute; inset: -2px; border-radius: 50%;
+  background: var(--color-moon-shadow); filter: blur(1.5px);
+  transform: translateX(-30%); transition: transform 0.9s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.theme-btn:hover .theme-btn__moon::after, .theme-btn:focus-visible .theme-btn__moon::after { transform: translateX(-42%); }
+.theme-btn[data-mode="light"] .theme-btn__moon::after { transform: translateX(-118%); }
+.theme-btn[data-mode="light"]:hover .theme-btn__moon::after,
+.theme-btn[data-mode="light"]:focus-visible .theme-btn__moon::after { transform: translateX(-100%); }
+
+/* Layout: sidebar (Replan) + main */
+.app { display: grid; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); gap: var(--space-5); padding: var(--space-5); align-items: start; max-width: var(--page-width); margin: 0 auto; }
+.app.no-sidebar { grid-template-columns: minmax(0, 1fr); }
+.sidebar { display: grid; gap: var(--space-4); position: sticky; top: var(--topbar-height); max-height: calc(100vh - 92px); overflow-y: auto; padding-right: var(--space-1); }
+.main { display: grid; gap: 18px; min-width: 0; }
+/* Text that sits straight on the lunar ground (headlines, intros, notes between boxes) gets a halo in the page
+   tone so it reads over bright craters and dark maria alike; anything with its own background drops it. */
+.main { text-shadow: var(--text-halo); }
+.main :is(.box, .btn, .badge, .segmented, .tabs, .tiles > *, .rp-answer, input, select, textarea) { text-shadow: none; }
+
+/* Explanation mode (?debug=1) */
+.explain-banner { display: none; }
+body.explain-mode .explain-banner { display: block; background: var(--color-explain-soft); color: var(--color-explain); border-bottom: 1px solid var(--color-explain); padding: var(--space-2) var(--space-5); font-size: 0.84rem; }
+body.explain-mode [data-explain] { position: relative; outline: 1px dashed var(--color-explain); outline-offset: 3px; border-radius: var(--radius-sm); }
+.explain-btn { display: none; }
+body.explain-mode .explain-btn { display: grid; place-items: center; position: absolute; top: -9px; right: -9px; width: 20px; height: 20px; border-radius: 50%; background: var(--color-explain); color: var(--color-on-accent); border: 2px solid var(--color-surface); font: 700 11px/1 var(--font-body); cursor: help; z-index: 5; padding: 0; }
+body.explain-mode .app { padding-right: calc(var(--explain-width) + var(--space-5)); }
+/* The top bar makes room for the card too, so the explain button (the way out) stays visible. */
+body.explain-mode .topbar { padding-right: calc(var(--explain-width) + var(--space-5)); }
+.explain-card { position: fixed; top: 0; right: 0; bottom: 0; width: var(--explain-width); max-width: 100%; background: var(--color-surface); border-left: 2px solid var(--color-explain); z-index: var(--z-panel); overflow-y: auto; padding: 18px; display: none; gap: 14px; align-content: start; }
+body.explain-mode .explain-card { display: grid; }
+.explain-card h2 { color: var(--color-explain); }
+.explain-card dl { margin: 0; display: grid; gap: 10px; }
+.explain-card dt { font-family: var(--font-data); font-size: 0.68rem; text-transform: uppercase; letter-spacing: var(--tracking-caps); color: var(--color-text-muted); }
+.explain-card dd { margin: 0; }
+.explain-card .live { font-family: var(--font-data); font-size: 0.78rem; white-space: pre-wrap; background: var(--color-explain-soft); border-radius: var(--radius-md); padding: 10px; }
+.explain-card .glossary { display: grid; gap: 6px; font-size: 0.82rem; border-top: 1px solid var(--color-border); padding-top: var(--space-3); }
+.explain-card .glossary b { font-family: var(--font-display); }
+.highlighted { outline: 2px solid var(--color-explain) !important; outline-offset: 3px; }
+
+@media (max-width: 1100px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .sidebar { position: static; max-height: none; }
+  body.explain-mode .app, body.explain-mode .topbar { padding-right: var(--space-5); }
+  .explain-card { top: auto; height: 50vh; width: 100%; border-left: 0; border-top: 2px solid var(--color-explain); }
+}
+
+/* Phones: the top bar becomes three compact rows (brand, notice + explanation, tabs) and only the tabs stay stuck.
+   --topbar-hidden is what scrolls away: top padding + brand row + notice row + the two gaps. */
+@media (max-width: 700px) {
+  .topbar { --topbar-hidden: calc(8px + 24px + 6px + 28px + 6px); top: calc(-1 * var(--topbar-hidden)); gap: 6px; padding: 8px 12px 0; }
+  .brand { flex: 1 0 100%; min-width: 0; height: 24px; }
+  .brand h1 { font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .topbar .right { flex: 1 0 100%; order: 2; margin-left: 0; justify-content: space-between; gap: 6px; height: 28px; min-width: 0; }
+  .topbar .theme-btn { width: 30px; flex: none; }
+  .topbar .badge { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .topbar .badge { font-size: 0.62rem; white-space: nowrap; padding: 3px 6px; }
+  .topbar .btn { font-size: 0.78rem; padding: 4px 8px; white-space: nowrap; }
+  .tabs { flex: 1 0 100%; order: 3; margin: 0 -12px; padding: 0 12px; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs a { flex: none; white-space: nowrap; padding: 9px 12px; }
+  .app { padding: 12px; gap: 14px; }
+  body.explain-mode .app, body.explain-mode .topbar { padding-right: 12px; }
+  body.explain-mode .explain-banner { padding: 8px 12px; }
+}
+
+/* Text only for screen readers. */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* Very narrow phones: the top bar row has to fit in 320 px. After the 700 px block so it wins. */
+@media (max-width: 380px) {
+  .wide-only { display: none; }
+  .topbar .badge { letter-spacing: 0.02em; font-size: 0.56rem; }
+}

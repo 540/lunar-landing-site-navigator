@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <script src="js/theme-init.js"></script>
+  <title>Design system · Lunar Landing Site Navigator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="styles/components.css">
+  <link rel="stylesheet" href="styles/base.css">
+  <style>
+    /* Catalogue layout only */
+    .catalogue { max-width: 1100px; margin: 0 auto; padding: var(--space-8) var(--space-5); display: grid; gap: var(--space-6); }
+    .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-3); }
+    .swatch { display: grid; gap: var(--space-1); font-size: var(--text-xs); }
+    .swatch i { height: 44px; border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--c); }
+    .swatch code { color: var(--color-text-muted); }
+    .example { display: grid; gap: var(--space-3); padding: var(--space-4); border: 1px dashed var(--color-border); border-radius: var(--radius-lg); }
+    .example > .segmented { justify-self: start; }
+    .code { font-family: var(--font-data); font-size: var(--text-2xs); color: var(--color-text-muted); white-space: pre-wrap; background: var(--color-sunken); padding: var(--space-3); border-radius: var(--radius-md); margin: 0; overflow-x: auto; }
+    .scale { display: grid; gap: var(--space-2); }
+    .scale div { display: grid; grid-template-columns: 140px 1fr; align-items: baseline; gap: var(--space-3); }
+    .space i { display: block; height: 12px; background: var(--color-earth); border-radius: 2px; }
+    code { font-family: var(--font-data); font-size: 0.92em; }
+  </style>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png">
+  <link rel="apple-touch-icon" href="assets/icon-180.png">
+</head>
+<body>
+  <main class="catalogue" id="catalogue">
+    <header class="stack">
+      <span class="eyebrow">Lunar Landing Site Navigator · web</span>
+      <h1 class="headline">Design system</h1>
+      <p class="hint">Tokens en <code>styles/tokens.css</code> · componentes en <code>styles/components.css</code> · funciones que los generan en <code>js/common/ui.js</code> · guía en <code>styles/README.md</code>. <a href="./">← Volver al planificador</a></p>
+    </header>
+  </main>
+
+  <script type="module">
+    import * as UI from './js/common/ui.js';
+    import { esc } from './js/common/util.js';
+
+    const section = (title, description, html) => UI.box(`<h2>${title}</h2>${description ? `<p class="hint">${description}</p>` : ''}${html}`);
+    const example = (html, code) => `<div class="example">${html}${code ? `<pre class="code">${esc(code)}</pre>` : ''}</div>`;
+    const swatches = list => `<div class="swatches">${list.map(t => `<div class="swatch"><i style="--c: var(${t})"></i><code>${t}</code></div>`).join('')}</div>`;
+
+    const html = [
+      section('Color · superficies y texto', 'Tokens semánticos: es lo único que usan componentes, vistas y gráficos.', swatches([
+        '--color-bg', '--color-surface', '--color-surface-raised', '--color-sunken', '--color-sunken-deep',
+        '--color-border', '--color-text', '--color-text-muted'])),
+      section('Color · dominio y estado', 'Sol, Tierra y relieve en mapas y gráficos; ok / warn / bad para el veredicto; violeta para el modo explicación.', swatches([
+        '--color-sun', '--color-earth', '--color-terrain', '--color-mission', '--color-ok', '--color-warn', '--color-bad', '--color-explain', '--color-link'])),
+      section('Tipografía', 'Space Grotesk para títulos, IBM Plex Sans para texto, IBM Plex Mono para datos.', `<div class="scale">
+        <div><code class="hint">.headline</code><span class="headline">¿Dónde y cuándo aterrizo?</span></div>
+        <div><code class="hint">.featured</code><span class="featured">Cresta de Shackleton</span></div>
+        <div><code class="hint">.box-title</code><span class="box-title">Top 3 de sitios</span></div>
+        <div><code class="hint">h2 · .section-title</code><span class="section-title">Barrido de retraso</span></div>
+        <div><code class="hint">.eyebrow</code><span class="eyebrow">Mejor opción · datos de ejemplo</span></div>
+        <div><code class="hint">.num</code><span class="num">2027-03-29 12:00 UTC</span></div>
+        <div><code class="hint">cuerpo</code><span>Cumple: Sol toda la misión y comunicación suficiente.</span></div>
+        <div><code class="hint">.reason</code><span class="reason">El plan sigue valiendo con estos cambios.</span></div>
+        <div><code class="hint">.hint</code><span class="hint">360°, altura no a escala</span></div>
+      </div>`),
+      section('Espacio', 'Escala de 4 en 4 px: --space-1 … --space-8.', `<div class="scale space">${[1, 2, 3, 4, 5, 6, 7, 8].map(n => `<div><code class="hint">--space-${n}</code><i style="width: var(--space-${n})"></i></div>`).join('')}</div>`),
+
+      section('Botón', '', example(
+        `<div class="row">${UI.button('Secundario')}${UI.button('Primario', { variant: 'primary' })}${UI.button('Conmutador activo', { 'aria-pressed': 'true' })}</div>${UI.button('Bloque', { variant: 'primary', block: true })}`,
+        `UI.button('Adoptar', { 'data-adopt': 'a' })\nUI.button('Ver', { variant: 'primary', block: true })\n<button class="btn btn--primary">Ver</button>`)),
+      section('Insignia y veredicto', 'El tono va en data-tone. UI.verdict() traduce el veredicto del motor (viable / marginal / not_viable) a tono.', example(
+        `<div class="row">${UI.verdict({ code: 'viable', title: 'Viable' })}${UI.verdict({ code: 'marginal', title: 'Justo' })}${UI.verdict({ code: 'not_viable', title: 'No viable' })}${UI.verdict({ code: 'viable', title: 'Viable' }, { large: true })}</div>
+         <div class="row">${['ok', 'warn', 'bad', 'neutral'].map(t => UI.badge(t, { tone: t })).join('')}${UI.badge('Datos de ejemplo', { tone: 'warn', variant: 'outline' })}</div>`,
+        `UI.verdict(v)                    // v = M.verdict(r, req)\nUI.verdict(v, { large: true })\nUI.badge('datos de ejemplo', { tone: 'warn' })`)),
+      section('Caja', 'El contenedor base de las vistas. --roomy para el resultado principal.', example(
+        `<div class="tiles" style="--min: 220px">${UI.box('<div class="box__head"><h2>Título</h2><span class="hint">acción</span></div><p>Contenido de la caja.</p>')}${UI.box('<span class="eyebrow">Holgada</span><p class="featured">Malapert</p>', { className: 'box--roomy' })}</div>`,
+        `UI.box('<h2>Título</h2>…', { className: 'box--roomy', 'data-explain': 'best' })`)),
+      section('Campos de formulario', '', example(
+        `<fieldset class="field-group"><legend>Requisitos</legend><div class="grid" style="--cols: 3">
+          <div class="field"><label for="e1">Días en superficie</label><input id="e1" type="number" value="10"></div>
+          <div class="field"><label for="e2">Aguanta sin Sol (h)</label><input id="e2" type="number" value="12"></div>
+          <div class="field"><label for="e3">Perfil</label><select id="e3"><option>Lander robótico</option></select></div>
+        </div></fieldset>
+        <div class="field"><label for="e4">Retraso</label><input id="e4" type="range"></div>`,
+        `<fieldset class="field-group"><legend>Requisitos</legend>\n  <div class="grid" style="--cols: 3">\n    <div class="field"><label for="x">Días</label><input id="x" type="number"></div>\n  </div>\n</fieldset>`)),
+      section('Opción (radio en tarjeta)', '', example(
+        `<div class="options" role="radiogroup">${UI.option({ id: 'a', title: 'Lander robótico pequeño', detail: '10 días · aguanta 12 h sin Sol', checked: true })}${UI.option({ id: 'b', title: 'Rover de larga duración', detail: '14 días · aguanta 48 h sin Sol' })}</div>`,
+        `UI.option({ id, title, detail, checked })`)),
+      section('Control segmentado', '', example(
+        `<div class="segmented" role="group"><button type="button" aria-pressed="true">Luz</button><button type="button" aria-pressed="false">Tierra</button><button type="button" aria-pressed="false">Relieve</button></div>`)),
+      section('Lista seleccionable', '', example(
+        `<div class="list" style="max-width: 360px">${UI.selectable({ id: 'a', name: 'Cresta de Shackleton', pressed: true, extra: UI.verdict({ code: 'viable', title: 'Viable' }) })}${UI.selectable({ id: 'b', name: 'Macizo de Malapert', extra: UI.verdict({ code: 'not_viable', title: 'No viable' }) })}</div>`,
+        `UI.selectable({ id, name, pressed, extra: UI.verdict(v) })`)),
+      section('Métricas y cifras', 'Métrica: dato secundario (tono sun / earth). Cifra: dato clave comparado con un requisito (meets → verde o rojo).', example(
+        `<div class="metrics" style="max-width: 360px">${UI.metric({ label: 'Misión con Sol', value: '100 %', tone: 'sun' })}${UI.metric({ label: 'Misión con Tierra', value: '68 %', tone: 'earth' })}${UI.metric({ label: 'Elevación solar máx.', value: '1.5°' })}</div>
+         ${UI.figures([{ label: 'Sol', value: '100 %', meets: true }, { label: 'Sombra más larga', value: '2 d 4 h', note: 'aguanta 12 h', meets: false }, { label: 'Tierra visible', value: '82 %', note: 'pides 60 %', meets: true }])}`,
+        `UI.metric({ label, value, tone: 'sun' })\nUI.figures([{ label, value, note, meets }, …])`)),
+      section('Reproductor', '', example(
+        `<div class="player"><button class="player__play" type="button" aria-label="Reproducir">▶</button><input type="range" value="20" aria-label="Momento"><span class="player__text">+2 d · 2027-03-31 12:00 UTC</span></div>`)),
+      section('Leyenda y puntos', '', example(
+        UI.legend([{ text: 'Sol', color: 'var(--color-sun)' }, { text: 'Tierra', color: 'var(--color-earth)' }, { text: 'Relieve', color: 'var(--color-terrain)' }]) +
+        UI.dots(['ok', 'ok', 'warn', 'bad', 'ok', 'ok', 'bad', 'ok'].map(t => ({ color: `var(--color-${t})` }))),
+        `UI.legend([{ text: 'Sol', color: 'var(--color-sun)' }])\nUI.dots([{ color: verdictCssVar('viable'), title: '…' }])`)),
+      section('Tabla', '', example(
+        UI.table(['Recurso', 'Para qué', 'Estado'], [['<a href="#">JPL Horizons</a>', 'Posición del Sol y la Tierra', UI.badge('datos de ejemplo', { tone: 'warn' })], ['<a href="#">Quickmap</a>', 'Coordenadas reales', UI.badge('pendiente', { tone: 'bad' })]]),
+        `UI.table(['Recurso', 'Estado'], [[cellHtml, cellHtml], …])`)),
+      section('Pestañas', '', example(`<nav class="tabs"><a href="#" aria-current="page">Planificar</a><a href="#">Avanzado</a><a href="#">Replanificar</a></nav>`)),
+      section('Vacío', '', example(UI.empty('Ningún sitio del catálogo es viable en esa fecha.'))),
+    ].join('');
+    document.getElementById('catalogue').insertAdjacentHTML('beforeend', html);
+  </script>
+</body>
+</html>

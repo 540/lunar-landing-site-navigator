@@ -1,0 +1,130 @@
+{
+    "site": {
+        "id": "shackleton-rim",
+        "name": "Cresta de conexi\u00f3n de Shackleton",
+        "region": "Polo sur",
+        "program": "Artemis (zona)",
+        "latDeg": -89.44027,
+        "lonDeg": -137.12649,
+        "heightKm": 0,
+        "coordinatesVerified": false,
+        "custom": false,
+        "horizonModel": "sphere"
+    },
+    "start": "2027-01-01T00:00:00.000Z",
+    "end": "2027-07-01T00:00:00.000Z",
+    "mode": "full",
+    "sun": {
+        "summary": {
+            "count": 2,
+            "totalHours": 699.921,
+            "fractionOfTime": 0.1611,
+            "longestWindowHours": 360.726
+        },
+        "windows": [
+            {
+                "start": "2027-01-01T00:00:00.000Z",
+                "end": "2027-01-16T00:43:34.307Z",
+                "durationHours": 360.726,
+                "startsBeforeRange": true,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-01-25T09:35:42.334Z",
+                "end": "2027-02-08T12:47:22.822Z",
+                "durationHours": 339.195,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            }
+        ]
+    },
+    "earth": {
+        "summary": {
+            "count": 7,
+            "totalHours": 1766.595,
+            "fractionOfTime": 0.4067,
+            "longestWindowHours": 269.976
+        },
+        "windows": [
+            {
+                "start": "2027-01-11T19:11:57.627Z",
+                "end": "2027-01-22T18:18:29.619Z",
+                "durationHours": 263.109,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-02-08T00:03:16.436Z",
+                "end": "2027-02-19T05:09:13.271Z",
+                "durationHours": 269.099,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-03-07T06:30:49.658Z",
+                "end": "2027-03-18T12:29:23.525Z",
+                "durationHours": 269.976,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-04-03T12:31:32.725Z",
+                "end": "2027-04-14T15:10:59.619Z",
+                "durationHours": 266.657,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-04-30T16:37:33.955Z",
+                "end": "2027-05-11T16:07:55.928Z",
+                "durationHours": 263.506,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-05-27T19:15:13.623Z",
+                "end": "2027-06-07T19:39:12.393Z",
+                "durationHours": 264.4,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-06-23T22:09:07.998Z",
+                "end": "2027-07-01T00:00:00.000Z",
+                "durationHours": 169.848,
+                "startsBeforeRange": false,
+                "endsAfterRange": true
+            }
+        ]
+    },
+    "sunAndEarth": {
+        "summary": {
+            "count": 2,
+            "totalHours": 114.262,
+            "fractionOfTime": 0.0263,
+            "longestWindowHours": 101.527
+        },
+        "windows": [
+            {
+                "start": "2027-01-11T19:11:57.627Z",
+                "end": "2027-01-16T00:43:34.307Z",
+                "durationHours": 101.527,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-02-08T00:03:16.436Z",
+                "end": "2027-02-08T12:47:22.822Z",
+                "durationHours": 12.735,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            }
+        ]
+    },
+    "warnings": [
+        {
+            "code": "smooth_moon_polar",
+            "message": "Sin relieve (terrain=1): horizonte de Luna lisa a 0\u00b0 a m\u00e1s de 80\u00b0 de latitud. En los polos el relieve decide la luz y la visibilidad de la Tierra; estas cifras son optimistas o, en un cr\u00e1ter, directamente falsas."
+        }
+    ]
+}

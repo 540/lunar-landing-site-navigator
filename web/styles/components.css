@@ -1,0 +1,271 @@
+/* =====================================================================
+   Design system components.
+   Each block is one component. Its reference HTML is in design-system.html
+   and, when it is generated from JS, in js/common/ui.js.
+   They only use semantic tokens (tokens.css).
+   Loaded before base.css; base.css only holds page-level styles, so there is
+   no overlap. Modifiers are written .btn.btn--x / .box.box--x on purpose.
+   ===================================================================== */
+
+/* ---------- Typography helpers ---------- */
+
+/* Section title: small, uppercase and muted. Same look as h2 in base.css. */
+.section-title { font-family: var(--font-display); font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-text-muted); font-weight: var(--weight-semibold); }
+/* View headline: "¿Dónde y cuándo aterrizo?" */
+.headline { font-family: var(--font-display); font-size: var(--text-3xl); letter-spacing: -0.01em; }
+/* Large title inside a box: "Top 3 de sitios" */
+.box-title { font-family: var(--font-display); font-size: 1.4rem; text-transform: none; letter-spacing: 0; color: var(--color-text); }
+/* Featured value: the recommended site */
+.featured { font-family: var(--font-display); font-size: var(--text-4xl); line-height: var(--leading-tight); letter-spacing: -0.01em; text-transform: none; color: var(--color-text); font-weight: var(--weight-semibold); }
+.text-sun { color: var(--color-sun-text); }
+.text-earth { color: var(--color-earth); }
+
+/* ---------- Layout ---------- */
+
+/* Vertical stack. Change the gap with --gap. */
+.stack { display: grid; gap: var(--gap, var(--space-3)); align-content: start; min-width: 0; }
+/* Wrapping horizontal row. */
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap, var(--space-3)); }
+.row.between { justify-content: space-between; }
+.row.top { align-items: start; }
+.row.bottom { align-items: end; }
+/* Grid of N equal columns: style="--cols: 3". --cols-narrow sets the columns below 1100 px. */
+.grid { display: grid; gap: var(--gap, var(--space-2)); grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); }
+@media (max-width: 1100px) { .grid { grid-template-columns: repeat(var(--cols-narrow, var(--cols, 2)), minmax(0, 1fr)); } }
+/* Cards of minimum width --min that fill the row. */
+.tiles { display: grid; gap: var(--gap, var(--space-4)); grid-template-columns: repeat(auto-fit, minmax(var(--min, 280px), 1fr)); }
+
+/* ---------- Button ----------
+   .btn                       secondary
+   .btn.btn--primary          main action of the view
+   .btn.btn--block            full width
+   .btn[aria-pressed="true"]  toggled on
+*/
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text);
+  border-radius: var(--radius-md); padding: 6px var(--space-3); cursor: pointer; text-decoration: none;
+}
+.btn:hover { background: var(--color-surface-raised); }
+.btn.btn--primary { background: var(--color-text); color: var(--color-text-inverse); border-color: var(--color-text); font-weight: var(--weight-semibold); padding: 9px var(--space-4); }
+.btn.btn--primary:hover { background: var(--color-text-muted); }
+.btn.btn--block { width: 100%; font-size: var(--text-lg); }
+.btn[aria-pressed="true"] { background: var(--color-text); color: var(--color-text-inverse); border-color: var(--color-text); }
+.btn.btn--explain[aria-pressed="true"] { background: var(--color-explain); border-color: var(--color-explain); color: var(--color-text-inverse); }
+
+/* ---------- Box (card / panel) ----------
+   .box               container with background, border and inner gap
+   .box.box--roomy    more breathing room (main result)
+   .box__head         header: title on the left, actions on the right
+*/
+.box {
+  background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-box); backdrop-filter: blur(var(--surface-blur)); padding: 14px; display: grid; gap: var(--space-3); align-content: start; min-width: 0;
+}
+.box > * { min-width: 0; } /* a wide child (a table) scrolls inside it instead of widening the box */
+.box.box--roomy { padding: var(--space-6); gap: var(--space-5); }
+.box__head { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); }
+
+/* ---------- Form field ----------
+   <div class="field"><label>…</label><input|select></div>
+   <fieldset class="field-group"><legend>…</legend>…</fieldset> groups fields.
+*/
+.field { display: grid; gap: var(--space-1); min-width: 0; }
+.field > label { font-size: 0.78rem; color: var(--color-text-muted); }
+.field input:not([type="range"]), .field select {
+  width: 100%; padding: 6px var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  background: var(--color-sunken); font-family: var(--font-data); font-size: 0.85rem;
+}
+.field select { font-family: var(--font-body); }
+.field input[type="range"] { width: 100%; accent-color: var(--color-earth); }
+.player input[type="range"] { width: 100%; min-width: 0; }
+.field-group { border: 0; margin: 0; padding: 0; display: grid; gap: var(--space-2); min-width: 0; }
+.field-group > legend { font-family: var(--font-data); font-size: var(--text-2xs); letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--color-text-muted); padding: 0; margin-bottom: var(--space-2); }
+
+/* ---------- Segmented control ----------
+   Mutually exclusive buttons with aria-pressed.
+*/
+.segmented { display: inline-flex; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.segmented button { border: 0; background: var(--color-surface); padding: var(--space-1) 10px; cursor: pointer; font-size: 0.78rem; }
+.segmented button[aria-pressed="true"] { background: var(--color-text); color: var(--color-surface); }
+
+/* ---------- Badge ----------
+   <span class="badge" data-tone="ok|warn|bad|neutral">text</span>
+   .badge--pill     rounded with border (verdict)
+   .badge--large    for the main result
+   .badge--outline  rectangular with border (prototype notice)
+*/
+.badge {
+  display: inline; font-family: var(--font-data); font-size: var(--text-3xs);
+  text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 6px; border-radius: var(--radius-sm); white-space: nowrap;
+  color: var(--color-text-muted); background: var(--color-surface-raised);
+}
+.badge[data-tone="ok"] { color: var(--color-ok); background: var(--color-ok-soft); }
+.badge[data-tone="warn"] { color: var(--color-warn); background: var(--color-warn-soft); }
+.badge[data-tone="bad"] { color: var(--color-bad); background: var(--color-bad-soft); }
+.badge--pill { border: 1px solid currentColor; border-radius: var(--radius-pill); padding: 2px var(--space-2); }
+.badge--large { font-size: 0.85rem; padding: 6px 14px; }
+.badge--outline { border: 1px solid currentColor; font-size: 0.7rem; padding: var(--space-1) var(--space-2); }
+
+/* ---------- Metric ----------
+   Small label + monospace value. data-tone="sun|earth" colours the value.
+*/
+.metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+.metric { display: grid; gap: 1px; }
+.metric > span { font-size: var(--text-2xs); color: var(--color-text-muted); }
+.metric > b { font-family: var(--font-data); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums; font-size: var(--text-xl); }
+.metric[data-tone="sun"] > b { color: var(--color-sun-text); }
+.metric[data-tone="earth"] > b { color: var(--color-earth); }
+
+/* ---------- Key figures ----------
+   Row of large figures split by a thin line.
+   <div class="figures"><div class="figure"><span/><b/><small/></div>…</div>
+*/
+.figures { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); gap: 1px; background: var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
+.figure { background: var(--color-surface-raised); padding: var(--space-3) 14px; display: grid; gap: 2px; }
+.figure > span { font-size: var(--text-xs); color: var(--color-text-muted); }
+.figure > b { font-family: var(--font-data); font-weight: var(--weight-medium); font-size: var(--text-2xl); font-variant-numeric: tabular-nums; }
+.figure > small { font-size: var(--text-2xs); color: var(--color-text-muted); }
+/* Robustness band of the figure, «[55–66 %]» (UI.band) */
+.figure > .figure-band { font-family: var(--font-data); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+@media (max-width: 900px) { .figures { grid-template-columns: minmax(0, 1fr); } }
+
+/* Deep polar note beside the figures of a site, south of 85°S (UI.deepPolarNote, #437): spans the whole readout */
+.deep-polar-note { grid-column: 1 / -1; margin: var(--space-1) 0 0; font-size: var(--text-2xs); color: var(--color-warn); }
+.deep-polar-note a { color: inherit; text-decoration: underline; }
+
+/* ---------- Legend ----------
+   <div class="legend"><span><i style="--c: var(--color-sun)"></i>Sol</span></div>
+*/
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: var(--text-xs); color: var(--color-text-muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; background: var(--c, currentColor); }
+
+/* ---------- Player ----------
+   Play button + time slider + text with the current moment.
+*/
+.player { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; }
+.player__play { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--color-border); background: var(--color-surface-raised); cursor: pointer; }
+/* The text column reserves the room of its longest text (--player-text, in characters of the monospaced font):
+   sized by its content, the slider would grow and shrink with every hour during playback. */
+.player__text { min-width: var(--player-text, auto); font-family: var(--font-data); font-size: var(--text-sm); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ---------- Option (radio card) ----------
+   <button class="option" role="radio" aria-checked><b>Title</b><span>detail</span></button>
+*/
+.options { display: grid; gap: var(--space-2); }
+.option { display: grid; gap: 2px; text-align: left; border: 1px solid var(--color-border); background: var(--color-surface-raised); border-radius: var(--radius-lg); padding: 9px var(--space-3); cursor: pointer; }
+.option > b { font-family: var(--font-display); font-size: 0.98rem; }
+.option > span { font-size: 0.78rem; color: var(--color-text-muted); }
+.option[aria-checked="true"] { border-color: var(--color-text); box-shadow: inset 0 0 0 1px var(--color-text); }
+
+/* ---------- Selectable list item ----------
+   Checkbox + name + extra, with aria-pressed.
+*/
+.list { display: grid; gap: var(--space-1); }
+.selectable { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: var(--space-2); align-items: center; padding: 6px var(--space-2); border-radius: var(--radius-md); cursor: pointer; border: 1px solid transparent; background: none; text-align: left; width: 100%; }
+.selectable:hover { background: var(--color-surface-raised); }
+.selectable[aria-pressed="true"] { border-color: var(--color-border); background: var(--color-surface-raised); }
+.selectable__check { width: 14px; height: 14px; border-radius: 3px; border: 1.5px solid var(--color-text-muted); }
+.selectable[aria-pressed="true"] .selectable__check { background: var(--color-text); border-color: var(--color-text); }
+.selectable__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- Table ---------- */
+.table-scroll { overflow-x: auto; max-width: 100%; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+.data-table th, .data-table td { text-align: left; padding: var(--space-2) 10px; border-bottom: 1px solid var(--color-border); vertical-align: top; }
+/* On a phone the table keeps readable columns and scrolls sideways inside .table-scroll instead of squeezing. */
+@media (max-width: 700px) { .data-table { min-width: 640px; } }
+.data-table th { font-size: var(--text-2xs); color: var(--color-text-muted); font-weight: var(--weight-medium); text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* ---------- Chart ----------
+   Canvas container with its eyebrow. The canvas takes the container width.
+*/
+.chart { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-1); }
+.chart canvas { width: 100%; display: block; border-radius: var(--radius-md); background: var(--color-sunken); }
+
+/* ---------- Status dots ----------
+   Row of coloured circles (e.g. the 8 points of the deviation test).
+*/
+.dots { display: flex; gap: 6px; }
+.dots i { width: 16px; height: 16px; border-radius: 50%; background: var(--c, var(--color-terrain)); }
+
+/* ---------- Empty state ---------- */
+.empty { color: var(--color-text-muted); padding: var(--space-6); text-align: center; border: 1px dashed var(--color-border); border-radius: 10px; }
+/* Loading screen of the planner (js/common/loading.js, #443): a card that floats over the page while the windows load,
+   so the layout under it does not jump; with an error it says what failed and offers to try again. */
+.loading { position: fixed; z-index: 30; top: 96px; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--space-1) var(--space-3); width: min(92vw, 440px); padding: var(--space-4) var(--space-5); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); backdrop-filter: blur(12px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45); }
+.loading[hidden] { display: none; }
+.loading p { margin: 0; grid-column: 2; }
+.loading__spinner { grid-row: 1 / span 2; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--color-border); border-top-color: var(--color-sun); animation: loading-spin 0.9s linear infinite; }
+.loading__text { font-weight: var(--weight-medium); }
+.loading__slow, .loading__error { font-size: var(--text-sm); color: var(--color-text-muted); }
+.loading.is-error .loading__spinner { display: none; }
+.loading.is-error .loading__text { display: none; }
+.loading.is-error p, .loading.is-error .btn { grid-column: 1 / -1; }
+.loading.is-error .loading__error { color: var(--color-bad); }
+.loading .btn { justify-self: start; grid-column: 2; }
+@keyframes loading-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .loading__spinner { animation: none; border-top-color: var(--color-border); border-color: var(--color-sun); } }
+
+/* ---------- Navigation tabs ---------- */
+.tabs { display: flex; gap: var(--space-1); }
+.tabs a { text-decoration: none; color: var(--color-text-muted); padding: 6px var(--space-3); border-radius: var(--radius-md) var(--radius-md) 0 0; font-weight: var(--weight-medium); }
+.tabs a[aria-current="page"] { color: var(--color-text); background: var(--color-surface-raised); box-shadow: inset 0 -2px 0 var(--color-text); }
+
+/* ---------- Sky from the site: 2D / 3D switch and the 3D view (js/common/sky-view.js, sky3d.js) ----------
+   .sky-head          title, note and the .segmented.sky-mode switch on the right
+   .sky-open          the ⤢ next to the switch: opens the 3D viewer of viewpoint/ at this site and instant, on foot
+   .sky3d             the 3D view: stage (canvas + labels over it) and a bar of buttons (Sol, Tierra)
+   .sky-notice        why the view went back to 2D
+*/
+.sky-head { flex-wrap: wrap; align-items: center; justify-content: flex-start; }
+.sky-head .sky-mode { margin-left: auto; flex: none; }
+.segmented button:disabled { opacity: 0.45; cursor: not-allowed; }
+.sky-open { display: inline-grid; place-items: center; flex: none; min-width: 32px; min-height: 32px; margin-left: var(--space-1); border-radius: var(--radius-md); color: var(--color-text-muted); font-size: var(--text-lg); line-height: 1; text-decoration: none; }
+.sky-open:hover { color: var(--color-text); background: var(--color-surface-raised); }
+.sky-open[hidden] { display: none; }
+.chart canvas[hidden], .sky3d[hidden] { display: none; }
+.sky3d { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-2); min-width: 0; } /* never wider than its column: the canvas follows the stage width */
+.sky3d__stage { position: relative; overflow: hidden; border-radius: var(--radius-md); background: var(--color-space); }
+.sky3d__stage .sky3d__canvas { display: block; width: 100%; background: var(--color-space); cursor: grab; touch-action: pan-y; }
+.sky3d__canvas:active { cursor: grabbing; }
+.sky3d__canvas:focus-visible { outline-offset: -2px; }
+.sky3d__labels { position: absolute; inset: 0; pointer-events: none; }
+.sky3d__label { position: absolute; transform: translate(-50%, -170%); padding: 1px 6px; border-radius: var(--radius-md); background: var(--color-map-label-bg); font-family: var(--font-data); font-size: var(--text-2xs); white-space: nowrap; }
+.sky3d__label[hidden] { display: none; }
+.sky3d__label--sun { color: var(--color-map-sun); }
+.sky3d__label--earth { color: var(--color-map-earth); }
+.sky3d__label--compass { transform: translate(-50%, -50%); background: none; color: var(--color-map-text); }
+.sky3d__bar { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.sky3d__btn { padding: 2px 10px; font-size: var(--text-xs); }
+.sky-notice { margin: 0; font-size: var(--text-sm); color: var(--color-warn); }
+.sky-notice[hidden] { display: none; }
+/* The sky could not be loaded: what failed and a way to ask again, where the chart would be. */
+.sky-error { display: grid; gap: var(--space-2); justify-items: start; padding: var(--space-4); border-radius: var(--radius-md); background: var(--color-bad-soft); font-size: var(--text-sm); }
+.sky-error p { margin: 0; }
+.sky-error[hidden], .chart[hidden] { display: none; }
+
+/* ---------- Mission history (js/common/history-panel.js, #246) ----------
+   .history-btn       button in the top bar: clock icon + label; on phones only the icon
+   .history-dialog    modal <dialog> with the list; its padding is in __body, so a click on the backdrop closes it
+   .history-item      a mission: the button that opens it and «Quitar»
+*/
+.history-btn svg { flex: none; }
+@media (max-width: 700px) { .history-btn__label { display: none; } }
+.history-dialog { width: min(94vw, 560px); max-height: min(86vh, 760px); padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); backdrop-filter: blur(14px); color: var(--color-text); box-shadow: var(--shadow-pop); }
+.history-dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+html:has(.history-dialog[open]) { overflow: hidden; }
+.history-dialog__body { display: grid; gap: var(--space-3); padding: var(--space-4); }
+.history-dialog__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.history-dialog__head h2 { margin: 0; }
+.history-dialog__body > p { margin: 0; }
+.history-dialog__clear { justify-self: start; }
+.history-dialog [hidden] { display: none; }
+.history-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.history-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding-right: var(--space-2); }
+.history-item:hover, .history-item:focus-within { background: var(--color-surface-raised); }
+.history-item__open { display: grid; gap: 2px; padding: var(--space-2) var(--space-3); border: 0; border-radius: var(--radius-md); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.history-item__open:disabled { cursor: not-allowed; opacity: 0.6; }
+.history-item__open small { font-size: var(--text-xs); color: var(--color-text-muted); }
+.history-item__title { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.history-item__remove { padding: 2px var(--space-2); font-size: var(--text-xs); }

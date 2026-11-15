@@ -1,0 +1,11 @@
+{
+  "name": "lunar-navigator-planner",
+  "version": "0.1.0",
+  "description": "Evaluador de viabilidad de aterrizajes del Lunar Landing Site Navigator, sobre la API de datos v1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "evaluate": "node src/cli.js",
+    "test": "node --test test/*.test.js"
+  }
+}

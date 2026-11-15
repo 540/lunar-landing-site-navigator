@@ -1,0 +1,123 @@
+{
+  "version": 1,
+  "id": "ridge-slope",
+  "name": {
+    "es": "Ladera de la cresta (≈4 km al lado)",
+    "en": "Slope of the ridge (≈4 km away)"
+  },
+  "center": {
+    "lat": -89.463,
+    "lon": -151.2
+  },
+  "extentKm": 40,
+  "grid": {
+    "cols": 257,
+    "rows": 257,
+    "stepKm": 0.15625
+  },
+  "units": {
+    "horizontal": "km",
+    "vertical": "km"
+  },
+  "heights": {
+    "file": "terrain-lod0.bin",
+    "encoding": "uint16-le",
+    "unit": "km",
+    "scale": 0.000075261,
+    "offset": -2.980165
+  },
+  "detail": [
+    {
+      "extentKm": 20,
+      "grid": {
+        "cols": 257,
+        "rows": 257,
+        "stepKm": 0.078125
+      },
+      "heights": {
+        "file": "terrain-lod1.bin",
+        "encoding": "delta16-gzip",
+        "unit": "km",
+        "scale": 0.000060757,
+        "offset": -2.028449
+      },
+      "products": [
+        "LDEM_80S_20MPP_ADJ@20m"
+      ]
+    },
+    {
+      "extentKm": 10,
+      "grid": {
+        "cols": 513,
+        "rows": 513,
+        "stepKm": 0.01953125
+      },
+      "heights": {
+        "file": "terrain-lod2.bin",
+        "encoding": "delta16-gzip",
+        "unit": "km",
+        "scale": 0.000022679,
+        "offset": 0.467749
+      },
+      "products": [
+        "LDEM_80S_20MPP_ADJ@20m"
+      ]
+    },
+    {
+      "extentKm": 2.5,
+      "grid": {
+        "cols": 513,
+        "rows": 513,
+        "stepKm": 0.0048828125
+      },
+      "heights": {
+        "file": "terrain-lod3.bin",
+        "encoding": "delta16-gzip",
+        "unit": "km",
+        "scale": 0.000005383,
+        "offset": 1.269578
+      },
+      "products": [
+        "LOLA_5MPP_Site01@5m"
+      ],
+      "measured": 0.11,
+      "rmsM": 0.32,
+      "citation": "LOLA 5 m/px de los sitios del polo sur (PGDA/GSFC), Barker et al. 2021"
+    }
+  ],
+  "source": {
+    "type": "lola",
+    "products": [
+      "LDEM_80S_20MPP_ADJ@160m",
+      "LDEM_80S_20MPP_ADJ@20m"
+    ],
+    "demVersion": "lola-b4686a47469d",
+    "citation": "LOLA LDEM (PGDA/GSFC), Barker et al. 2023"
+  },
+  "sceneFrame": {
+    "projection": "orthographic",
+    "radiusKm": 1737.4,
+    "centerLat": -89.463,
+    "centerLon": -151.2,
+    "axes": {
+      "x": "east",
+      "y": "up",
+      "z": "south"
+    }
+  },
+  "far": {
+    "file": "terrain-far.bin",
+    "extentKm": 300,
+    "grid": {
+      "cols": 257,
+      "rows": 257,
+      "stepKm": 1.171875
+    },
+    "heights": {
+      "encoding": "uint16-le",
+      "unit": "km",
+      "scale": 0.000302257,
+      "offset": -17.887349
+    }
+  }
+}

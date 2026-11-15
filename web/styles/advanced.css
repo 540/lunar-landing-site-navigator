@@ -1,0 +1,382 @@
+/* "Avanzado" view. Left column: the mission and the south pole. Right column: the top 3
+   (podium, landing window, detail of the chosen site and the rest of the ranking) or, in its second
+   mode (.is-comparing), the comparison of scenarios.
+   Boxes, figures, badges, player and tables come from the design system (components.css). */
+
+.adv { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 18px; align-items: start; }
+.adv-side { display: grid; gap: 18px; min-width: 0; }
+.adv-main { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; min-width: 0; }
+.adv-main > * { grid-column: 1 / -1; }
+.adv-main > .adv-modes { grid-column: 1; }
+.adv-main > .top-title { grid-column: 2; }
+.top-title #ranking-info { margin-right: auto; }
+.adv-main > .top-title { position: relative; z-index: 5; } /* its drop-down («Resto de sitios») goes over the podium */
+.adv-main.is-waiting > :not(.top-title):not(#adv-loading) { display: none; }
+.adv h3 { font-size: var(--text-xl); }
+
+/* Small shared pieces */
+.rank { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--color-text); color: var(--color-text-inverse); font-family: var(--font-display); font-weight: var(--weight-bold); font-size: 1.05rem; }
+.rank--sm { width: 22px; height: 22px; font-size: var(--text-2xs); }
+.meter { display: block; height: 5px; border-radius: 3px; background: var(--color-border); overflow: hidden; }
+.meter i { display: block; height: 100%; border-radius: 3px; background: var(--color-text); transition: width var(--motion-scene, 700ms) var(--ease-out, ease-out); }
+.meter[data-tone="sun"] i { background: var(--color-sun); }
+.meter[data-tone="earth"] i { background: var(--color-earth); }
+.is-plan { font-family: var(--font-data); font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-ok); }
+.note { font-size: var(--text-xs); color: var(--color-text-muted); }
+.float-tip { position: absolute; z-index: 6; pointer-events: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; width: max-content; max-width: min(280px, calc(100% - 8px)); padding: 8px 10px; border-radius: var(--radius-md); background: var(--color-sunken-deep); border: 1px solid var(--color-border); box-shadow: var(--shadow-float); font-size: 0.78rem; }
+.float-tip small { flex: 1 0 100%; color: var(--color-text-muted); font-size: var(--text-2xs); }
+.float-tip .tip-best { font-family: var(--font-data); font-size: var(--text-3xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); }
+
+/* ---------- Left column: mission ---------- */
+.mission-box { gap: var(--space-3); padding: var(--space-4); }
+/* The mission: the chips of the top of Plan, one under the other */
+.adv-steps { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+.adv-steps .plan-step button { grid-template-columns: auto minmax(0, 1fr) auto; padding: 5px var(--space-2); }
+.adv-steps .plan-step__edit { display: inline; }
+.adv-steps .plan-step small { color: var(--color-text); }
+.adv-steps .plan-step button { justify-items: start; text-align: left; } /* also on phones, where the steps of Plan drop their summary */
+.adv-steps .plan-step small { display: block; justify-self: stretch; min-width: 0; }
+.priority { display: grid; gap: var(--space-1); }
+.priority select { width: 100%; padding: 6px var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-sunken); }
+.btn.btn--small { font-size: 0.78rem; padding: 3px 10px; }
+
+/* ---------- Left column: south pole ---------- */
+.top-map-box { padding: var(--space-4); }
+.top-map-wrap { position: relative; }
+#top-map { width: 100%; aspect-ratio: 1; display: block; border-radius: 50%; background: var(--color-sunken); }
+.map-legend { gap: 6px 12px; }
+.map-layers { display: flex; }
+.map-layers button { flex: 1; }
+.light-legend { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-2); align-items: center; font-size: var(--text-2xs); color: var(--color-text-muted); }
+.light-legend i { height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--color-bg), var(--color-terrain) 55%, var(--color-text-muted)); }
+.light-legend[hidden] { display: none; }
+.legend .ray { width: 16px; height: 0; border-radius: 0; border-top: 2px solid var(--c); background: none; vertical-align: 3px; }
+.legend .ray--hidden { border-top-style: dashed; }
+.legend .sq { border-radius: 2px; }
+.legend .sq--faint { opacity: 0.3; }
+.legend .legend-mark { color: var(--color-text); margin-right: 4px; }
+
+/* ---------- Right column: podium ---------- */
+.top-title { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px var(--space-3); }
+/* On glass, like a .box: the hint (and its warning in colour) cannot be read straight on the lunar ground. */
+.top-title { padding: 4px 4px 4px var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); backdrop-filter: blur(var(--surface-blur)); box-shadow: var(--shadow-box); text-shadow: none; }
+.podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+.podium-card { display: grid; gap: var(--space-2); align-content: start; text-align: left; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 14px; cursor: pointer; min-width: 0; position: relative; transition: background 0.12s, border-color 0.12s; }
+.podium-card:hover { background: var(--color-surface-raised); }
+.podium-card[aria-selected="true"] { background: var(--color-surface-raised); border-color: var(--color-text); box-shadow: inset 0 0 0 1px var(--color-text); }
+/* A notch ties the chosen card to the detail below */
+.podium-card[aria-selected="true"]::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 12px; height: 12px; background: var(--color-surface-raised); border: solid var(--color-text); border-width: 0 2px 2px 0; transform: translateX(-50%) rotate(45deg); }
+.podium-card .rank { background: var(--color-surface-raised); color: var(--color-text); border: 1px solid var(--color-border); }
+.podium-card[aria-selected="true"] .rank { background: var(--color-text); color: var(--color-text-inverse); border-color: var(--color-text); }
+.podium-top { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); }
+.podium-name { font-family: var(--font-display); font-size: 1rem; line-height: 1.25; text-wrap: balance; }
+.podium-date { font-size: 0.78rem; color: var(--color-text-muted); }
+.podium-score { display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: baseline; gap: 4px var(--space-2); }
+.podium-score b { font-size: var(--text-2xl); font-weight: var(--weight-medium); line-height: 1; }
+.podium-score small { font-size: var(--text-2xs); color: var(--color-text-muted); }
+.podium-score .meter { align-self: center; }
+.podium-facts { display: flex; flex-wrap: wrap; gap: 2px var(--space-3); font-size: var(--text-xs); color: var(--color-text-muted); }
+.podium-facts b { color: var(--color-text); font-weight: var(--weight-medium); }
+.podium-facts b.text-ok { color: var(--color-ok); } .podium-facts b.text-bad { color: var(--color-bad); } .podium-facts b.text-warn { color: var(--color-warn); }
+
+/* ---------- Right column: landing window ---------- */
+.window-box { position: relative; padding: var(--space-4); gap: var(--space-3); }
+.window-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: var(--space-2) var(--space-4); }
+.strips { display: grid; gap: 2px; }
+.strip-row { display: grid; grid-template-columns: 150px minmax(0, 1fr) 58px; gap: 10px; align-items: end; }
+.strip-label { display: flex; align-items: center; gap: var(--space-2); min-width: 0; height: 20px; padding: 0; border: 0; background: none; cursor: pointer; text-align: left; font-size: 0.82rem; color: var(--color-text-muted); }
+.strip-label > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.strip-label .rank { background: var(--color-surface-raised); color: var(--color-text); }
+.strip-row[aria-current="true"] .strip-label { color: var(--color-text); font-weight: var(--weight-semibold); }
+.strip-row[aria-current="true"] .strip-label .rank { background: var(--color-text); color: var(--color-text-inverse); }
+.strip { display: flex; gap: 1px; height: 34px; padding-top: 14px; border-radius: var(--radius-sm); cursor: pointer; }
+.strip i { flex: 1; min-width: 1px; border-radius: 1px; position: relative; }
+.strip i.viable { background: var(--color-ok); }
+.strip i.marginal { background: var(--color-warn); }
+.strip i.not_viable { background: var(--color-bad); opacity: 0.22; }
+.strip-row:not([aria-current="true"]) .strip i.viable, .strip-row:not([aria-current="true"]) .strip i.marginal { opacity: 0.6; }
+.strip i:hover { opacity: 1 !important; box-shadow: 0 0 0 1px var(--color-text); z-index: 1; }
+.strip i.best::before { content: "▾"; position: absolute; left: 50%; top: -15px; transform: translateX(-50%); font-size: 12px; line-height: 1; color: var(--color-text); font-style: normal; }
+.strip i.current { opacity: 1 !important; box-shadow: 0 0 0 2px var(--color-text); z-index: 2; }
+.strip-count { text-align: right; font-size: 0.82rem; line-height: 20px; }
+.strip-count small { color: var(--color-text-muted); font-size: var(--text-2xs); }
+.strip-ticks { position: relative; height: 18px; margin-top: 4px; }
+.strip-ticks span { position: absolute; top: 0; padding: 3px 0 0 4px; border-left: 1px solid var(--color-border); font-family: var(--font-data); font-size: var(--text-3xs); color: var(--color-text-muted); white-space: nowrap; }
+
+/* ---------- Right column: detail of the chosen site ---------- */
+.detail { gap: var(--space-4); padding: 18px; border-color: var(--color-text-muted); }
+.detail-info, .detail-viz { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); min-width: 0; align-content: start; }
+.detail-head { display: grid; gap: var(--space-1); }
+/* As the result of Plan: the site and its verdict on one line (the rules on the verdict), then «Aterriza …» */
+.detail-name.featured { margin: 0; font-size: 1.6rem; line-height: var(--leading-tight); }
+.detail-head .res-title .rank--point { width: 28px; height: 28px; }
+.detail-head .res-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--space-2); margin: 0; }
+.detail-head .res-line .coords { font-family: var(--font-data); font-size: var(--text-2xs); }
+.adv-readout { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px var(--space-2); }
+.adv-readout .readout__value { font-size: var(--text-xl); }
+.detail-head .detail-origin { margin-bottom: 0; }
+.detail-head .res-title { margin: 0; }
+.coords { font-family: var(--font-data); font-size: var(--text-2xs); color: var(--color-text-muted); }
+.reason-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.reason-list li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: var(--space-2); font-size: 0.86rem; }
+.reason-list li::before { content: "✓"; color: var(--color-ok); font-weight: var(--weight-bold); }
+.reason-list li.bad::before { content: "✕"; color: var(--color-bad); }
+/* What if the lander comes down off the site: a ring of points around it */
+.around { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: var(--space-5); align-items: center; padding: var(--space-4) var(--space-3) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+/* Narrow phones: the rose on top, the text under it, so the radius buttons fit. */
+@media (max-width: 420px) { .around { grid-template-columns: minmax(0, 1fr); justify-items: center; } .around > :not(.around-rose) { justify-self: stretch; } }
+.around-rose { position: relative; isolation: isolate; width: 132px; aspect-ratio: 1; border-radius: 50%; border: 1px dashed var(--color-border); }
+.around-rose i { position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: var(--color-text-muted); box-shadow: 0 0 0 2px var(--color-text); }
+.around-rose i.viable { background: var(--color-ok); }
+.around-rose i.marginal { background: var(--color-warn); }
+.around-rose i.not_viable { background: var(--color-bad); }
+/* Each point of the ring is a button (24 px target). Viable: larger, with a tick; just: medium, with a «!»; the rest, a small dot. */
+.around-pin { position: absolute; width: 24px; height: 24px; margin: -12px 0 0 -12px; padding: 0; border: 0; border-radius: 50%; background: none; display: grid; place-items: center; cursor: pointer; font-size: 0.7rem; font-weight: var(--weight-bold); line-height: 1; color: var(--color-text-inverse); }
+.around-pin::before { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: var(--color-text-muted); z-index: -1; transition: transform 0.12s; }
+.around-pin.viable::before { inset: 2px; background: var(--color-ok); }
+.around-pin.marginal::before { inset: 4px; background: var(--color-warn); }
+.around-pin.not_viable::before { background: var(--color-bad); }
+.around-pin:hover::before { transform: scale(1.2); }
+.around-pin:focus-visible { outline: 2px solid var(--color-text); outline-offset: 1px; }
+.around-pin[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--color-text); }
+.around-pin.around-site::before { inset: 8px; box-shadow: 0 0 0 2px var(--color-text); }
+.around-hint { display: flex; align-items: center; gap: 6px; }
+.around-key { flex: none; width: 16px; height: 16px; border-radius: 50%; display: inline-grid; place-items: center; background: var(--color-ok); color: var(--color-text-inverse); font-size: 0.6rem; font-weight: var(--weight-bold); }
+.detail-origin { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-2) var(--space-3); margin-bottom: var(--space-3); }
+.rank--point { font-size: var(--text-xs); }
+@media (prefers-reduced-motion: reduce) { .around-pin::before { transition: none; } }
+.around-rose.is-loading { animation: around-pulse 1.2s ease-in-out infinite; }
+@keyframes around-pulse { 50% { border-color: var(--color-text-muted); } }
+@media (prefers-reduced-motion: reduce) { .around-rose.is-loading { animation: none; } }
+.around-n { position: absolute; left: 50%; top: -2px; transform: translate(-50%, -100%); font-size: 0.68rem; color: var(--color-text-muted); }
+.around-text { display: grid; gap: 4px; justify-items: start; }
+.around-text b { font-size: 1rem; }
+.around-text small { font-size: 0.84rem; color: var(--color-text-muted); }
+.around-radii { display: flex; gap: 6px; margin-top: var(--space-1); }
+.around-radii button { border: 1px solid var(--color-border); background: var(--color-surface); border-radius: var(--radius-md); padding: 4px 10px; font-size: 0.78rem; cursor: pointer; }
+.around-radii button[aria-pressed="true"] { background: var(--color-text); color: var(--color-text-inverse); border-color: var(--color-text); }
+
+.detail-charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); align-items: start; }
+.detail-charts.is-loading canvas { opacity: 0.3; }
+/* 2D: the sky (360°) and the mission hour by hour, together. 3D: the 3D sky alone, in the room of both. */
+.detail-charts:has(#adv-sky3d:not([hidden])) .chart[data-explain="line"] { display: none; }
+.detail-charts > .chart { min-width: 0; }
+.chart-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--space-1) var(--space-2); }
+#adv-line { cursor: ew-resize; touch-action: pan-y; }
+/* Sun and Earth bars, aligned with the plot area of the chart below (30 px on the left, 8 px on the right) */
+.spans { display: grid; gap: 3px; padding-right: 8px; min-height: 19px; }
+.span-row { display: grid; grid-template-columns: 30px minmax(0, 1fr); align-items: center; }
+.span-row > span { font-size: 0.6rem; color: var(--color-text-muted); line-height: 8px; }
+.span-row > div { position: relative; height: 8px; border-radius: 2px; background: var(--color-sunken); }
+.span-row i { position: absolute; top: 0; bottom: 0; border-radius: 2px; background: var(--color-sun); }
+.span-row[data-tone="earth"] i { background: var(--color-earth); }
+.detail .player { background: var(--color-surface-raised); border-radius: var(--radius-lg); padding: var(--space-2) var(--space-3); }
+.detail .player input { accent-color: var(--color-text); }
+.detail .player { --player-text: 10ch; } /* "Aterrizaje" and "+29 d 23 h" */
+.now { font-size: 0.78rem; color: var(--color-text-muted); }
+.now b { color: var(--color-text); font-weight: var(--weight-medium); }
+.now .margin { color: var(--color-text-muted); }
+.detail-foot { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: var(--space-3) var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--color-border); }
+.detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+
+/* ---------- Right column: the two modes ---------- */
+.adv-modes { justify-self: start; }
+.adv-modes button { padding: 6px 14px; font-size: 0.84rem; }
+.adv:not(.is-comparing) #scenarios { display: none; }
+.adv.is-comparing .adv-main > :not(.adv-modes):not(#scenarios) { display: none; }
+/* The light map and the Sun and Earth rays are of one mission; each scenario has its own dates */
+.adv.is-comparing .map-layers, .adv.is-comparing .map-legend { display: none; }
+
+/* ---------- Right column: comparison of scenarios ---------- */
+/* One column per scenario (2 to 4): it fits a 1440 × 900 screen without scrolling */
+.scenarios { padding: var(--space-4); gap: var(--space-3); }
+.scenarios-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: var(--space-2) var(--space-4); }
+.scenario-table { width: 100%; min-width: 620px; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+.scenario-table th, .scenario-table td { padding: 10px var(--space-3); text-align: left; vertical-align: top; border-bottom: 1px solid var(--color-border); border-left: 1px solid transparent; border-right: 1px solid transparent; }
+.scenario-table tbody tr:last-child > * { border-bottom-color: transparent; }
+.scenario-table tr > :first-child { width: 190px; padding-left: 0; }
+.scenario-table tbody th { font-weight: var(--weight-normal); }
+.scenario-table tbody th b { display: block; font-size: 0.9rem; font-weight: var(--weight-semibold); }
+.scenario-table small { display: block; font-size: var(--text-2xs); line-height: 1.35; color: var(--color-text-muted); }
+.scenario-corner { vertical-align: bottom !important; }
+.scenario-col { display: table-cell; cursor: pointer; }
+.scenario-col > * + * { margin-top: 6px; }
+.scenario-top { display: flex; align-items: center; gap: var(--space-2); }
+.scenario-top .rank { background: var(--color-surface-raised); color: var(--color-text); border: 1px solid var(--color-border); }
+.scenario-col.is-active .rank { background: var(--color-text); color: var(--color-text-inverse); border-color: var(--color-text); }
+.scenario-remove { margin-left: auto; width: 24px; height: 24px; border: 0; border-radius: var(--radius-md); background: none; color: var(--color-text-muted); cursor: pointer; line-height: 1; }
+.scenario-remove:hover { background: var(--color-surface-raised); color: var(--color-text); }
+.scenario-col select, .scenario-col input { display: block; width: 100%; min-width: 0; padding: 5px var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-sunken); color: var(--color-text); font-size: 0.8rem; }
+.scenario-col input { font-family: var(--font-data); }
+/* The full site name, wrapped: the select above cuts long names. */
+.scenario-name { flex: 1; min-width: 0; font-size: 0.8rem; font-weight: 600; line-height: 1.25; white-space: normal; text-align: left; }
+/* The active scenario (the one a click on the map moves): its column is framed */
+.scenario-table .is-active { background: var(--color-surface-raised); border-left-color: var(--color-text-muted); border-right-color: var(--color-text-muted); }
+.scenario-table thead .is-active { border-top: 1px solid var(--color-text-muted); border-radius: var(--radius-md) var(--radius-md) 0 0; }
+.scenario-table tbody tr:last-child .is-active { border-bottom-color: var(--color-text-muted); border-radius: 0 0 var(--radius-md) var(--radius-md); }
+.scenario-value { display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--space-2); }
+.scenario-cell b { font-size: 1.15rem; font-weight: var(--weight-medium); }
+.scenario-cell small { margin-top: 4px; }
+.scenario-cell.is-loading { color: var(--color-text-muted); }
+/* The best of each row: marked with text and a star, not only with colour */
+.scenario-cell.is-best b { color: var(--color-ok); }
+.best-mark { font-family: var(--font-data); font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-ok); white-space: nowrap; }
+
+/* ---------- Right column: rest of the sites, a drop-down in the top-3 bar ---------- */
+.others { position: relative; }
+.others > summary { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); font-size: 0.78rem; cursor: pointer; list-style: none; white-space: nowrap; }
+.others > summary::-webkit-details-marker { display: none; }
+.others > summary::after { content: "▾"; color: var(--color-text-muted); }
+.others[open] > summary { background: var(--color-surface-raised); }
+.others-list { position: absolute; right: 0; top: calc(100% + 6px); z-index: 10; width: min(440px, 86vw); max-height: 60vh; overflow-y: auto; margin: 0; padding: var(--space-1) var(--space-3); list-style: none; display: grid; background: var(--color-sunken); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
+.others-list li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-2) 0; border-top: 1px solid var(--color-border); }
+.others-list li:first-child { border-top: 0; }
+.others-list li > div { display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--space-2); min-width: 0; }
+.others-list small { flex: 1 0 100%; font-size: var(--text-2xs); color: var(--color-text-muted); }
+.others-list .rank { background: var(--color-surface-raised); color: var(--color-text); }
+
+/* ---------- Narrower screens ---------- */
+
+/* One column: mission, top 3 and, at the end, the map */
+@media (max-width: 1100px) {
+  .adv { grid-template-columns: minmax(0, 1fr); }
+  /* One column: the detail's actions go last, after the charts */
+  .detail-info, .detail-viz { display: contents; }
+  .detail-foot { order: 1; }
+  .adv-side { display: contents; }
+  .mission-box { order: 1; }
+  .adv-main { order: 2; }
+  .top-map-box { order: 3; }
+  #top-map { max-width: 420px; margin: 0 auto; }
+  .detail-charts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+  .detail-charts { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Phones */
+@media (max-width: 700px) {
+  .adv, .adv-main { gap: 14px; }
+  .adv .box-title { font-size: 1.2rem; }
+  .detail-actions .btn, .res-line .btn { min-height: 40px; }
+
+  /* Podium: one compact row per site */
+  .podium { grid-template-columns: minmax(0, 1fr); gap: var(--space-2); }
+  .podium-card { grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px var(--space-3); align-items: center; padding: var(--space-3); }
+  .podium-card[aria-selected="true"]::after { display: none; }
+  .podium-top { display: contents; }
+  .podium-top .rank { grid-row: 1 / span 2; }
+  .podium-top .badge { grid-column: 3; grid-row: 1; }
+  .podium-name { grid-column: 2; grid-row: 1; font-size: 0.92rem; }
+  .podium-date { grid-column: 2 / -1; grid-row: 2; }
+  .podium-score { grid-column: 2 / -1; }
+  .podium-score b { font-size: var(--text-xl); }
+  .podium-facts, .podium-card .is-plan { grid-column: 2 / -1; }
+
+  .window-box, .detail { padding: var(--space-3); }
+  .strip-row { grid-template-columns: 26px minmax(0, 1fr) 54px; gap: var(--space-2); }
+  .strip-count { white-space: nowrap; font-size: var(--text-xs); }
+  .strip-ticks span:nth-child(even) { display: none; }
+  .strip-label > span:last-child { display: none; }
+  .strip { gap: 0; height: 40px; }
+  .adv-readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .detail-name.featured { font-size: 1.25rem; }
+  .detail .player { grid-template-columns: auto minmax(0, 1fr); }
+  .detail .player .player__text { grid-column: 1 / -1; grid-row: 1; font-size: var(--text-2xs); color: var(--color-text-muted); }
+  .detail .player .player__play { width: 40px; height: 40px; }
+
+  .priority select { min-height: 44px; }
+  .scenarios { padding: var(--space-3); }
+  .scenario-table tr > :first-child { width: 120px; }
+  .scenario-col select, .scenario-col input, .scenario-remove, .adv-modes button { min-height: 40px; }
+  .scenario-remove { width: 40px; }
+  .others-list li { grid-template-columns: auto minmax(0, 1fr); }
+  .others-list .btn { grid-column: 2; justify-self: start; min-height: 40px; }
+  .adv-main > .top-title { grid-column: 1 / -1; }
+  .top-title #ranking-info { flex: 1 0 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .podium-card { transition: none; } }
+
+/* ---------- Desktop: the whole view on one screen, without scrolling ----------
+   Compact podium and window, the detail in two columns (figures | charts) and the charts take the height that
+   is left. --adv-sky-h and --adv-line-h are read by js/views/advanced.js when it draws. */
+@property --adv-sky-h { syntax: "<length>"; inherits: true; initial-value: 190px; }
+@property --adv-line-h { syntax: "<length>"; inherits: true; initial-value: 120px; }
+@property --adv-sky3d-h { syntax: "<length>"; inherits: true; initial-value: 300px; }
+@media (min-width: 1101px) {
+  .adv {
+    --adv-free: calc(100dvh - var(--adv-chrome, 600px));
+    --adv-sky-h: clamp(100px, calc(var(--adv-free) * 0.56), 260px);
+    --adv-line-h: clamp(80px, calc(var(--adv-free) * 0.44), 200px);
+    --adv-sky3d-h: calc(var(--adv-sky-h) + var(--adv-line-h) + var(--adv-line-chrome, 30px)); /* the room of both 2D charts */
+    grid-template-columns: 300px minmax(0, 1fr); gap: 14px;
+  }
+  .adv-side { gap: 12px; }
+  .mission-box { padding: var(--space-3); gap: var(--space-2); }
+  .top-map-box { padding: var(--space-3); gap: var(--space-2); }
+  #top-map { width: min(100%, calc(100dvh - 570px)); margin: 0 auto; }
+  /* A passing note (the shadows loading, the point open) floats over the legend: it must not make the page scroll */
+  .top-map-box { position: relative; }
+  .adv:not(.is-comparing) #map-note { position: absolute; left: var(--space-3); right: var(--space-3); bottom: var(--space-3); z-index: 2; margin: 0; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-sunken); box-shadow: var(--shadow-float); }
+
+  .podium-card { grid-template-columns: auto minmax(0, 1fr) auto; gap: 6px var(--space-3); align-items: center; padding: 12px 14px; }
+  .podium-top { display: contents; }
+  .podium-top .rank { grid-row: 1 / span 2; width: 32px; height: 32px; font-size: 0.95rem; }
+  .podium-top .badge { grid-column: 3; grid-row: 1; }
+  .podium-name { grid-column: 2; grid-row: 1; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .podium-date { display: none; }
+  .podium-score { grid-column: 2 / -1; grid-row: 2; }
+  .podium-score b { font-size: var(--text-xl); }
+  /* «Tu plan actual» as a tab on the card's top edge, so the name keeps its room */
+  .podium-card .is-plan { position: absolute; top: -8px; right: 12px; padding: 0 6px; border-radius: var(--radius-sm); background: var(--color-sunken); font-size: 0.6rem; line-height: 16px; }
+  .podium-facts { display: none; } /* shade, Earth and slope: in the detail of each site and in «Comparar escenarios» */
+
+  .window-box { padding: 10px 14px; gap: 6px; }
+  .window-box h3 { font-size: 0.92rem; }
+  .strip { height: 20px; padding-top: 8px; }
+  .strip-label { height: 14px; }
+  .strip-count { line-height: 14px; }
+  .strip i.best::before { top: -11px; font-size: 10px; }
+  .strip-ticks { height: 14px; margin-top: 2px; }
+  .strip-ticks span { padding-top: 1px; }
+
+  .detail { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 12px 28px; padding: 18px 20px; align-items: start; }
+  .detail-info { gap: 12px; }
+  .detail-viz { gap: 6px; }
+  .detail-head { gap: 6px; }
+  .detail-name.featured { font-size: 1.3rem; }
+  .detail-head .res-line { flex-wrap: nowrap; font-size: 0.9rem; }
+  .detail-head .res-line .coords { display: none; } /* on the site's name, as its title */
+  .detail-head .res-line .num { white-space: nowrap; }
+  /* The figures as the readout of Plan on a short window: name and value on one line, what it is held to under it */
+  .adv-readout { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px var(--space-6); }
+  .adv-readout .readout__row { grid-template-columns: 14px minmax(0, 1fr) auto; align-items: center; padding: 6px 4px; border-radius: 0; border-bottom: 1px solid var(--color-border); }
+  .adv-readout .readout__row:nth-last-child(-n + 2) { border-bottom: 0; }
+  .adv-readout .readout__swatch { grid-row: 1; }
+  .adv-readout .readout__label { align-self: baseline; font-size: var(--text-sm); color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .adv-readout .readout__value { grid-column: 3; grid-row: 1; font-size: 1.05rem; text-align: right; white-space: nowrap; }
+  .adv-readout .readout__req, .adv-readout .figure-band { display: none; }
+  .adv-steps .plan-step button { padding: 4px var(--space-2); row-gap: 0; }
+  .adv-steps .plan-step__n { width: 20px; height: 20px; }
+  .reason-list { gap: 2px; }
+  .reason-list li { font-size: 0.8rem; }
+  .around { grid-template-columns: 84px minmax(0, 1fr); gap: var(--space-5); padding: 10px 14px; }
+  .around-rose { width: 84px; }
+  .detail-foot { padding-top: 0; border-top: 0; }
+  .detail-foot .res-actions { flex-wrap: nowrap; }
+  .detail-foot .res-actions .btn { padding: 7px var(--space-3); }
+  .detail-foot .is-plan { white-space: nowrap; }
+  .detail-charts { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .chart-head { flex-wrap: nowrap; align-items: center; }
+  .chart-head > .eyebrow { flex: none; white-space: nowrap; }
+  .chart-head > .hint { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chart[data-explain="line"] .chart-head > .hint { display: none; } /* "arrastra para moverte": the cursor and the title of the chart say it */
+  .chart-head > .btn, .chart-head > .segmented { margin-left: auto; flex: none; }
+  .detail .player { padding: 4px 10px; }
+  .now { font-size: 0.72rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+/* Desktop below 1400 px: a narrower left column leaves the detail room for its two columns. */
+@media (min-width: 1101px) and (max-width: 1399px) {
+  .adv { grid-template-columns: 260px minmax(0, 1fr); }
+  .adv-readout .readout__value { font-size: 0.95rem; }
+}

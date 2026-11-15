@@ -1,0 +1,184 @@
+/* "Replanificar" view: at a glance the delay, the answer and one table; the rest folded under «Ver detalles».
+   Design system tokens only (styles/README.md). */
+.replan { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); align-content: start; }
+.replan > * { min-width: 0; }
+
+/* At a glance: delay, answer and one table */
+.rp-head { scroll-margin-top: var(--topbar-height); display: grid; gap: var(--space-2); }
+/* Head, table and details sit on glass, like a .box: small text cannot be read straight on the lunar ground. */
+.rp-head, .rp-details { padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); backdrop-filter: blur(var(--surface-blur)); box-shadow: var(--shadow-box); text-shadow: none; }
+.rp-head .hint { margin: 0; }
+.rp-delay { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); margin-top: var(--space-2); }
+.rp-delay__label { font-weight: var(--weight-semibold); }
+.rp-delay .rp-chips .btn { font-size: var(--text-sm); padding: var(--space-2) var(--space-3); }
+.rp-delay__landing { flex-basis: 100%; margin: 0; }
+
+.rp-answer { display: grid; gap: var(--space-2); padding: var(--space-5); border-radius: var(--radius-lg); border: 1px solid var(--color-border); background: var(--color-surface); }
+.rp-answer[data-tone="bad"] { border-color: var(--color-bad); background: linear-gradient(90deg, var(--color-bad-soft), transparent 70%), var(--color-surface); }
+.rp-answer[data-tone="ok"] { border-color: var(--color-ok); background: linear-gradient(90deg, var(--color-ok-soft), transparent 70%), var(--color-surface); }
+.rp-answer__status { margin: 0; color: var(--color-text); font-family: var(--font-display); font-size: var(--text-3xl); line-height: var(--leading-tight); font-weight: var(--weight-semibold); text-transform: none; letter-spacing: -0.01em; }
+.rp-answer__status:focus { outline: none; } /* focus is moved here programmatically, not a control */
+.rp-answer[data-tone="bad"] .rp-answer__status::before { content: "✕ "; color: var(--color-bad); }
+.rp-answer[data-tone="ok"] .rp-answer__status::before { content: "✓ "; color: var(--color-ok); }
+.rp-answer__reason { margin: 0; font-size: var(--text-lg); color: var(--color-text-muted); }
+.rp-answer__rec:empty { display: none; }
+.rp-answer__rec { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-top: var(--space-2); padding-top: var(--space-3); border-top: 1px solid var(--color-border); }
+.rp-answer__best { margin: 0; font-size: var(--text-xl); font-weight: var(--weight-semibold); }
+.rp-answer__best span { color: var(--color-ok); }
+.rp-answer__best.is-none { color: var(--color-warn); font-size: var(--text-md); }
+
+.rp-table { width: 100%; border-collapse: collapse; }
+/* The glass is on the scroll wrapper, so on a phone the panel keeps the page width and the table scrolls inside it. */
+.rp-outcomes .table-scroll { background: var(--color-surface); backdrop-filter: blur(var(--surface-blur)); border-radius: var(--radius-lg); box-shadow: var(--shadow-box); text-shadow: none; }
+.rp-table th, .rp-table td { text-align: left; padding: var(--space-3) var(--space-3); border-bottom: 1px solid var(--color-border); vertical-align: middle; }
+.rp-table thead th { font-family: var(--font-data); font-size: var(--text-3xs); letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--color-text-muted); font-weight: normal; }
+.rp-table tbody th { font-weight: var(--weight-semibold); }
+.rp-table small { display: block; font-size: var(--text-2xs); color: var(--color-text-muted); font-weight: normal; }
+.rp-table td.num { white-space: nowrap; }
+.rp-table td.is-bad { color: var(--color-bad); font-weight: var(--weight-semibold); }
+.rp-table td.is-bad small { color: var(--color-bad); }
+.rp-table tr.is-current { background: var(--color-sunken); }
+.rp-table tr.is-rec { background: var(--color-ok-soft); }
+.rp-table tr.is-empty th { color: var(--color-text-muted); font-weight: normal; }
+.rp-star { color: var(--color-ok); }
+
+.rp-details > summary { cursor: pointer; padding: 0; font-weight: var(--weight-semibold); }
+.rp-details > summary .hint { font-weight: normal; margin-left: var(--space-2); }
+.rp-details[open] { display: grid; gap: var(--space-5); }
+
+/* Layout: controls on the left, calendar and exits on the right */
+.rp-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); align-items: start; }
+.replan.is-loading .rp-outcomes, .replan.is-loading .rp-details { opacity: 0.45; pointer-events: none; transition: opacity var(--motion-medium, 200ms); }
+.rp-main { display: grid; gap: var(--space-5); min-width: 0; }
+.rp-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-5); align-items: start; }
+.rp-controls > h3 { grid-column: 1 / -1; }
+.rp-chips { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.rp-controls input[type="datetime-local"], .rp-controls input[type="date"] { min-width: 0; width: 100%; font-size: var(--text-sm); }
+.rp-chips .btn { padding: var(--space-1) var(--space-2); font-size: var(--text-xs); }
+
+
+
+
+
+.rp-cal-legend { display: flex; flex-wrap: wrap; gap: var(--space-2) 14px; font-size: var(--text-xs); color: var(--color-text-muted); align-items: center; }
+.rp-cal-legend i { display: inline-block; width: 14px; height: 14px; border-radius: var(--radius-sm); margin-right: 5px; vertical-align: -3px; border: 1px solid var(--color-border); background: var(--color-sunken); }
+.rp-cal-legend { padding-bottom: var(--space-2); border-bottom: 1px solid var(--color-border); }
+
+@media (max-width: 640px) {
+  .rp-answer { padding: var(--space-4); }
+  .rp-answer__status { font-size: var(--text-2xl); }
+  .rp-table th, .rp-table td { padding: var(--space-2); }
+}
+
+/* Test mode (?test=1) */
+.rp-test { position: sticky; top: var(--space-2); z-index: 5; justify-self: start; padding: var(--space-2) var(--space-3); border-radius: var(--radius-lg); border: 1px solid var(--color-explain); background: var(--color-explain-soft); font-size: var(--text-sm); }
+.rp-test b { color: var(--color-explain); }
+
+/* On phones only the tabs stay stuck, so the margin is their height, not the whole bar */
+@media (max-width: 700px) { .rp-head { scroll-margin-top: 48px; } .rp-table { min-width: 600px; } }
+
+/* Form: delay first, then deadline; spacecraft and advanced settings folded */
+.rp-field-short input { max-width: 120px; }
+.rp-controls .field .hint, .rp-controls fieldset > .hint { margin: 0; }
+.rp-fold { border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-sunken); }
+.rp-fold > summary { cursor: pointer; padding: var(--space-2) var(--space-3); display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: baseline; font-size: var(--text-sm); list-style: none; }
+.rp-fold > summary::-webkit-details-marker { display: none; }
+.rp-fold > summary::before { content: "▸"; color: var(--color-text-muted); }
+.rp-fold[open] > summary::before { content: "▾"; }
+.rp-fold > summary:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 1px; border-radius: var(--radius-md); }
+.rp-fold__title { font-weight: var(--weight-semibold); }
+.rp-fold__summary { color: var(--color-text-muted); }
+.rp-fold__edit { margin-left: auto; color: var(--color-earth); text-decoration: underline; }
+.rp-fold[open] .rp-fold__edit { display: none; }
+.rp-fold__body { display: grid; gap: var(--space-3); padding: 0 var(--space-3) var(--space-3); }
+.rp-region-box { margin: 0; display: grid; gap: var(--space-2); }
+.rp-region__list { display: grid; gap: var(--space-2); font-size: var(--text-sm); }
+.rp-region__list p { margin: 0; }
+.rp-region__sites { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-1); }
+.rp-region__sites li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--space-3); align-items: center; padding: var(--space-2) 0; border-bottom: 1px solid var(--color-border); }
+.rp-region__name { font-weight: var(--weight-medium); }
+
+.rp-answer__text { display: grid; gap: var(--space-1); flex: 1 1 360px; }
+.rp-answer__why { margin: 0; color: var(--color-text-muted); }
+
+/* «▶ Simular la misión»: your plan and the best exit hour by hour, with the battery */
+.rp-sim { display: grid; gap: var(--space-3); margin-top: var(--space-2); padding-top: var(--space-3); border-top: 1px solid var(--color-border); }
+.rp-sim__head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
+.rp-sim__clock { color: var(--color-text-muted); font-size: var(--text-sm); }
+.rp-sim__head .btn { margin-left: auto; font-size: var(--text-xs); padding: var(--space-1) var(--space-2); }
+.rp-sim__rows { display: grid; gap: var(--space-4); }
+.rp-sim__row { display: grid; grid-template-columns: minmax(180px, 240px) minmax(0, 1fr) 210px; gap: var(--space-1) var(--space-4); align-items: center; }
+.rp-sim__label { display: grid; font-size: var(--text-sm); }
+.rp-sim__label span { font-size: var(--text-2xs); color: var(--color-text-muted); }
+.rp-sim__track { position: relative; padding-bottom: 14px; }
+.rp-sim__track svg { display: block; width: 100%; height: 30px; border-radius: var(--radius-sm); background: var(--color-sunken); }
+.rp-sim__track .is-sun { fill: var(--color-sun); }
+.rp-sim__track .is-dark { fill: var(--color-terrain); }
+.rp-sim__track .is-empty { fill: var(--color-bad); }
+.rp-sim__track .is-earth { fill: var(--color-earth); }
+.rp-sim__cursor { fill: var(--color-text); }
+.rp-sim__ticks { position: absolute; inset: auto 0 0 0; height: 12px; }
+.rp-sim__ticks span { position: absolute; transform: translateX(-50%); font: var(--text-3xs) var(--font-data); color: var(--color-text-muted); white-space: nowrap; }
+.rp-sim__ticks span:first-child { transform: none; }
+.rp-sim__ticks span:last-child { transform: translateX(-100%); }
+.rp-sim__battery { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); }
+.rp-sim__gauge { flex: none; width: 46px; height: 16px; border: 2px solid var(--color-text-muted); border-radius: 3px; padding: 1px; position: relative; }
+.rp-sim__gauge::after { content: ""; position: absolute; right: -5px; top: 3px; width: 3px; height: 6px; background: var(--color-text-muted); border-radius: 0 1px 1px 0; }
+.rp-sim__gauge i { display: block; height: 100%; width: 100%; background: var(--color-ok); border-radius: 1px; }
+.rp-sim__gauge[data-level="low"] i { background: var(--color-warn); }
+.rp-sim__gauge[data-level="empty"] { border-color: var(--color-bad); }
+.rp-sim__end { grid-column: 2 / -1; margin: 0; font-size: var(--text-sm); font-weight: var(--weight-semibold); visibility: hidden; }
+.rp-sim__row.is-done .rp-sim__end { visibility: visible; }
+.rp-sim__row[data-ok="false"] .rp-sim__end { color: var(--color-bad); }
+.rp-sim__row[data-ok="true"] .rp-sim__end { color: var(--color-ok); }
+.rp-sim__why { margin: 0; white-space: pre-line; font-size: var(--text-sm); }
+.rp-sim__why:empty { display: none; }
+@media (max-width: 760px) {
+  .rp-sim__row { grid-template-columns: 1fr; }
+  .rp-sim__end { grid-column: auto; }
+}
+
+/* When each site can land: one row per site, one cell per day */
+.rp-calendar-box { gap: var(--space-3); }
+.rp-tl { display: grid; grid-template-columns: 160px repeat(var(--days), minmax(5px, 1fr)); grid-auto-rows: auto; column-gap: 1px; row-gap: 4px; min-width: 420px; align-items: center; padding: 6px 6px 6px 2px; } /* room for the rings of the marked days */
+.rp-tl__axis, .rp-tl__marks { display: contents; }
+.rp-tl__tick { grid-row: 1; font: var(--text-3xs) var(--font-data); color: var(--color-text-muted); white-space: nowrap; }
+.rp-tl__mark { grid-row: 2; justify-self: start; white-space: nowrap; font: var(--weight-semibold) var(--text-3xs) / 1.5 var(--font-data); padding: 0 4px; border-radius: var(--radius-sm); border: 1px dashed var(--color-text-muted); z-index: 1; }
+.rp-tl__mark[data-mark="now"] { background: var(--color-text); color: var(--color-text-inverse); border: 1px solid var(--color-text); }
+.rp-tl__mark[data-mark="rec"] { background: var(--color-ok); color: var(--color-text-inverse); border: 1px solid var(--color-ok); }
+.rp-tl__site { grid-column: 1; font-size: var(--text-sm); font-weight: var(--weight-medium); padding-right: var(--space-2); line-height: 1.2; }
+.rp-tl__site small { display: block; font-size: var(--text-2xs); color: var(--color-text-muted); font-weight: normal; }
+.rp-tl__day { height: 26px; padding: 0; border: 0; border-radius: 2px; cursor: pointer; background: var(--color-sunken); }
+.rp-tl__day[data-tone="ok"] { background: var(--color-ok); }
+.rp-tl__day[data-tone="warn"] { background: var(--color-warn); }
+.rp-tl__day[data-tone="bad"] { background: color-mix(in srgb, var(--color-bad) 35%, var(--color-sunken)); }
+.rp-tl__day.is-lost, .rp-tl__day.is-out { opacity: 0.35; }
+.rp-tl__day.is-out { background-image: repeating-linear-gradient(0deg, transparent 0 3px, var(--color-surface) 3px 4px); }
+.rp-tl__day.is-now { box-shadow: 0 0 0 2px var(--color-text); position: relative; z-index: 1; }
+.rp-tl__day.is-rec { box-shadow: 0 0 0 3px var(--color-ok), 0 0 0 4px var(--color-surface); position: relative; z-index: 2; }
+.rp-tl__day:hover { outline: 1px solid var(--color-text); }
+.rp-tl__day:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 1px; }
+.rp-cal-legend i[data-tone="ok"] { background: var(--color-ok); }
+.rp-cal-legend i[data-tone="warn"] { background: var(--color-warn); }
+.rp-cal-legend i[data-tone="bad"] { background: color-mix(in srgb, var(--color-bad) 35%, var(--color-sunken)); }
+.rp-cal-legend i.is-lost { background: var(--color-ok); opacity: 0.35; }
+.rp-cal-legend i.is-out { background: var(--color-ok); opacity: 0.35; background-image: repeating-linear-gradient(0deg, transparent 0 3px, var(--color-surface) 3px 4px); }
+.rp-tl__info { margin: 0; min-height: 1.5em; font-size: var(--text-sm); color: var(--color-text); }
+.rp-tl__site.is-far { color: var(--color-text-muted); font-weight: normal; }
+.rp-tl__day.is-far { opacity: 0.45; }
+.rp-region__sites.is-far { opacity: 0.6; }
+/* Exit C that does not beat waiting at your site (#70): still listed, but quieter and with the reason. */
+.rp-table tr.is-no-gain th, .rp-table tr.is-no-gain td { color: var(--color-text-muted); }
+.rp-table small.rp-no-gain { color: var(--color-warn); font-style: italic; }
+
+/* The region on the south-pole map (#35). */
+.rp-region__map { width: 100%; max-width: 360px; aspect-ratio: 1; justify-self: center; } /* round by its own clip: labels may cross the edge */
+.rp-region__legend { justify-content: center; font-size: var(--text-2xs); }
+/* The swatches sit on the map's dark ground, like the dots, so the -400 tones keep 3:1 in the light theme too (#332). */
+.rp-region__legend i { box-shadow: 0 0 0 2px var(--color-map-bg); margin-left: 2px; margin-right: 7px; }
+
+/* «Ver en 3D» inside the mission simulation (#36). */
+.rp-3d { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--color-border); }
+.rp-3d__label { font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.rp-3d__note { flex-basis: 100%; margin: 0; }
+.rp-3d a[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }

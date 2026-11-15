@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Lunar Landing Site Navigator · prototipo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+  <header class="barra">
+    <div class="marca"><span class="luna" aria-hidden="true"></span><h1>Lunar Landing Site Navigator</h1></div>
+    <nav class="vistas" aria-label="Vistas">
+      <a href="#inicio" data-vista="inicio">Planificar</a>
+      <a href="#comparar" data-vista="comparar">Avanzado</a>
+      <a href="#replanificar" data-vista="replanificar">Replanificar</a>
+      <a href="#fuentes" data-vista="fuentes">Fuentes de datos</a>
+    </nav>
+    <div class="derecha">
+      <span class="etiqueta-demo">Prototipo · datos simulados</span>
+      <button class="boton" id="btn-debug" type="button">Modo explicación</button>
+    </div>
+  </header>
+  <div class="aviso-debug">Modo explicación: pulsa cualquier <b>?</b> morado para ver qué es cada cosa, qué te dice, de dónde sale hoy y de dónde saldrá en el producto real.</div>
+
+  <div class="app" id="app">
+    <aside class="lateral" id="lateral">
+      <section class="caja" aria-labelledby="t-mision">
+        <div class="caja-cab"><h2 id="t-mision">Misión</h2></div>
+        <div class="campo" data-explica="perfil">
+          <label for="perfil">Perfil de misión</label>
+          <select id="perfil"></select>
+          <span class="ayuda" id="perfil-fuente"></span>
+        </div>
+        <div class="campo" data-explica="fecha">
+          <label for="fecha">Alunizaje previsto (UTC)</label>
+          <input id="fecha" type="datetime-local">
+        </div>
+        <div class="campo" data-explica="retraso">
+          <label for="retraso">Retraso: <b class="num" id="retraso-v">+0 días</b></label>
+          <input id="retraso" type="range" min="0" max="60" value="0">
+        </div>
+        <div class="fila3" data-explica="requisitos">
+          <div class="campo"><label for="dias">Duración (d)</label><input id="dias" type="number" min="1" max="30" step="0.5"></div>
+          <div class="campo"><label for="aguante">Aguanta sin Sol (h)</label><input id="aguante" type="number" min="0" max="720" step="1"></div>
+          <div class="campo"><label for="min-tierra">Tierra (%)</label><input id="min-tierra" type="number" min="0" max="100" step="5"></div>
+        </div>
+      </section>
+
+      <section class="caja" aria-labelledby="t-mapa">
+        <div class="caja-cab">
+          <h2 id="t-mapa">Polo sur</h2>
+          <div class="segmentado" role="group" aria-label="Capa del mapa" data-explica="capa">
+            <button type="button" data-capa="sol" aria-pressed="true">Luz</button>
+            <button type="button" data-capa="tierra" aria-pressed="false">Tierra</button>
+            <button type="button" data-capa="relieve" aria-pressed="false">Relieve</button>
+          </div>
+        </div>
+        <div class="mapa-envoltorio" data-explica="mapa">
+          <canvas id="mapa" width="360" height="360" aria-label="Mapa del polo sur lunar con los sitios"></canvas>
+        </div>
+        <div class="mapa-pie"><span id="mapa-cursor">Pulsa en el mapa para añadir un sitio propio</span><span id="mapa-capa-txt"></span></div>
+      </section>
+
+      <section class="caja" aria-labelledby="t-sitios">
+        <div class="caja-cab"><h2 id="t-sitios">Sitios</h2><span class="ayuda">hasta 3 a la vez</span></div>
+        <div class="sitios" id="sitios" data-explica="sitios"></div>
+      </section>
+    </aside>
+
+    <main class="principal" id="principal">
+      <section id="vista-inicio" class="inicio" hidden>
+        <div>
+          <span class="eyebrow">Planificador de misión</span>
+          <h1 class="inicio-titulo">¿Dónde y cuándo aterrizo?</h1>
+        </div>
+        <div class="plan-lado">
+          <form class="caja plan-form" id="plan-form" aria-label="Características de la misión">
+            <fieldset class="plan-bloque" data-explica="plan-nave">
+              <legend>Tu nave</legend>
+              <div class="perfiles" id="plan-perfiles" role="radiogroup" aria-label="Perfil de nave"></div>
+            </fieldset>
+            <fieldset class="plan-bloque" data-explica="requisitos">
+              <legend>Requisitos</legend>
+              <div class="fila3">
+                <div class="campo"><label for="plan-dias">Días en superficie</label><input id="plan-dias" type="number" min="1" max="30" step="0.5"></div>
+                <div class="campo"><label for="plan-aguante">Aguanta sin Sol (h)</label><input id="plan-aguante" type="number" min="0" max="720"></div>
+                <div class="campo"><label for="plan-tierra">Tierra mínima (%)</label><input id="plan-tierra" type="number" min="0" max="100" step="5"></div>
+              </div>
+            </fieldset>
+            <fieldset class="plan-bloque" data-explica="plan-ventana">
+              <legend>¿Cuándo puedes aterrizar? (UTC)</legend>
+              <div class="fila2">
+                <div class="campo"><label for="plan-desde">No antes de</label><input id="plan-desde" type="date"></div>
+                <div class="campo"><label for="plan-hasta">No después de</label><input id="plan-hasta" type="date"></div>
+              </div>
+            </fieldset>
+            <button class="boton primario plan-buscar" id="plan-buscar" type="submit">Ver</button>
+          </form>
+        <div id="plan-paso2" class="caja plan-res">
+          <div class="plan-resultado" data-explica="mejor">
+            <div>
+              <span class="eyebrow" id="res-eyebrow">Mejor opción</span>
+              <h2 class="res-sitio" id="res-sitio"></h2>
+              <p class="res-linea"><span class="num" id="res-fecha"></span> <span class="pill grande" id="res-ver"></span></p>
+              <p class="ayuda" id="res-motivo"></p>
+            </div>
+            <a class="boton" href="#comparar">Vista avanzada →</a>
+          </div>
+          <div class="res-cuerpo">
+            <figure class="res-reloj" data-explica="reloj">
+              <canvas id="reloj" width="460" height="460" aria-label="Reloj lunar de 30 días"></canvas>
+              <figcaption>
+                <span class="eyebrow">Un mes lunar</span>
+                <div class="leyenda"><span><i style="background: var(--sun)"></i>Horas con Sol</span><span><i style="background: var(--earth)"></i>Horas con la Tierra</span><span><i style="background: var(--ok)"></i>Tu misión (arrástrala)</span></div>
+              </figcaption>
+            </figure>
+            <div class="res-cielo">
+              <div class="caja-cab"><span class="eyebrow">El cielo desde el sitio</span><span class="ayuda">360°, altura exagerada</span></div>
+              <div class="grafico" data-explica="panorama"><canvas id="inicio-panorama" aria-label="Cielo desde el sitio"></canvas></div>
+              <div class="reloj" data-explica="tiempo">
+                <button class="play" id="inicio-play" type="button" aria-label="Reproducir la misión">▶</button>
+                <input id="inicio-hora" type="range" min="0" max="240" value="0" aria-label="Momento de la misión">
+                <span class="reloj-texto" id="inicio-hora-v"></span>
+              </div>
+              <p class="inicio-ahora num" id="inicio-ahora"></p>
+              <div class="res-cifras" id="res-cifras"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </section>
+
+      <section id="vista-comparar" class="principal" hidden>
+        <div class="caja avanzado-cab"><div><span class="eyebrow">Vista avanzada</span><h2 class="avanzado-titulo">Top 3 de sitios</h2></div><p class="ayuda" id="ranking-info">Ajusta la misión en el panel de la izquierda y mira cómo cambian.</p></div>
+        <div class="caja reloj" data-explica="tiempo">
+          <button class="play" id="play" type="button" aria-label="Animar la misión">▶</button>
+          <input id="hora" type="range" min="0" max="240" value="0" aria-label="Momento de la misión">
+          <span class="reloj-texto" id="hora-v"></span>
+        </div>
+        <div class="tarjetas" id="tarjetas"></div>
+        <div class="leyenda">
+          <span><i style="background: var(--sun)"></i>Sol</span>
+          <span><i style="background: var(--earth)"></i>Tierra</span>
+          <span><i style="background: var(--regolith)"></i>Relieve que tapa el cielo</span>
+        </div>
+      </section>
+
+      <section id="vista-replanificar" class="principal" hidden>
+        <div class="caja" data-explica="cambios">
+          <div><h2>¿Qué ha cambiado?</h2><p class="ayuda" id="rp-plan"></p></div>
+          <div class="fila4">
+            <div class="campo"><label for="rp-retraso">Retraso (días)</label><input id="rp-retraso" type="number" min="0" max="60" step="0.5" value="0"></div>
+            <div class="campo"><label for="rp-aguante">Batería: aguanta sin Sol (h)</label><input id="rp-aguante" type="number" min="0" max="720"></div>
+            <div class="campo"><label for="rp-dias">Días en superficie</label><input id="rp-dias" type="number" min="1" max="30" step="0.5"></div>
+            <div class="campo"><label for="rp-desvio">Desvío al aterrizar (m)</label><input id="rp-desvio" type="number" min="0" max="3000" step="100" value="0"></div>
+          </div>
+        </div>
+        <div class="rp-salidas" id="rp-salidas"></div>
+        <div class="caja alternativa" id="alternativa" data-explica="alternativa" hidden></div>
+        <div class="caja">
+          <div>
+            <h2>Barrido de retraso del plan</h2>
+            <p class="ayuda">Cada casilla es un día de retraso sobre la fecha prevista. Verde: viable. Ámbar: justo. Rojo: no vale. Pulsa una casilla para ver ese escenario.</p>
+          </div>
+          <div class="barrido" data-explica="barrido"><table class="tabla-barrido" id="barrido"></table></div>
+        </div>
+      </section>
+
+      <section id="vista-fuentes" class="fuentes" hidden data-explica="fuentes"></section>
+    </main>
+  </div>
+
+  <aside class="ficha" id="ficha" aria-live="polite"></aside>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

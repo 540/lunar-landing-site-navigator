@@ -1,0 +1,9 @@
+{
+  "name": "lunar-navigator-web",
+  "private": true,
+  "description": "Interfaz del planificador del Lunar Landing Site Navigator (sin build ni dependencias; three.js, solo para el cielo en 3D, viene de un CDN)",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  }
+}

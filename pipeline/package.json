@@ -1,0 +1,16 @@
+{
+  "name": "lunar-navigator-pipeline",
+  "version": "0.1.0",
+  "description": "Datos precalculados del Mirador del Polo Sur y del juego de rol del Lunar Landing Site Navigator",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "ephemeris": "node ephemeris.mjs",
+    "mask-grid": "node mask-grid.mjs",
+    "horizon-mask": "node horizon-mask.mjs",
+    "relief": "node relief.mjs",
+    "relief:lola": "node relief.mjs --source lola",
+    "game-scenario": "node game-scenario.mjs",
+    "test": "node --test test/*.test.js"
+  }
+}

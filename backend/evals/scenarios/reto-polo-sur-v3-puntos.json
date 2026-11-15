@@ -1,0 +1,76 @@
+{
+  "name": "reto-polo-sur-v3-puntos",
+  "description": "Puntos de interés reevaluados con las reglas del benchmark v3 (v2 + relieve LOLA, observador a 2 m), en modo PRECISO (20 m cerca donde hay ventana en la caché) y con robustez espacial a 1 km (peor valor entre el centro y 8 vecinos). Incluye los ganadores sin relieve (v2, v1), los sitios de referencia y los candidatos encontrados con relieve.",
+  "points": [
+    {
+      "lat": -77.855,
+      "lon": -6.1364,
+      "name": "Ganador v2 (sin relieve)"
+    },
+    {
+      "lat": -83.69,
+      "lon": -5.388,
+      "name": "Ganador v1 (sin relieve)"
+    },
+    "im1",
+    "im2-alunizaje",
+    "im2-objetivo",
+    "shackleton-rim",
+    "chandrayaan3",
+    {
+      "lat": -75.181,
+      "lon": -12.006,
+      "name": "Candidato relieve A (análisis)"
+    },
+    {
+      "lat": -78.1588,
+      "lon": -7.8153,
+      "name": "Candidato relieve B (análisis)"
+    },
+    {
+      "lat": -75.9328,
+      "lon": -10.8906,
+      "name": "Candidato relieve C (análisis)"
+    },
+    {
+      "lat": -72.4703,
+      "lon": -5.6219,
+      "name": "Ganador v3 robusto (malla rápida)"
+    },
+    {
+      "lat": -77.4455,
+      "lon": -7.0115,
+      "name": "Mejor nominal v3 (malla rápida)"
+    }
+  ],
+  "dates": [
+    "2027-01-10",
+    "2027-01-24",
+    "2027-02-07"
+  ],
+  "missionDays": 14,
+  "stepMinutes": 60,
+  "mode": "limb",
+  "aggregate": "worst",
+  "weights": {
+    "energy": 0.7,
+    "comm": 0.3
+  },
+  "constraints": {
+    "minEnergy": 0.4,
+    "minEarthFraction": 0.3,
+    "maxLongestNightH": 200
+  },
+  "earthMode": "center",
+  "earthMinElevationDeg": 2,
+  "robustness": {
+    "radiusKm": 1,
+    "directions": 8,
+    "rings": 1
+  },
+  "terrain": {
+    "enabled": true,
+    "observerHeightM": 2,
+    "resolution": "precise"
+  }
+}

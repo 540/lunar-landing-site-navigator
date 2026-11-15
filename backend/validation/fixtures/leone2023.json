@@ -1,0 +1,14 @@
+{
+ "description": "Leone et al. 2023, iScience 26, 107853, tabla 2: % del tiempo con la Tierra visible en puntos con nombre, leído por los autores del mapa de visibilidad de la Tierra de PGDA (Mazarico et al. 2011) en LROC QuickMap; es decir, PGDA de segunda mano. Transcrita a mano.",
+ "source": "https://doi.org/10.1016/j.isci.2023.107853",
+ "columns": ["name", "lat", "lon", "earthPct"],
+ "points": [
+  ["Henson N rim", -87.85, -130.74, 43],
+  ["De Gerlache rim", -88.00, -97.03, 57],
+  ["De Gerlache S rim", -89.02, -92.08, 59],
+  ["De Gerlache N rim", -87.99, -91.17, 60],
+  ["N of de Gerlache", -87.94, -82.40, 58],
+  ["Henson SSW rim", -89.44, -136.60, 58],
+  ["Shackleton rim", -89.79, -155.60, 57]
+ ]
+}

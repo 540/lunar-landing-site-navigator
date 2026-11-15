@@ -1,0 +1,17 @@
+.DS_Store
+node_modules/
+.env
+
+# Release: salidas temporales
+release/.ultima.json
+release/.ultima.json.tmp
+release/.notas.md
+release/.error.txt
+release/.auto.log
+release/.auto.cerrojo/
+
+# Matriz de validación: vista HTML y puntos de la última medición (npm run validate -- --view)
+backend/validation/out/
+
+# Banco de medición del render: cerrojo de una medición cada vez (#139)
+tools/render-bench/.lock/

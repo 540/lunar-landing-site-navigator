@@ -1,0 +1,7 @@
+{
+  "description": "SHA-256 de las alturas (Float32 little-endian) de cada rejilla LOLA de la caché, las de `node scripts/fetch-dem.ts` sin opciones, las que usa el equipo en local (validación frente a PGDA, máscaras del catálogo). scripts/pack-dem.ts las comprueba.",
+  "grids": {
+    "LDEM_60S_240MPP_ADJ_240m_c0_r0_7760x7760": "0ee079ab6ab8fd2d9001b424916905f18812b22ef1cca2a41f8f5620ec714881",
+    "LDEM_80S_20MPP_ADJ_160m_c0_r0_3800x3800": "f905fa24fb940365d3878863621e3a0a0bf3f5b4cfa1d286f23e151cae0645c3"
+  }
+}

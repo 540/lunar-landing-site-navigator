@@ -1,0 +1,8 @@
+{
+  "default": "lola-mouton",
+  "scenarios": [
+    "procedural-shackleton",
+    "lola-shackleton",
+    "lola-mouton"
+  ]
+}

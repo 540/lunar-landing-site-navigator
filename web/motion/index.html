@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Movimiento · Lunar Landing Site Navigator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/plan.css">
+  <link rel="stylesheet" href="../styles/advanced.css">
+  <link rel="stylesheet" href="../styles/replan.css">
+  <link rel="stylesheet" href="motion.css">
+  <link rel="stylesheet" href="lab.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="moon" aria-hidden="true"></span><h1>Lunar Landing Site Navigator</h1></div>
+    <span class="badge badge--outline" data-tone="warn">Laboratorio de movimiento · datos de ejemplo</span>
+    <div class="right">
+      <button class="btn" id="motion-toggle" type="button" aria-pressed="true">Movimiento: activado</button>
+      <a class="btn lab-link" href="../index.html">Volver a la app</a>
+    </div>
+  </header>
+
+  <main class="lab">
+    <section class="lab-intro">
+      <span class="eyebrow">Propuesta · no toca las vistas</span>
+      <h1 class="headline">Qué se mueve, y para qué</h1>
+      <p>Hoy la interfaz cambia a saltos: pulsas «Ver» y el resultado ya está ahí; mueves el retraso y el veredicto cambia de color sin avisar. Aquí hay ocho piezas de movimiento, cada una probada con el modelo de la app. Todas explican un cambio de estado; ninguna se mueve por adorno.</p>
+      <ul class="lab-rules">
+        <li><b>Una sola secuencia larga.</b> La búsqueda (0,8 s). Todo lo demás dura menos de medio segundo.</li>
+        <li><b>El veredicto avisa cuando cambia.</b> Una onda de su color, una vez.</li>
+        <li><b>Se puede apagar.</b> Con «movimiento reducido» en el sistema, o con el botón de arriba, todo es instantáneo.</li>
+      </ul>
+    </section>
+
+    <!-- 1. Search resolves + drag the mission -->
+    <section class="box lab-demo" id="demo-search">
+      <header class="lab-head">
+        <div>
+          <span class="eyebrow">1 · Planificar</span>
+          <h2 class="lab-title">La búsqueda se resuelve, no aparece</h2>
+          <p class="lab-why">Al pulsar «Ver», una aguja recorre el mes y deja pintadas las horas con Sol y con Tierra mientras cuenta los aterrizajes probados. Después se despliega el arco de la misión y entra el veredicto. Si mueves el retraso, el arco se desliza y, cuando cambia el veredicto, suelta una onda.</p>
+        </div>
+        <button class="btn" type="button" data-replay="search">Repetir</button>
+      </header>
+      <div class="lab-search">
+        <div class="lab-controls">
+          <div class="options" id="d1-profiles" role="radiogroup" aria-label="Perfil de nave"></div>
+          <button class="btn btn--primary btn--block" id="d1-run" type="button">Ver</button>
+          <div class="field">
+            <label for="d1-delay">Retraso: <b class="num" id="d1-delay-value">+0 días</b></label>
+            <input id="d1-delay" type="range" min="0" max="29" value="0">
+            <span class="hint">O arrastra el arco dentro del reloj.</span>
+          </div>
+        </div>
+        <canvas id="d1-clock" width="460" height="460" aria-label="Reloj lunar de 30 días"></canvas>
+        <div class="lab-result">
+          <span class="eyebrow">Mejor opción · <span id="d1-tested">0</span> aterrizajes probados en 5 sitios · datos de ejemplo</span>
+          <div id="d1-body" class="lab-result-body">
+            <h3 class="featured" id="d1-site"></h3>
+            <p class="res-line"><span class="num" id="d1-date"></span> <span class="badge badge--pill badge--large" id="d1-verdict"></span></p>
+            <p class="hint" id="d1-reason"></p>
+            <div class="figures">
+              <div class="figure"><span>Sol</span><b id="d1-sun"></b></div>
+              <div class="figure"><span>Sombra más larga</span><b id="d1-dark"></b><small id="d1-dark-req"></small></div>
+              <div class="figure"><span>Tierra visible</span><b id="d1-earth"></b><small id="d1-earth-req"></small></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="lab-note">Con el backend real, la aguja da vueltas hasta que llega la respuesta: es el estado de carga, no un retraso añadido.</p>
+    </section>
+
+    <!-- 2. Living sky -->
+    <section class="box lab-demo" id="demo-sky">
+      <header class="lab-head">
+        <div>
+          <span class="eyebrow">2 · Planificar y Avanzado</span>
+          <h2 class="lab-title">El cielo se desliza y el relieve se apaga</h2>
+          <p class="lab-why">La reproducción avanza de forma continua en vez de saltar de 2 en 2 horas. El Sol y la Tierra pasan por detrás del relieve, dejan una estela de las últimas 36 h y, cuando el Sol se esconde, el terreno se oscurece y aparece el aviso con la hora. La banda de abajo muestra de un vistazo cuándo hay Sol y cuándo hay Tierra; se puede arrastrar.</p>
+        </div>
+        <div class="segmented" id="d2-cases" role="group" aria-label="Caso"></div>
+      </header>
+      <div class="chart"><canvas id="d2-sky" aria-label="Cielo de 360° desde el sitio"></canvas></div>
+      <canvas id="d2-band" class="lab-band" tabindex="0" role="slider" aria-label="Momento de la misión" aria-valuemin="0"></canvas>
+      <div class="lab-timeline">
+        <button class="play" id="d2-play" type="button" aria-label="Reproducir la misión">▶</button>
+        <span class="player__text" id="d2-time"></span>
+        <span class="badge badge--pill" id="d2-sun-state"></span>
+        <span class="badge badge--pill" id="d2-earth-state"></span>
+        <div class="legend"><span><i style="--c: var(--color-sun)"></i>Con Sol</span><span><i style="--c: var(--color-earth)"></i>Con la Tierra</span></div>
+      </div>
+    </section>
+
+    <!-- 3. Map -->
+    <section class="box lab-demo" id="demo-map">
+      <header class="lab-head">
+        <div>
+          <span class="eyebrow">3 · Avanzado</span>
+          <h2 class="lab-title">Las sombras barren el polo</h2>
+          <p class="lab-why">Las sombras se funden entre fotogramas en vez de saltar. El Sol y la Tierra giran por el borde del mapa: se ve de dónde viene la luz y cómo la Tierra se balancea (libración). Al soltar un punto propio, una onda marca dónde ha caído y de qué color sale su veredicto.</p>
+        </div>
+        <button class="btn" type="button" data-replay="map">Repetir</button>
+      </header>
+      <div class="lab-map">
+        <canvas id="d3-map" width="360" height="360" aria-label="Mapa del polo sur con sombras en movimiento"></canvas>
+        <div class="lab-map-side">
+          <div class="lab-timeline">
+            <button class="play" id="d3-play" type="button" aria-label="Reproducir la misión">▶</button>
+            <span class="player__text" id="d3-time"></span>
+          </div>
+          <div class="legend">
+            <span><i style="--c: var(--color-sun)"></i>Sol (borde)</span>
+            <span><i style="--c: var(--color-earth)"></i>Tierra (borde)</span>
+            <span><i style="--c: #05081a"></i>Sin Sol ahora</span>
+          </div>
+          <p class="hint">Pulsa en el mapa para soltar un punto propio.</p>
+          <p class="hint" id="d3-point"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Top 3 -->
+    <section class="box lab-demo" id="demo-top">
+      <header class="lab-head">
+        <div>
+          <span class="eyebrow">4 · Avanzado</span>
+          <h2 class="lab-title">El top 3 se reordena a la vista</h2>
+          <p class="lab-why">Al cambiar la misión, las tarjetas viajan a su nuevo puesto, las cifras cuentan hasta el valor nuevo y la que entra aparece en su sitio. Así se ve qué sitio ha subido, cuál ha caído y cuál es nuevo, sin releer las tres.</p>
+        </div>
+        <div class="segmented" id="d4-profiles" role="group" aria-label="Perfil de nave"></div>
+      </header>
+      <div class="tiles" style="--min: 300px" id="d4-cards"></div>
+    </section>
+
+    <!-- 5. Delay sweep -->
+    <section class="box lab-demo" id="demo-sweep">
+      <header class="lab-head">
+        <div>
+          <span class="eyebrow">5 · Replanificar</span>
+          <h2 class="lab-title">El barrido se despliega y la columna se desliza</h2>
+          <p class="lab-why">Las casillas entran de izquierda a derecha, como el tiempo. La columna del retraso elegido es un marco que se desliza de un día a otro y, al pasar el ratón, otro marco tenue anticipa la columna. El resumen de arriba cambia con el día.</p>
+        </div>
+        <button class="btn" type="button" data-replay="sweep">Repetir</button>
+      </header>
+      <p class="lab-readout" id="d5-readout"></p>
+      <div class="sweep-wrap">
+        <div class="lab-sweep-inner" id="d5-inner">
+          <table class="sweep-table" id="d5-table"></table>
+          <div class="lab-column ghost" id="d5-ghost" hidden></div>
+          <div class="lab-column" id="d5-column"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Deviation -->
+    <section class="box lab-demo" id="demo-deviation">
+      <header class="lab-head">
+        <div>
+          <span class="eyebrow">6 · Replanificar</span>
+          <h2 class="lab-title">La prueba de desvío es un anillo, no una fila</h2>
+          <p class="lab-why">Los 8 puntos se colocan alrededor del sitio, cada uno en su dirección, y aterrizan uno tras otro. El anillo crece con el radio. Se ve hacia qué lado es peligroso desviarse, que es lo que le pasó a Athena.</p>
+        </div>
+        <button class="btn" type="button" data-replay="deviation">Repetir</button>
+      </header>
+      <div class="lab-deviation">
+        <svg id="d6-ring" viewBox="0 0 240 240" role="img" aria-label="Ocho puntos alrededor del sitio"></svg>
+        <div class="lab-deviation-side">
+          <div class="field">
+            <label for="d6-radius">Desvío al aterrizar: <b class="num" id="d6-radius-value"></b></label>
+            <input id="d6-radius" type="range" min="100" max="1500" step="50" value="400">
+          </div>
+          <p class="lab-big"><b class="num" id="d6-count">0</b> de 8 puntos viables</p>
+          <p class="reason" id="d6-reason"></p>
+          <div class="lab-before">
+            <span class="eyebrow">Como está hoy</span>
+            <div class="dots" id="d6-row"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. View change -->
+    <section class="box lab-demo" id="demo-view">
+      <header class="lab-head">
+        <div>
+          <span class="eyebrow">7 · Navegación</span>
+          <h2 class="lab-title">El plan viaja de una vista a otra</h2>
+          <p class="lab-why">Al pasar de Planificar a Avanzado, el nombre del sitio y su veredicto se desplazan hasta su tarjeta en vez de desaparecer y reaparecer. Deja claro que la primera tarjeta es el mismo plan.</p>
+        </div>
+      </header>
+      <div class="lab-view" id="d7-stage"></div>
+    </section>
+
+    <!-- 8. Micro-interactions -->
+    <section class="box lab-demo" id="demo-micro">
+      <header class="lab-head">
+        <div>
+          <span class="eyebrow">8 · Todas las vistas</span>
+          <h2 class="lab-title">Respuesta al tocar</h2>
+          <p class="lab-why">Botones, perfiles y campos responden al pasar por encima y al pulsar. Es solo CSS: basta con enlazar <code>motion.css</code>. Pulsa el veredicto para ver el aviso de cambio.</p>
+        </div>
+      </header>
+      <div class="lab-micro">
+        <button class="btn" type="button">Vista avanzada →</button>
+        <button class="btn btn--primary" type="button">Ver</button>
+        <button class="btn" type="button" id="d8-adopt">Adoptar</button>
+        <div class="segmented" id="d8-layers" role="group" aria-label="Capa del mapa">
+          <button type="button" aria-pressed="true">Luz</button><button type="button" aria-pressed="false">Tierra</button><button type="button" aria-pressed="false">Relieve</button>
+        </div>
+        <button class="badge badge--pill badge--large lab-pill-button" data-tone="ok" data-code="viable" id="d8-pill" type="button">Viable</button>
+        <div class="field lab-micro-field"><label for="d8-days">Días en superficie</label><input id="d8-days" type="number" value="10"></div>
+      </div>
+    </section>
+
+    <section class="box lab-demo">
+      <header class="lab-head"><div><span class="eyebrow">Para integrarlo</span><h2 class="lab-title">Qué va a cada zona</h2></div></header>
+      <div class="lab-table-wrap">
+        <table class="lab-table">
+          <thead><tr><th>Pieza</th><th>Dónde va</th><th>Zona</th><th>Coste</th></tr></thead>
+          <tbody>
+            <tr><td>Tokens, respuesta al tocar y utilidades <code>.motion-*</code></td><td><code>motion/motion.css</code> → enlazar en <code>index.html</code></td><td>Común</td><td>Una línea</td></tr>
+            <tr><td>Reproducción continua (sustituye al <code>setInterval</code> de 2 h)</td><td><code>createPlayer</code> en <code>js/app.js</code>; la hora pasa a tener decimales</td><td>Común</td><td>Medio</td></tr>
+            <tr><td>1 · Búsqueda y arco del reloj</td><td><code>createClock</code> en <code>js/views/plan.js</code></td><td>Planificar</td><td>Medio</td></tr>
+            <tr><td>2 · Cielo vivo y banda de tiempo</td><td><code>createSky</code> en <code>js/common/charts.js</code></td><td>Común</td><td>Medio</td></tr>
+            <tr><td>3 · Sombras fundidas, Sol y Tierra en el borde, ondas</td><td><code>createMap</code> en <code>js/common/map.js</code></td><td>Avanzado</td><td>Alto</td></tr>
+            <tr><td>4 · Reordenación del top 3</td><td><code>flip</code> y <code>countTo</code> en <code>js/views/advanced.js</code> (hoy rehace el HTML entero)</td><td>Avanzado</td><td>Medio</td></tr>
+            <tr><td>5 · Cascada y columna deslizante</td><td><code>js/views/replan.js</code> y <code>styles/replan.css</code></td><td>Replanificar</td><td>Bajo</td></tr>
+            <tr><td>6 · Anillo de desvío</td><td><code>js/views/replan.js</code></td><td>Replanificar</td><td>Bajo</td></tr>
+            <tr><td>7 · Cambio de vista</td><td><code>viewTransition</code> en el <code>hashchange</code> de <code>js/app.js</code></td><td>Común</td><td>Bajo</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="lab.js"></script>
+</body>
+</html>

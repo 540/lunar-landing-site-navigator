@@ -1,0 +1,123 @@
+{
+    "site": {
+        "id": "shackleton-rim",
+        "name": "Cresta de conexi\u00f3n de Shackleton",
+        "region": "Polo sur",
+        "program": "Artemis (zona)",
+        "latDeg": -89.44027,
+        "lonDeg": -137.12649,
+        "heightKm": 0,
+        "coordinatesVerified": false,
+        "custom": false,
+        "horizonModel": "sphere"
+    },
+    "start": "2027-01-01T00:00:00.000Z",
+    "end": "2027-07-01T00:00:00.000Z",
+    "mode": "center",
+    "sun": {
+        "summary": {
+            "count": 1,
+            "totalHours": 970.609,
+            "fractionOfTime": 0.2234,
+            "longestWindowHours": 970.609
+        },
+        "windows": [
+            {
+                "start": "2027-01-01T00:00:00.000Z",
+                "end": "2027-02-10T10:36:33.311Z",
+                "durationHours": 970.609,
+                "startsBeforeRange": true,
+                "endsAfterRange": false
+            }
+        ]
+    },
+    "earth": {
+        "summary": {
+            "count": 7,
+            "totalHours": 1961.677,
+            "fractionOfTime": 0.4516,
+            "longestWindowHours": 299.569
+        },
+        "windows": [
+            {
+                "start": "2027-01-11T03:43:18.486Z",
+                "end": "2027-01-23T08:05:45.850Z",
+                "durationHours": 292.374,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-02-07T08:48:05.010Z",
+                "end": "2027-02-19T18:57:28.389Z",
+                "durationHours": 298.156,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-03-06T15:09:58.975Z",
+                "end": "2027-03-19T02:44:06.826Z",
+                "durationHours": 299.569,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-04-02T20:50:15.967Z",
+                "end": "2027-04-15T05:53:54.814Z",
+                "durationHours": 297.061,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-04-30T00:38:48.662Z",
+                "end": "2027-05-12T06:53:51.299Z",
+                "durationHours": 294.251,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-05-27T03:17:12.275Z",
+                "end": "2027-06-08T10:00:08.350Z",
+                "durationHours": 294.716,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-06-23T06:26:57.627Z",
+                "end": "2027-07-01T00:00:00.000Z",
+                "durationHours": 185.551,
+                "startsBeforeRange": false,
+                "endsAfterRange": true
+            }
+        ]
+    },
+    "sunAndEarth": {
+        "summary": {
+            "count": 2,
+            "totalHours": 366.182,
+            "fractionOfTime": 0.0843,
+            "longestWindowHours": 292.374
+        },
+        "windows": [
+            {
+                "start": "2027-01-11T03:43:18.486Z",
+                "end": "2027-01-23T08:05:45.850Z",
+                "durationHours": 292.374,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            },
+            {
+                "start": "2027-02-07T08:48:05.010Z",
+                "end": "2027-02-10T10:36:33.311Z",
+                "durationHours": 73.808,
+                "startsBeforeRange": false,
+                "endsAfterRange": false
+            }
+        ]
+    },
+    "warnings": [
+        {
+            "code": "smooth_moon_polar",
+            "message": "Sin relieve (terrain=1): horizonte de Luna lisa a 0\u00b0 a m\u00e1s de 80\u00b0 de latitud. En los polos el relieve decide la luz y la visibilidad de la Tierra; estas cifras son optimistas o, en un cr\u00e1ter, directamente falsas."
+        }
+    ]
+}

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Aterrizaje a bordo · Lunar Landing Site Navigator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="src/styles/lander.css">
+  <!-- Design system tokens: the verdict colours (#341) -->
+  <link rel="stylesheet" href="../web/styles/tokens.css">
+  <link rel="icon" type="image/png" sizes="32x32" href="../web/assets/icon-32.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="../web/assets/icon-512.png">
+  <link rel="apple-touch-icon" href="../web/assets/icon-180.png">
+  <script type="importmap">
+  {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+  </script>
+</head>
+<body>
+  <div class="app" id="app">
+    <canvas id="gl" aria-label="Cabina del módulo de aterrizaje" role="application"></canvas>
+    <div class="smoke" id="smoke" aria-hidden="true"></div>
+    <div class="flash" id="flash" aria-hidden="true"></div>
+
+    <a class="back" id="back" href="../home/">← Volver a la Luna</a>
+
+    <div class="strip" id="strip" hidden>
+      <span class="strip__phase" id="phase"></span>
+      <span><small id="lblAlt"></small><b id="alt">–</b><i>m</i></span>
+      <span><small id="lblVv"></small><b id="vv">–</b><i>m/s</i></span>
+      <span><small id="lblVh"></small><b id="vh">–</b><i>m/s</i></span>
+      <span><small id="lblFuel"></small><b id="fuel">–</b><i>%</i></span>
+      <span class="strip__mode" id="mode"></span>
+    </div>
+
+    <div class="reticle" id="reticle" aria-hidden="true" hidden></div>
+    <p class="hint" id="hint" role="status" aria-live="polite" hidden></p>
+    <p class="warn" id="warn" role="alert" hidden></p>
+    <p class="radio" id="radio" aria-live="polite" hidden></p>
+    <p class="lockhint" id="lockhint" hidden></p>
+
+    <div class="touch" id="touch" hidden>
+      <div class="stickpad" id="stickpad" aria-hidden="true"><i id="stickdot"></i></div>
+      <div class="touch__buttons">
+        <button type="button" id="tSit"></button>
+        <button type="button" id="tAuto"></button>
+        <button type="button" id="tUp" aria-label="">▲</button>
+        <button type="button" id="tDown" aria-label="">▼</button>
+        <button type="button" id="tBack" aria-label="">◀</button>
+        <button type="button" id="tFwd" aria-label="">▶</button>
+      </div>
+    </div>
+
+    <div class="loading" id="loading" role="status" aria-live="polite">
+      <div class="loading__ring" aria-hidden="true"></div>
+      <p id="loadingText"></p>
+    </div>
+
+    <div class="card" id="intro" role="dialog" aria-modal="true" aria-labelledby="introTitle" hidden>
+      <p class="card__kicker" id="introKicker"></p>
+      <h1 id="introTitle"></h1>
+      <p id="introText"></p>
+      <h2 id="introControlsTitle"></h2>
+      <dl class="keys" id="introControls"></dl>
+      <div class="card__actions">
+        <button class="primary" type="button" id="start"></button>
+        <span class="card__note" id="introNote"></span>
+      </div>
+    </div>
+
+    <div class="card card--end" id="end" role="dialog" aria-modal="true" aria-labelledby="endTitle" hidden>
+      <p class="card__kicker" id="endKicker"></p>
+      <h1 id="endTitle"></h1>
+      <p id="endText"></p>
+      <ul class="reasons" id="endReasons"></ul>
+      <dl class="stats" id="endStats"></dl>
+      <p class="card__note" id="endLimits"></p>
+      <div class="card__actions">
+        <button class="primary" type="button" id="retry"></button>
+        <a class="secondary" id="endHome" href="../home/"></a>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="src/main.js"></script>
+  <script type="module" src="../shared/version/badge.js"></script>
+</body>
+</html>

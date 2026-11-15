@@ -1,0 +1,11 @@
+{
+  "workflow": "generic",
+  "commands": {
+    "test": "npm install --prefix backend && npm install --prefix data && npm test",
+    "typecheck": "npm install --prefix backend && npm install --prefix data && npm run typecheck",
+    "lint": "echo 'Sin linter configurado todavía'"
+  },
+  "ci": "github-actions",
+  "branchTemplate": "feat/{key}-{slug}",
+  "workerNotes": "Lee CLAUDE.md y README.md antes de tocar nada. Commits y PR en español con tildes, ñ, ¿ y ¡, y con la referencia a la issue (#{key}). Código en inglés; textos que ve el usuario, en español. No edites prototipo/ ni CLAUDE.md. No hagas commit de nada bajo .claude/ (el runner siembra ficheros ahí). Una pantalla nueva es una carpeta en la raíz, añadida a MOUNTS en serve.mjs y al href de su misión en home/index.html. Antes de abrir la PR, `npm test` en la raíz tiene que pasar."
+}

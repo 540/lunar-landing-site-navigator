@@ -1,0 +1,49 @@
+{
+  "name": "reto-polo-sur-v3",
+  "description": "BENCHMARK v3 = v2 + RELIEVE LOLA. Misma misión y mismas reglas que el v2 (14 días, alunizaje 10-ene-2027 con retrasos al 24-ene y 7-feb, peor fecha real, Tierra con el centro a ≥2°, energía 0,7 / comunicación 0,3), pero cada punto usa su máscara de horizonte calculada desde el DEM LOLA (observador a 2 m sobre el terreno). Con relieve el campo cambia en 1–2 km, así que la malla inicial es de 3 km; la región por defecto es la franja donde el v2 y la búsqueda con relieve encuentran los mejores sitios (la caché de 240 m cubre hasta 60°S: se puede ampliar). La malla usa el modo rápido (160/240 m); confirma los finalistas en modo puntos con terrain.resolution=\"precise\" y robustness. Para competir solo se puede cambiar region, search o points.",
+  "region": {
+    "latMin": -82,
+    "latMax": -72,
+    "lonMin": -30,
+    "lonMax": 10
+  },
+  "dates": [
+    "2027-01-10",
+    "2027-01-24",
+    "2027-02-07"
+  ],
+  "missionDays": 14,
+  "stepMinutes": 60,
+  "mode": "limb",
+  "aggregate": "worst",
+  "weights": {
+    "energy": 0.7,
+    "comm": 0.3
+  },
+  "constraints": {
+    "minEnergy": 0.4,
+    "minEarthFraction": 0.3,
+    "maxLongestNightH": 200
+  },
+  "search": {
+    "spacingKm": 3,
+    "maxIterations": 4,
+    "keepTop": 10,
+    "minSpacingKm": 0.7,
+    "stopDelta": 0.01,
+    "patience": 2
+  },
+  "baselines": [
+    "shackleton-rim",
+    "im2-alunizaje",
+    "im1",
+    "chandrayaan3"
+  ],
+  "earthMode": "center",
+  "earthMinElevationDeg": 2,
+  "terrain": {
+    "enabled": true,
+    "observerHeightM": 2,
+    "resolution": "fast"
+  }
+}

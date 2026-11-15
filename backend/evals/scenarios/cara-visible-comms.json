@@ -1,0 +1,13 @@
+{
+  "name": "cara-visible-comms",
+  "description": "Prioriza comunicación directa continua y noches cortas en la cara visible, con 3 fechas repartidas en un mes (cualquier fase).",
+  "region": { "latMin": -60, "latMax": 60, "lonMin": -90, "lonMax": 90 },
+  "dates": ["2027-03-01", "2027-03-11", "2027-03-21"],
+  "missionDays": 10,
+  "stepMinutes": 60,
+  "aggregate": "mean",
+  "weights": { "energy": 0.2, "comm": 0.5, "both": 0.2, "night": 0.1 },
+  "constraints": { "minEarthFraction": 0.99 },
+  "search": { "spacingKm": 100, "maxIterations": 6 },
+  "baselines": ["apollo11", "apollo15", "apollo17", "chandrayaan3"]
+}

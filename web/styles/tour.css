@@ -1,0 +1,41 @@
+/* Guided tour (js/common/tour-engine.js): a spotlight on the current element and a popover with the step.
+   It takes the colours from styles/tokens.css (so it follows the light theme too): screens outside web/ (home/)
+   link tokens.css before this file. It shares the violet of the explanation mode. */
+.tour {
+  --tour-accent: var(--color-explain);
+  --tour-surface: var(--color-surface);
+  --tour-raised: var(--color-surface-raised);
+  --tour-border: var(--color-border);
+  --tour-text: var(--color-text);
+  --tour-muted: var(--color-text-muted);
+  --tour-inverse: var(--color-text-inverse);
+  --tour-display: var(--font-display, var(--f-display, inherit));
+  --tour-mono: var(--font-data, var(--f-mono, ui-monospace, Menlo, monospace));
+  --tour-glide: var(--motion-medium, 280ms) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+  position: fixed; inset: 0; z-index: var(--z-tour, 40);
+}
+.tour[hidden] { display: none; }
+.tour__spot { position: fixed; border-radius: 8px; outline: 2px solid var(--tour-accent); box-shadow: 0 0 0 200vmax var(--color-scrim); pointer-events: none; }
+.tour__spot[hidden] { display: none; }
+.tour__pop { position: fixed; box-sizing: border-box; width: 400px; max-width: calc(100vw - 24px); display: grid; gap: 8px; padding: 16px; background: var(--tour-surface); color: var(--tour-text); border: 1px solid var(--tour-accent); border-radius: 8px; box-shadow: var(--shadow-pop); font-size: 14px; line-height: 1.45; }
+.tour__count { font-family: var(--tour-mono); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tour-accent); }
+.tour__pop h2 { margin: 0; font-family: var(--tour-display); font-size: 1.1rem; font-weight: 600; line-height: 1.2; text-transform: none; letter-spacing: 0; color: var(--tour-text); }
+.tour__pop p { margin: 0; }
+.tour__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+.tour__btn { font: inherit; color: var(--tour-text); background: var(--tour-surface); border: 1px solid var(--tour-border); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+.tour__btn:hover { background: var(--tour-raised); }
+.tour__btn[hidden], .tour__skip[hidden], .tour__never[hidden] { display: none; }
+.tour__btn.tour__btn--primary { background: var(--tour-text); color: var(--tour-inverse); border-color: var(--tour-text); font-weight: 600; }
+.tour__btn.tour__btn--primary:hover { background: var(--tour-muted); border-color: var(--tour-muted); }
+.tour__skip { margin-right: auto; padding: 6px 0; border: 0; background: none; color: var(--tour-muted); font: inherit; font-size: 0.74rem; text-decoration: underline; cursor: pointer; }
+.tour__skip:hover { color: var(--tour-text); }
+/* «No mostrar más tutoriales» (#205): its own row under the actions, only on the tour that opens by itself */
+.tour__never { justify-self: start; min-height: 24px; padding: 6px 0 0; border: 0; border-top: 1px solid var(--tour-border); width: 100%; text-align: left; background: none; color: var(--tour-muted); font: inherit; font-size: 0.74rem; text-decoration: underline; cursor: pointer; }
+.tour__never:hover { color: var(--tour-text); }
+.tour--moving .tour__spot { transition: left var(--tour-glide), top var(--tour-glide), width var(--tour-glide), height var(--tour-glide); }
+.tour--moving .tour__pop { transition: left var(--tour-glide), top var(--tour-glide); }
+@media (prefers-reduced-motion: reduce) { .tour--moving .tour__spot, .tour--moving .tour__pop { transition: none; } }
+
+/* Replay button in the top bar of web/: compass icon + label; on phones only the icon. */
+.tour-btn svg { flex: none; color: var(--color-explain); }
+@media (max-width: 700px) { .tour-btn__label { display: none; } }

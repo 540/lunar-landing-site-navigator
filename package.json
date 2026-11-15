@@ -1,0 +1,28 @@
+{
+  "name": "lunar-landing-site-navigator",
+  "private": true,
+  "description": "Lunar Landing Site Navigator · equipo 540 · NASA Space Apps 2026",
+  "license": "MIT",
+  "engines": {
+    "node": "26.x"
+  },
+  "scripts": {
+    "start": "node serve.mjs",
+    "start:data": "npm start --prefix data",
+    "validate": "npm run validate --prefix backend --",
+    "validate:view": "npm run validate:view --prefix backend --",
+    "typecheck": "npm run typecheck --prefix backend && npm run typecheck --prefix data && backend/node_modules/.bin/tsc -p home/scripts",
+    "parity": "bash .claude/scripts/api-parity.sh",
+    "test": "npm run typecheck && npm run parity && node --test tests/*.test.mjs && npm test --prefix backend && node backend/evals/golden.ts check && npm test --prefix data && npm test --prefix planner && npm test --prefix pipeline && npm test --prefix web && npm test --prefix viewpoint && npm test --prefix rolegame && npm test --prefix lander",
+    "pipeline:ephemeris": "node pipeline/ephemeris.mjs",
+    "pipeline:mask-grid": "node pipeline/mask-grid.mjs",
+    "pipeline:horizon-mask": "node pipeline/horizon-mask.mjs",
+    "pipeline:relief": "node pipeline/relief.mjs",
+    "pipeline:relief:lola": "node pipeline/relief.mjs --source lola",
+    "pipeline:game-scenario": "node pipeline/game-scenario.mjs",
+    "pipeline:game-solver": "node pipeline/game-solver.mjs",
+    "pipeline:game-candidates": "node pipeline/game-candidates.mjs",
+    "bench:render": "node tools/render-bench/bench.mjs",
+    "bench:diff": "node tools/render-bench/diff.mjs"
+  }
+}

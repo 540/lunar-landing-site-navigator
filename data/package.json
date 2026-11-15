@@ -1,0 +1,25 @@
+{
+  "name": "lunar-navigator-public-api",
+  "version": "1.24.0",
+  "description": "API pública v1 (mínima y estable) del Lunar Landing Site Navigator: Sol y Tierra vistos desde un sitio lunar",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.ts",
+    "test": "node --test test/*.test.ts",
+    "typecheck": "tsc -p .",
+    "accuracy": "node test/accuracy-report.ts",
+    "validation-summary": "node test/validation-summary.ts"
+  },
+  "engines": {
+    "node": "26.13.x"
+  },
+  "dependencies": {
+    "graphql": "17.0.2",
+    "yaml": "2.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "typescript": "7.0.2"
+  }
+}

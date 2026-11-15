@@ -1,0 +1,550 @@
+/* Starting style: :root variables from the prototype (docs/juego-rol/index.html) and the home fonts. */
+:root {
+  color-scheme: dark;
+  --bg: #060708; --panel: #0e1013; --raise: #15181c; --line: #22262c; --line2: #2d323a;
+  --fg: #ebe8e2; --muted: #8c9198; --faint: #5b6068;
+  --sun: #f2a33a; --earth: #4f9df0; --good: var(--color-map-ok); --bad: var(--color-map-bad); --warn: var(--color-map-warn); /* tokens.css (#341) */
+  --f-display: "Space Grotesk", system-ui, sans-serif;
+  --f-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; background: var(--bg); color: var(--fg); }
+body { font-family: var(--f-body); font-size: 14.5px; line-height: 1.5; }
+:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+
+.app {
+  max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px;
+  padding: 14px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px));
+}
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 24px; justify-content: space-between; }
+h1 { font-family: var(--f-display); font-weight: 600; font-size: 22px; margin: 0; line-height: 1.1; text-transform: uppercase; letter-spacing: .01em; }
+.back { display: inline-flex; align-items: center; gap: 10px; color: var(--muted); text-decoration: none; }
+.back:hover { color: var(--fg); }
+.moon { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 72% 40%, #d9d5cc 0 46%, transparent 47%), #1a1d21; box-shadow: inset -3px 0 0 #0006; }
+.top__end { display: flex; align-items: center; gap: 10px; }
+.tutorial-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 12px; border: 1px solid var(--line2); border-radius: 999px; background: var(--raise); color: var(--muted); font: 500 12px/1 var(--f-body); cursor: pointer; }
+.tutorial-btn:hover { color: var(--fg); }
+.tutorial-btn svg { color: var(--earth); }
+.badge { font-family: var(--f-mono); font-size: 12px; color: var(--sun); border: 1px solid var(--sun); border-radius: 999px; padding: 3px 12px; }
+
+/* Map slot (square canvas) and side panel: stacked on mobile, side by side from 900px. */
+.stage { display: grid; gap: 14px; grid-template-columns: 1fr; }
+/* Map (J4.1): the WebGL relief (#map-gl) under the 2D canvas (#map), which keeps taps, keyboard and focus. */
+.map-col { display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 0; }
+.map-stack { position: relative; width: min(100%, calc(100dvh - 120px)); aspect-ratio: 1; }
+#map { position: relative; width: 100%; aspect-ratio: 1; height: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; display: block; }
+#map.map--gl { background: transparent; }
+#map-gl { position: absolute; inset: 0; width: 100%; height: 100%; border: 1px solid transparent; border-radius: 12px; display: block; }
+.panel { min-height: 160px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+@media (min-width: 900px) {
+  .stage { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; }
+}
+
+/* HUD and end screen (J0.4). */
+#map { touch-action: manipulation; cursor: pointer; }
+.hud { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; margin: 0 0 12px; }
+.hud dt { color: var(--muted); }
+.hud dd { margin: 0; font-family: var(--f-mono); text-align: right; }
+.hint { color: var(--muted); font-size: 13px; margin: 0; }
+.warn { color: #f2a33a; font-size: 13px; margin: 8px 0 0; }
+.end { margin-top: 16px; padding: 14px; border: 1px solid var(--line2); border-radius: 10px; background: var(--raise); }
+.end h2 { font-family: var(--f-display); font-size: 18px; margin: 0 0 6px; }
+.end--win h2 { color: var(--good); }
+.end--battery h2, .end--time h2 { color: var(--bad); }
+.end p { margin: 0 0 12px; }
+.again { min-height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--sun); color: #1a1205; font: 600 14px/1 var(--f-body); cursor: pointer; }
+
+/* Text for screen readers only. */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* Preview of the planned route (J1.2): red if the battery runs out, yellow below the lift-off minimum. */
+.preview { margin: 0 0 12px; padding: 12px; border: 1px solid var(--line2); border-left: 4px solid var(--line2); border-radius: 10px; background: var(--raise); }
+.preview--depleted { border-color: var(--bad); }
+.preview--low { border-color: var(--warn); }
+.preview h2 { font-family: var(--f-display); font-size: 16px; margin: 0 0 8px; }
+.preview .hud { margin-bottom: 8px; }
+.preview--depleted .hud dd:last-of-type, .preview--depleted .preview__alert { color: var(--bad); }
+.preview--low .hud dd:last-of-type, .preview--low .preview__alert { color: var(--warn); }
+.preview__alert { margin: 0 0 8px; font-size: 13px; font-weight: 500; }
+.preview__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.ghost { min-height: 40px; padding: 0 18px; border: 1px solid var(--line2); border-radius: 999px; background: transparent; color: inherit; font: 600 14px/1 var(--f-body); cursor: pointer; }
+.panel, .preview { overflow-wrap: anywhere; }
+
+/* Wait buttons (J2.1), under the summary. */
+.wait { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.wait .ghost { min-height: 44px; }
+.ghost:disabled { opacity: .45; cursor: not-allowed; }
+
+/* Battery bar (J2.2): fill coloured by level, tick at the lift-off minimum (prototype .batt, panel-sized). */
+.battery { display: inline-flex; align-items: center; gap: 10px; }
+.meter { position: relative; display: block; width: clamp(96px, 30vw, 150px); height: 10px; border-radius: 3px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+.meter__fill { position: absolute; inset: 0 auto 0 0; background: var(--good); }
+.meter--warn .meter__fill { background: var(--warn); }
+.meter--bad .meter__fill { background: var(--bad); }
+.meter__min { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--fg); opacity: .8; }
+.battery__pct { min-width: 3.5em; }
+.min-mark::before { content: ""; display: inline-block; width: 2px; height: 10px; margin-right: 8px; vertical-align: -1px; background: var(--fg); opacity: .8; }
+
+/* Energy hint (J2.4): replaces the usual help in shadow with a low battery. */
+.hint--energy { color: var(--warn); font-weight: 500; }
+
+/* Mission goal and packages (J3.1). */
+.goal { margin: 0 0 12px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.packets { display: inline-flex; align-items: center; gap: 10px; }
+.pk { display: inline-flex; gap: 3px; }
+.pk span { width: 10px; height: 10px; border-radius: 2px; border: 1px solid var(--earth); }
+.pk span.on { background: var(--earth); }
+.actions { display: flex; flex-direction: column; gap: 8px; margin: 0 0 12px; }
+.actions .wait { margin: 0; }
+.transmit { min-height: 44px; padding: 0 18px; border: 1px solid var(--earth); border-radius: 999px; background: rgba(79, 157, 240, .16); color: var(--fg); font: 600 14px/1 var(--f-body); cursor: pointer; }
+.transmit:disabled { opacity: .45; cursor: not-allowed; }
+#wait-earth { border-color: rgba(79, 157, 240, .6); color: var(--earth); }
+.warn--packets { margin: 0 0 12px; color: var(--earth); font-weight: 500; }
+
+/* «Tierra visible» layer (J3.2): the legend, with the same dot as on the map. */
+.legend-earth { margin: -4px 0 12px; font-size: 12.5px; color: var(--muted); }
+.legend-earth::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 8px; vertical-align: -1px; border-radius: 2px; background: rgba(79, 157, 240, .4); box-shadow: inset 0 0 0 3px rgba(79, 157, 240, .4); }
+
+/* Earth hints (J3.5). */
+.hint--earth { color: var(--earth); font-weight: 500; }
+
+/* Horizon ring (J3.4): the sky compass of Plan seen from the rover's cell. */
+.ringbox { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.ringbox__head { display: flex; justify-content: space-between; margin: 0; font: 600 11px/1.4 var(--f-display); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.ringbox__note { font-family: var(--f-mono); font-weight: 400; text-transform: none; letter-spacing: 0; }
+.ring { display: block; width: 100%; margin-top: 6px; }
+
+/* Language switch (J10.1): «ES | EN» next to the tutorial button. */
+.lang { display: inline-flex; border: 1px solid var(--line2); border-radius: 999px; overflow: hidden; }
+.lang button { min-height: 32px; min-width: 40px; padding: 0 10px; border: 0; background: transparent; color: var(--muted); font: 600 12px/1 var(--f-mono); cursor: pointer; }
+.lang button[aria-pressed="true"] { background: var(--raise); color: var(--fg); }
+.lang button + button { border-left: 1px solid var(--line2); }
+.top__end { flex-wrap: wrap; }
+.lang, .badge, .tutorial-btn { flex: none; white-space: nowrap; }
+
+/* Reduced motion (J10.2): nothing slides or pulses, by system preference or with the switch in «Ajustes»
+   (.reduce-motion on <html>, set from motion.js). It also covers the tutorial and the modals that come later. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+.reduce-motion *, .reduce-motion *::before, .reduce-motion *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+
+/* Introduction and trials (J5): steps bar, landing and predict-and-reveal trials (prototype .steps, .q, .opt, .reveal). */
+.panel { min-width: 0; }
+.steps { display: flex; align-items: center; gap: 4px; margin: 0 0 14px; padding: 0; list-style: none; overflow-x: auto; scrollbar-width: none; font-size: 12.5px; color: var(--faint); }
+.steps li { display: inline-flex; align-items: center; gap: 6px; padding: 3px 0; white-space: nowrap; }
+.steps li + li::before { content: ""; width: 18px; height: 1px; margin-right: 4px; background: var(--line2); flex: none; }
+.steps b { display: grid; place-items: center; width: 18px; height: 18px; border: 1px solid var(--line2); border-radius: 50%; font: 500 10.5px/1 var(--f-mono); }
+.steps li.on { color: var(--fg); }
+.steps li.on b { border-color: var(--sun); color: var(--sun); }
+.steps li.done { color: var(--muted); }
+.steps li.done b { background: var(--raise); }
+.kicker { margin: 0 0 4px; font: 600 11px/1.4 var(--f-display); color: var(--sun); text-transform: uppercase; letter-spacing: .08em; }
+.intro__title { margin: 0 0 10px; font: 600 20px/1.2 var(--f-display); }
+.intro__title:focus { outline: none; }
+.lead { margin: 0 0 14px; color: var(--fg); }
+.intro__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.q { display: flex; flex-direction: column; gap: 7px; }
+.q h3 { margin: 0 0 2px; font-size: 14.5px; font-weight: 600; }
+.opt { display: flex; gap: 10px; align-items: flex-start; min-height: 44px; padding: 9px 12px; text-align: left; background: var(--raise); border: 1px solid var(--line); border-radius: 8px; color: var(--fg); font: 400 13.5px/1.4 var(--f-body); cursor: pointer; }
+.opt b { padding-top: 1px; font: 500 12px/1.4 var(--f-mono); color: var(--faint); }
+.opt:hover:not(:disabled) { border-color: var(--line2); background: #1a1e23; }
+.opt:disabled { cursor: default; }
+.opt--ok { border-color: var(--good); }
+.opt--ok b { color: var(--good); }
+.opt--ko { border-color: var(--bad); }
+.opt--ko b { color: var(--bad); }
+.intro__show { align-self: flex-start; }
+.reveal { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding: 10px 12px; border-radius: 8px; background: rgba(242, 163, 58, .1); font-size: 13.5px; }
+.reveal p { margin: 0; }
+.reveal:focus { outline: none; }
+.verdict { font-weight: 600; font-size: 13px; }
+.verdict--ok { color: var(--good); }
+.verdict--ko { color: var(--bad); }
+.reveal__data { font-weight: 500; }
+.intro__hours { align-self: flex-start; font: 500 12px/1 var(--f-mono); color: var(--sun); }
+.mini { display: block; width: 100%; height: 110px; background: var(--raise); border-radius: 8px; }
+
+/* End of the game (J7.1): the end panel replaces the game panel; the actions leave room for J7.4 and later stories. */
+.end { margin-top: 0; }
+.end__title { margin: 0 0 6px; font: 600 20px/1.2 var(--f-display); }
+.end__title:focus { outline: none; }
+.end__why { margin: 0 0 14px; }
+.end__actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.end__link { display: inline-flex; align-items: center; text-decoration: none; }
+.end__link:hover { border-color: var(--fg); }
+
+/* Illumination map and lessons of the end (J7.2): scale from 0 to 100 % of the time in sunlight (prototype .deb). */
+.illum { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line2); }
+.illum__summary { margin: 0 0 10px; font-weight: 500; }
+.illum__legend { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 8px; margin: 0 0 8px; font: 12px/1.3 var(--f-mono); color: var(--muted); }
+.illum__label { grid-column: 1 / -1; font-family: var(--f-body); }
+.illum__bar { height: 10px; border-radius: 3px; background: linear-gradient(90deg, #2a2b2d, rgb(242, 163, 58)); }
+.lessons__title { margin: 14px 0 8px; font: 600 15px/1.3 var(--f-display); }
+.lessons { margin: 0; padding-left: 20px; display: grid; gap: 8px; font-size: 13.5px; }
+.lessons b { color: var(--fg); font-weight: 600; }
+
+/* Legend under the map (J4.4): wraps on narrow screens. */
+.legend { width: min(100%, calc(100dvh - 120px)); margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); }
+.legend li { display: inline-flex; align-items: center; gap: 7px; }
+.legend__sun { color: var(--fg); }
+.legend__key { flex: none; display: inline-block; width: 12px; height: 12px; }
+.legend__key--swatch { border-radius: 3px; background: var(--key); border: 1px solid var(--line2); }
+.legend__key--dot { border-radius: 3px; background: rgba(79, 157, 240, .4); box-shadow: inset 0 0 0 4px rgba(79, 157, 240, .4); }
+.legend__key--disc { border-radius: 50%; background: var(--key); }
+.legend__key--ring { border-radius: 50%; border: 2px dashed var(--key); }
+/* Why «Transmitir» is off although the Earth is in sight (J3.6). */
+.transmit-why { margin: 0; font-size: 12.5px; color: var(--earth); }
+.legend__key--pad { border-radius: 50%; border: 2px solid var(--key); background: radial-gradient(circle, var(--key) 0 2px, transparent 3px); }
+.legend__key--line { height: 0; border-top: 2px dashed var(--key); }
+.legend__key--dash { height: 0; border-top: 2px dotted var(--key); }
+.legend__key--arrow { width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 11px solid var(--key); }
+
+/* Level selector (J6.1): three buttons in the header, the chosen one marked. */
+.top__end { flex-wrap: wrap; justify-content: flex-end; }
+.levels { display: inline-flex; border: 1px solid var(--line2); border-radius: 999px; overflow: hidden; }
+.levels button { min-height: 32px; padding: 0 12px; border: 0; background: transparent; color: var(--muted); font: 500 12px/1 var(--f-body); cursor: pointer; }
+.levels button + button { border-left: 1px solid var(--line2); }
+.levels button[aria-pressed="true"] { background: var(--sun); color: #1a1205; font-weight: 600; }
+.levels button:disabled { opacity: .5; cursor: not-allowed; }
+.panels--sun { color: var(--sun); }
+.panels--below { color: var(--warn); }
+.panels--partial, .panels--dark { color: var(--muted); }
+
+/* Checks (J6.3): a circle that fills with a tick when met (prototype .ck). */
+.ck { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); }
+.ck i { width: 15px; height: 15px; border-radius: 50%; border: 1.5px solid var(--line2); display: grid; place-items: center; font-style: normal; font-size: 10px; color: transparent; }
+.ck.on { color: var(--fg); }
+.ck.on i { background: var(--good); border-color: var(--good); color: #06120b; }
+.ck.pop i { animation: ck-pop .6s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes ck-pop { 0% { transform: scale(.3); } 60% { transform: scale(1.35); } 100% { transform: scale(1); } }
+.packets .ck { margin-left: 2px; }
+
+/* Goal button and log of events (J6.4). */
+.goal-btn { min-height: 36px; margin: -4px 0 12px; }
+.log { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.log h2 { margin: 0 0 4px; font: 600 11px/1.4 var(--f-display); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.log ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); }
+.log .ev { color: var(--warn); }
+
+/* «Tierra visible» over the map (J6.5, intermediate only). */
+/* Since J13.2 it sits in the bottom right corner of the map, over «Leyenda», styled as the mock-up's .lb. */
+.earth-toggle[aria-pressed="true"] { color: var(--earth); border-color: rgba(79, 157, 240, .6); }
+
+/* Mission goal (J6.2): modal with three illustrated steps that come in one after another. */
+.goal-dialog { max-width: min(700px, calc(100vw - 32px)); width: 100%; padding: 20px; border: 1px solid var(--line2); border-radius: 14px; background: var(--panel); color: var(--fg); }
+.goal-dialog::backdrop { background: rgba(0, 0, 0, .6); }
+.goal-dialog__kicker { margin: 0; font: 500 12px/1.4 var(--f-mono); color: var(--sun); }
+.goal-dialog h2 { margin: 4px 0 14px; font: 600 20px/1.2 var(--f-display); }
+.gsteps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.gstep { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--raise); text-align: center; animation: gstep-in .55s ease backwards; }
+.gstep:nth-child(2) { animation-delay: .7s; }
+.gstep:nth-child(3) { animation-delay: 1.4s; }
+@keyframes gstep-in { from { opacity: 0; transform: translateY(10px); } }
+.gstep svg { width: 92px; height: 92px; flex: none; }
+.gstep .gn { font: 500 11px/1 var(--f-mono); color: var(--sun); }
+.gstep p { margin: 4px 0 0; font-size: 14.5px; font-weight: 600; line-height: 1.3; }
+.gstep small { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; font-weight: 400; }
+.goal-dialog__actions { display: flex; justify-content: flex-end; margin-top: 16px; }
+@media (max-width: 620px) {
+  .gsteps { grid-template-columns: minmax(0, 1fr); }
+  .gstep { flex-direction: row; text-align: left; }
+  .gstep svg { width: 64px; height: 64px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gstep, .ck.pop i { animation: none; }
+}
+.reduce-motion .gstep, .reduce-motion .ck.pop i { animation: none; }
+
+/* 3D Moon (J8.1): «Dónde estás» over the panel from 900 px; on phones it shares the map square through tabs (J8.2). */
+.view-tabs { display: none; gap: 6px; }
+.view-tabs [role="tab"] { min-height: 40px; padding: 0 16px; border: 1px solid var(--line2); border-radius: 999px; background: transparent; color: var(--muted); font: 600 13px/1 var(--f-body); cursor: pointer; }
+.view-tabs [role="tab"][aria-selected="true"] { background: var(--raise); color: var(--fg); border-color: var(--sun); }
+.moon-box { display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+.moon__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 12px; }
+.moon__toggle { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.moon__toggle::before { content: ""; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); transition: transform .15s; }
+.moon-box.is-closed .moon__toggle::before { transform: rotate(-45deg); }
+.moon__toggle:hover { color: var(--fg); }
+.moon__toggle:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; border-radius: 3px; }
+.moon__body { display: flex; flex-direction: column; gap: 8px; }
+@media (max-width: 899.98px) { .moon__toggle { pointer-events: none; } .moon__toggle::before { display: none; } }
+.moon__head h2 { margin: 0; font: 600 11px/1.4 var(--f-display); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.moon__help { font-size: 11.5px; color: var(--faint); }
+.moon__view { position: relative; height: 270px; border-radius: 8px; overflow: hidden; background: #030405; cursor: grab; }
+.moon__view:active { cursor: grabbing; }
+.moon__canvas { display: block; width: 100%; height: 100%; }
+.moon__unavailable { margin: 0; padding: 16px; color: var(--muted); font-size: 13px; }
+.moon__legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; padding: 0; list-style: none; font-size: 11.5px; color: var(--muted); }
+.leg::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; border-radius: 50%; }
+.leg--sun::before { background: var(--sun); }
+.leg--earth::before { background: var(--earth); }
+.leg--trail::before { width: 14px; height: 2px; border-radius: 1px; vertical-align: 3px; background: linear-gradient(90deg, var(--sun), transparent); }
+.leg--orbit::before { width: 14px; height: 0; border-radius: 0; vertical-align: 3px; border-top: 1px solid rgba(242, 163, 58, .45); }
+.leg--zone::before { background: transparent; box-shadow: inset 0 0 0 2px var(--sun); }
+@media (min-width: 900px) {
+  /* The game panel first and the Moon under it, folded by default (it pushed the driving panel out of sight). */
+  .stage--moon { grid-template-areas: "map panel" "map moon"; grid-template-rows: auto 1fr; }
+  .moon-box.is-closed .moon__body, .moon-box.is-closed .moon__help { display: none; }
+  .stage--moon .map-col { grid-area: map; }
+  .stage--moon .moon-box { grid-area: moon; }
+  .stage--moon .panel { grid-area: panel; }
+}
+@media (max-width: 899.98px) {
+  .stage--moon .view-tabs { display: flex; }
+  .stage--moon[data-view="map"] .moon-box { display: none; }
+  .stage--moon[data-view="moon"] .map-col { display: none; }
+  .stage--moon[data-view="moon"] .moon-box { width: min(100%, calc(100dvh - 120px)); justify-self: center; }
+  .stage--moon[data-view="moon"] .moon__view { height: auto; aspect-ratio: 1; }
+}
+
+/* Reference route of the end (J7.3): the player against the solver. */
+.reference { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line2); }
+.reference__title { margin: 0 0 6px; font: 600 15px/1.3 var(--f-display); }
+.reference__table { width: 100%; margin-top: 8px; border-collapse: collapse; font-size: 13px; }
+.reference__table th, .reference__table td { padding: 6px 4px; border-bottom: 1px solid var(--line); text-align: right; }
+.reference__table th[scope="row"] { text-align: left; color: var(--muted); font-weight: 500; }
+.reference__table thead th { font: 600 12px/1.2 var(--f-display); color: var(--fg); }
+.reference__table thead th:last-child { color: #c58cff; }
+.reference__table td { font-family: var(--f-mono); white-space: nowrap; }
+
+/* Mission panel as in the mock-up (J13.4, #312): kicker, goal with the figures in bold, buttons with icon and key
+   in a 2 × 2 grid, hint with a warning icon and the panoramic horizon ring. */
+.kicker { margin: 0 0 6px; font: 600 11px/1.4 var(--f-display); color: var(--sun); letter-spacing: .1em; text-transform: uppercase; }
+.goal b { color: var(--fg); font-weight: 600; }
+.actions .wait { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.act, .transmit { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 6px 10px; border-radius: 8px; font: 500 13px/1.2 var(--f-body); cursor: pointer; text-align: left; }
+.act { border: 1px solid var(--line); background: var(--raise); color: var(--fg); }
+.act:hover:not(:disabled) { border-color: var(--line2); }
+.act:disabled { color: var(--faint); cursor: not-allowed; }
+.transmit { width: 100%; border: 0; background: var(--earth); color: #04101f; font-weight: 600; }
+.transmit:disabled { background: var(--raise); color: var(--faint); border: 1px solid var(--line); opacity: 1; }
+.act kbd, .transmit kbd, .preview__actions kbd { margin-left: auto; padding: 0 4px; border: 1px solid currentColor; border-radius: 4px; font: 400 10.5px/1.5 var(--f-mono); opacity: .7; flex: none; white-space: nowrap; }
+.preview__actions .again, .preview__actions .ghost { display: inline-flex; align-items: center; gap: 8px; }
+.i { flex: none; width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+#wait-sun .i { color: var(--sun); }
+#wait-earth .i { color: var(--earth); }
+#wait-earth { border-color: var(--line); color: var(--fg); }
+#wait-earth:disabled { color: var(--faint); }
+.hint--energy, .hint--earth { display: flex; gap: 8px; align-items: flex-start; }
+.hint .i { margin-top: 2px; }
+.ringbox { padding-top: 10px; }
+.ringbox__head { font-size: 10.5px; }
+.ring { height: 80px; border-radius: 6px; }
+.preview:not(.preview--depleted):not(.preview--low) { border-color: rgba(242, 163, 58, .5); background: rgba(242, 163, 58, .08); }
+
+/* State of the game over the map (J13.2, #310), as the mock-up: pills on top, Sun and Earth at the bottom left,
+   «Tierra visible» and «Leyenda» at the bottom right, the reading of a cell under the map. */
+.map-stack:has(#map:focus-visible) #map { border-color: var(--sun); box-shadow: 0 0 0 1px var(--sun); }
+#map:focus-visible { outline: none; }
+.map-hud { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; gap: 5px; flex-wrap: wrap; pointer-events: none; z-index: 2; }
+/* On the map (not the cabin, not full screen) the pills sit outside it: above and below, never over its cells. */
+.map-col { --hud-out: 0px; }
+.map-stack { width: min(100%, calc(100dvh - 120px - var(--hud-out))); }
+.map-hud.map-hud--out, .map-stat.map-stat--out { position: static; width: min(100%, calc(100dvh - 120px - var(--hud-out))); max-width: none; }
+.map-col > .map-hud--out { margin-bottom: -4px; }
+.map-col > .map-stat--out { margin-top: -4px; }
+.map-stat { position: absolute; left: 8px; bottom: 8px; display: flex; gap: 5px; flex-wrap: wrap; pointer-events: none; max-width: calc(100% - 140px); z-index: 2; }
+.map-corner { position: absolute; right: 8px; bottom: 8px; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; z-index: 2; }
+.pill { display: inline-flex; gap: 7px; align-items: center; background: rgba(8, 9, 11, .8); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); border: 1px solid rgba(255, 255, 255, .08); border-radius: 8px; padding: 5px 9px; font-size: 12px; color: var(--muted); }
+.pill .i, .lb .i, .earth-toggle .i { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.pill__value { font-family: var(--f-mono); color: var(--fg); }
+.pill__lab { font-family: var(--f-mono); color: var(--muted); }
+.pill__lab--late { color: var(--bad); }
+.pill--battery { color: var(--good); }
+.pill--warn { color: var(--warn); }
+.pill--bad { color: var(--bad); }
+.batt { position: relative; display: block; width: 44px; height: 8px; border-radius: 2px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+.batt b { position: absolute; inset: 0 auto 0 0; background: currentColor; }
+.batt s { position: absolute; top: -1px; bottom: -1px; width: 1.5px; background: var(--fg); opacity: .75; }
+.pill--packets { color: var(--earth); }
+.pill--packets .pk span { width: 9px; height: 9px; }
+.pill--checks { gap: 10px; }
+.pill--act { pointer-events: auto; cursor: pointer; color: var(--fg); font: inherit; font-size: 12px; }
+.pill--act:hover { border-color: rgba(242, 163, 58, .6); }
+.pill--sun.on { color: var(--sun); }
+.pill--earth.on { color: var(--earth); }
+.lb, .map-corner .earth-toggle { display: inline-flex; gap: 6px; align-items: center; min-height: 30px; padding: 4px 10px; border: 1px solid rgba(255, 255, 255, .12); border-radius: 7px; background: rgba(8, 9, 11, .8); color: var(--muted); font: 500 12px/1 var(--f-body); cursor: pointer; }
+.lb:hover, .map-corner .earth-toggle:hover { color: var(--fg); }
+.lb[aria-expanded="true"] { color: var(--fg); border-color: rgba(242, 163, 58, .6); }
+.map-corner .earth-toggle[aria-pressed="true"] { color: var(--earth); border-color: rgba(79, 157, 240, .6); }
+.readout { width: min(100%, calc(100dvh - 120px)); min-height: 17px; margin: 0; font-family: var(--f-mono); font-size: 11.5px; color: var(--muted); text-align: center; }
+.readout b { color: var(--fg); font-weight: 500; }
+@media (max-width: 620px) {
+  .map-hud, .map-stat { gap: 4px; }
+  .pill { padding: 3px 6px; font-size: 10.5px; gap: 4px; }
+  .pill__lab { display: none; }
+  .batt { width: 26px; }
+  .pill--checks { gap: 6px; }
+  .lb, .map-corner .earth-toggle { min-height: 26px; padding: 3px 8px; font-size: 11px; }
+}
+
+/* Header as in the mock-up of the epics map (J13.3, #311): brand on the left (back, title, scenario badge), controls on
+   the right (level, language, «Ajustes», tutorial) and the steps bar underneath. */
+.app { gap: 10px; }
+.top { position: relative; gap: 8px 14px; }
+.brand { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; min-width: 0; }
+.brand h1 { font-size: 19px; white-space: nowrap; }
+.back { font-size: 13px; gap: 8px; }
+.badge { font-size: 11px; padding: 2px 10px; white-space: nowrap; }
+.badge--real { color: var(--good); border-color: color-mix(in srgb, var(--good) 60%, transparent); }
+.top__end { gap: 6px; }
+.levels, .lang { border-radius: 8px; border-color: var(--line); background: var(--panel); }
+.levels button, .lang button { min-height: 30px; padding: 0 10px; font: 500 12px/1 var(--f-body); }
+.levels button + button, .lang button + button { border-left-color: var(--line); }
+.levels button[aria-pressed="true"], .lang button[aria-pressed="true"] { background: var(--raise); color: var(--fg); font-weight: 500; }
+.pill-btn, .tutorial-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 11px; border: 1px solid var(--line2); border-radius: 999px; background: var(--raise); color: var(--muted); font: 500 12px/1 var(--f-body); cursor: pointer; white-space: nowrap; flex: none; }
+.pill-btn:hover, .pill-btn[aria-expanded="true"] { color: var(--fg); }
+.pill-btn svg { color: var(--earth); }
+
+/* «Ajustes»: a popover under its button with the map quality, light mode and reduced motion. */
+.settings { position: relative; flex: none; }
+.settings__menu { position: absolute; z-index: 30; top: calc(100% + 8px); right: 0; width: min(290px, calc(100vw - 32px)); display: flex; flex-direction: column; gap: 10px; padding: 12px; background: var(--panel); border: 1px solid var(--line2); border-radius: 10px; box-shadow: 0 10px 30px #000a; font-size: 13px; }
+.settings__title { margin: 0; font: 600 11px/1.3 var(--f-display); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.settings__seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.settings__seg button { flex: 1; min-height: 32px; padding: 0 8px; border: 0; background: none; color: var(--muted); font: 500 12px/1.2 var(--f-body); cursor: pointer; }
+.settings__seg button + button { border-left: 1px solid var(--line); }
+.settings__seg button[aria-pressed="true"] { background: var(--raise); color: var(--fg); }
+.settings__seg button:disabled { opacity: .5; cursor: not-allowed; }
+.settings__note { margin: -4px 0 0; font-size: 11.5px; color: var(--faint); }
+.settings__row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.settings__label { display: flex; flex-direction: column; gap: 2px; color: var(--fg); }
+.settings__desc { color: var(--muted); font-size: 12px; line-height: 1.35; }
+.switch { position: relative; flex: none; width: 40px; height: 22px; padding: 0; border: 1px solid var(--line2); border-radius: 999px; background: var(--raise); cursor: pointer; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--muted); transition: transform .15s; }
+.switch[aria-checked="true"] { background: color-mix(in srgb, var(--good) 25%, transparent); border-color: var(--good); }
+.switch[aria-checked="true"]::after { transform: translateX(18px); background: var(--good); }
+
+/* Steps bar under the header: each step is a button that goes back to it. */
+.stepbar .steps { margin: 0; }
+.steps__go { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 4px; border: 0; border-radius: 6px; background: none; color: inherit; font: inherit; cursor: pointer; white-space: nowrap; }
+.steps__go:hover:not(:disabled) { color: var(--fg); }
+.steps__go:disabled { cursor: default; }
+.steps li.on .steps__go b { border-color: var(--sun); color: var(--sun); }
+.steps li.done .steps__go b { background: var(--raise); }
+@media (max-width: 620px) {
+  .back span:last-child { display: none; }
+  .brand h1 { font-size: 16px; }
+}
+
+/* #382: cells that will see the Earth in the next 24 h (legend key) and the outlook pill over the map. */
+.legend__key--hatch { background: repeating-linear-gradient(-45deg, var(--key) 0 2px, transparent 2px 5px); border: 1px solid var(--key); }
+.pill--outlook { color: var(--earth); border-color: rgba(79, 157, 240, .55); }
+/* Cabin of the rover (J12.1): the 3D view over the map, under the HUD; a vignette frame and the Mapa / Cabina switch. */
+.cabin { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; display: block; border-radius: 12px; background: #000; touch-action: none; cursor: grab; }
+.cabin:active { cursor: grabbing; }
+.cabin:focus-visible { outline: 2px solid var(--sun); outline-offset: -2px; }
+.cabin__frame { position: absolute; inset: 0; z-index: 1; pointer-events: none; border-radius: 12px;
+  background: radial-gradient(ellipse 120% 95% at 50% 42%, transparent 58%, rgba(0, 0, 0, .55) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06), inset 0 22px 30px -18px rgba(0, 0, 0, .8); }
+/* Where the ground comes from (#393): one quiet line over the bottom of the view. */
+.cabin__source { position: absolute; right: 10px; top: 132px; z-index: 1; margin: 0; max-width: min(60%, 420px); padding: 3px 8px; border-radius: 6px; background: rgba(8, 9, 11, .55); color: var(--muted); font-size: 11px; line-height: 1.3; text-align: right; pointer-events: none; }
+@media (max-width: 600px) { .cabin__source { display: none; } }
+.cabin__note { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1; margin: 0; padding: 8px 14px; border-radius: 999px; background: rgba(8, 9, 11, .8); color: var(--fg); font-size: 13px; }
+.viewmode { display: inline-flex; border-radius: 8px; overflow: hidden; }
+.viewmode .viewmode__btn { border-radius: 0; }
+.viewmode .viewmode__btn[aria-pressed="true"] { background: var(--sun); color: #1a1205; border-color: var(--sun); }
+
+/* Cabin driving (J12.2–J12.4): the map becomes a live minimap in a corner, an action bar with the keys, a touch pad on
+   phones, the slope warning and full screen. */
+.map-stack.cabin-on #map, .map-stack.cabin-on #map-gl { position: absolute; inset: auto; left: 8px; bottom: 46px; width: 27%; height: auto; aspect-ratio: 1; z-index: 3; border: 1px solid rgba(255, 255, 255, .25); border-radius: 10px; box-shadow: 0 6px 20px #000c; }
+.map-stack.cabin-on #map-gl { pointer-events: none; }
+.map-stack.cabin-on .map-hud .pill--battery .batt { width: 120px; height: 10px; }
+.map-stack.cabin-on .map-hud .pill--battery { font-size: 14px; }
+.cabin-actions { position: absolute; left: 50%; bottom: 92px; transform: translateX(-50%); z-index: 2; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: 46%; pointer-events: none; }
+/* The group is wider than its buttons: only they take the clicks, so «Mapa / Cabina» below stays usable (#398). */
+.cabin-actions > button { pointer-events: auto; }
+.cabin-actions__btn:disabled { opacity: .4; cursor: not-allowed; }
+.cabin__toast { position: absolute; left: 50%; top: 42%; transform: translateX(-50%); z-index: 4; margin: 0; padding: 8px 16px; border-radius: 999px; background: rgba(229, 86, 75, .92); color: #fff; font: 600 14px/1.2 var(--f-body); pointer-events: none; }
+.cabin-pad { position: absolute; right: 10px; bottom: 92px; z-index: 3; width: 112px; height: 112px; border-radius: 50%; background: rgba(8, 9, 11, .55); border: 1px solid rgba(255, 255, 255, .2); touch-action: none; }
+.cabin-pad__knob { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; background: rgba(242, 163, 58, .85); box-shadow: 0 2px 8px #000a; }
+.viewmode__full { margin-left: 6px; border-radius: 7px !important; }
+.map-stack:fullscreen, .map-stack.map-stack--full { width: 100vw; height: 100vh; max-width: none; aspect-ratio: auto; background: #000; }
+.map-stack.map-stack--full { position: fixed; inset: 0; z-index: 60; }
+.map-stack:fullscreen .cabin, .map-stack.map-stack--full .cabin, .map-stack:fullscreen .cabin__frame, .map-stack.map-stack--full .cabin__frame { border-radius: 0; }
+.map-stack:fullscreen.cabin-on #map, .map-stack.map-stack--full.cabin-on #map, .map-stack:fullscreen.cabin-on #map-gl, .map-stack.map-stack--full.cabin-on #map-gl { width: min(24vw, 34vh); }
+@media (max-width: 600px) {
+  .map-stack.cabin-on #map, .map-stack.cabin-on #map-gl { width: 32%; bottom: 40px; }
+  .cabin-actions { max-width: 64%; bottom: auto; top: 76px; }
+  .cabin-actions__btn { font-size: 11px; min-height: 26px; padding: 3px 7px; }
+}
+.reduce-motion .cabin-pad__knob { transition: none; }
+/* Compass of the cabin (J12.3): a strip at the top of the view, under the HUD pills. */
+.cabin-compass { position: absolute; left: 18%; right: 18%; top: 84px; height: 26px; z-index: 2; pointer-events: none; border-bottom: 1px solid rgba(235, 232, 226, .35); background: linear-gradient(180deg, rgba(0, 0, 0, .35), transparent); border-radius: 6px 6px 0 0; }
+.cabin-compass::after { content: ""; position: absolute; left: 50%; bottom: -5px; border: 5px solid transparent; border-bottom-color: var(--sun); transform: translate(-50%, 0) rotate(180deg); }
+.cabin-compass__m { position: absolute; top: 4px; transform: translateX(-50%); font: 600 12px/1 var(--f-mono); color: var(--fg); white-space: nowrap; text-shadow: 0 1px 3px #000; }
+.cabin-compass__m--tick { color: var(--muted); }
+.cabin-compass__m--sun { color: var(--sun); font-size: 15px; top: 2px; }
+.cabin-compass__m--earth { color: var(--earth); font-size: 13px; }
+.cabin-compass__m--earth.is-down { opacity: .45; }
+.cabin-compass__m--zone { top: 30px; padding: 2px 8px; border-radius: 999px; background: rgba(79, 157, 240, .9); color: #06111f; font: 600 11px/1.3 var(--f-body); }
+.cabin-compass__m.is-off { font-weight: 700; }
+@media (max-width: 600px) { .cabin-compass { left: 6%; right: 6%; top: 118px; } }
+
+/* Cabin (J12): why «Transmitir» is off, the heading in the compass, ASCENSO and the Earth hidden by the relief. */
+.cabin-actions__why { flex-basis: 100%; margin: 2px 0 0; padding: 4px 10px; border-radius: 8px; background: rgba(6, 7, 8, .78); color: var(--earth); font-size: 12.5px; text-align: center; }
+.cabin-compass__heading { position: absolute; left: 0; top: 100%; margin-top: 4px; padding: 2px 8px; border-radius: 6px; background: rgba(6, 7, 8, .78); color: var(--fg); font: 600 12px/1.4 var(--f-mono); white-space: nowrap; }
+.cabin-compass__m--pad { color: #ebe8e2; font: 600 10px/1 var(--f-mono); }
+.cabin-compass__m--earth.is-hidden { opacity: .55; }
+/* On phones the bar goes down, over the minimap and the corner switch, so it does not cover the compass (J12). */
+@media (max-width: 600px) {
+  .cabin-actions { top: auto; bottom: 160px; max-width: 94%; }
+  .cabin-actions__why { font-size: 11.5px; }
+}
+/* Light and moments of the cabin (J12.5 #301, J12.7 #303). */
+.cabin-compass { pointer-events: auto; cursor: pointer; }
+.cabin__toast--earth { background: rgba(79, 157, 240, .94); color: #06111f; box-shadow: 0 0 24px rgba(79, 157, 240, .6); }
+.cabin__toast--info { background: rgba(8, 9, 11, .86); color: var(--fg); border: 1px solid rgba(255, 255, 255, .2); }
+.cabin-compass__m--earth.is-flash { animation: earth-flash 2.6s ease-out; }
+@keyframes earth-flash {
+  0% { transform: translateX(-50%) scale(1); text-shadow: 0 0 0 transparent; }
+  12% { transform: translateX(-50%) scale(1.9); text-shadow: 0 0 14px #8fc0ff, 0 0 28px #4f9df0; }
+  100% { transform: translateX(-50%) scale(1); text-shadow: 0 1px 3px #000; }
+}
+.reduce-motion .cabin-compass__m--earth.is-flash { animation: none; }
+@media (prefers-reduced-motion: reduce) { .cabin-compass__m--earth.is-flash { animation: none; } }
+.cabin-actions__btn--post { border-color: var(--sun); color: var(--sun); }
+
+/* The ascent vehicle at ASCENSO (#398): why mission control does not clear the lift-off, in the cabin and the panel. */
+.cabin-liftoff { position: absolute; left: 50%; top: 31%; transform: translateX(-50%); z-index: 3; width: min(560px, 86%); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255, 160, 32, .7); background: rgba(8, 9, 11, .86); box-shadow: 0 0 24px rgba(255, 160, 32, .25); text-align: center; pointer-events: none; }
+.cabin-liftoff__title { margin: 0 0 4px; color: #ffb347; font: 600 15px/1.35 var(--f-body); }
+.cabin-liftoff__todo { margin: 0; color: var(--fg); font-size: 13px; line-height: 1.4; }
+.cabin-actions__btn--lift { border-color: #46e08a; color: #46e08a; }
+.cabin-actions__btn--lift:disabled { border-color: rgba(255, 160, 32, .6); color: #ffb347; }
+.cabin-actions__why { pointer-events: none; }
+@media (max-width: 600px) {
+  .cabin-liftoff { top: auto; bottom: 62px; width: 94%; padding: 8px 10px; }
+  .cabin-liftoff__title { font-size: 13px; }
+  .cabin-liftoff__todo { font-size: 12px; }
+}
+/* The end card in the cabin (#398): low over the view, so the ascent stage in the sky stays in sight, also in full
+   screen, after the lift-off or at once on a loss. It takes the place of the action bar while it is open. */
+.cabin-end { position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 6; width: min(520px, calc(100% - 32px)); max-height: calc(100% - 140px); overflow: auto; padding: 22px 24px 20px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, .22); background: rgba(8, 9, 11, .9); box-shadow: 0 18px 60px #000c; text-align: center; animation: cabin-end-in .45s ease-out both; }
+.cabin-end[hidden] { display: none; }
+.map-stack.cabin-ended .cabin-actions, .map-stack.cabin-ended .cabin-liftoff, .map-stack.cabin-ended .cabin-pad { visibility: hidden; }
+.cabin-end--win { border-color: rgba(70, 224, 138, .75); box-shadow: 0 0 36px rgba(70, 224, 138, .28), 0 18px 60px #000c; }
+.cabin-end--lost { border-color: rgba(229, 86, 75, .8); box-shadow: 0 0 36px rgba(229, 86, 75, .25), 0 18px 60px #000c; }
+.cabin-end__kicker { margin: 0 0 6px; font: 600 12px/1.2 var(--f-body); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.cabin-end--win .cabin-end__kicker { color: #46e08a; }
+.cabin-end--lost .cabin-end__kicker { color: #ff8a7f; }
+.cabin-end__title { margin: 0 0 10px; color: var(--fg); font: 700 clamp(24px, 4vw, 34px)/1.1 var(--f-display, var(--f-body)); }
+.cabin-end__why { margin: 0 0 18px; color: var(--fg); font-size: 15px; line-height: 1.45; }
+.cabin-end__actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.cabin-end__btn { min-height: 40px; }
+@keyframes cabin-end-in { from { opacity: 0; transform: translate(-50%, 16px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.reduce-motion .cabin-end { animation: none; }
+@media (prefers-reduced-motion: reduce) { .cabin-end { animation: none; } }
+@media (max-width: 600px) {
+  .cabin-end { bottom: 8px; width: calc(100% - 16px); max-height: calc(100% - 16px); padding: 10px 12px; }
+  .cabin-end__kicker { margin-bottom: 2px; font-size: 11px; }
+  .cabin-end__title { margin-bottom: 4px; font-size: 20px; }
+  .cabin-end__why { font-size: 12.5px; line-height: 1.35; margin-bottom: 8px; }
+  .cabin-end__actions { gap: 6px; }
+  .cabin-end__btn { min-height: 34px; padding: 6px 12px; font-size: 13px; }
+}
+.liftoff { margin: 0 0 12px; padding: 10px 12px; border: 1px solid rgba(255, 160, 32, .6); border-radius: 10px; background: rgba(255, 160, 32, .07); }
+.liftoff__title { margin: 0 0 4px; color: #ffb347; font-weight: 600; font-size: 13.5px; }
+.liftoff__todo { margin: 0 0 8px; font-size: 13px; }
+.liftoff__btn:disabled { opacity: .55; cursor: not-allowed; }

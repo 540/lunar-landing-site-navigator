@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Mirador del Polo Sur</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="src/styles/viewpoint.css">
+  <!-- Tutorial of the first visit: engine and styles shared with web/ and home/; tour.css takes its colours from tokens.css (#200) -->
+  <link rel="stylesheet" href="../web/styles/tokens.css">
+  <link rel="stylesheet" href="../web/styles/tour.css">
+  <!-- Hand control: the camera follows a hand that points, clicks and drags (shared/hands/) -->
+  <link rel="stylesheet" href="../shared/hands/hands.css">
+  <link rel="icon" type="image/png" sizes="32x32" href="../web/assets/icon-32.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="../web/assets/icon-512.png">
+  <link rel="apple-touch-icon" href="../web/assets/icon-180.png">
+</head>
+<body>
+  <canvas id="gl" aria-hidden="true"></canvas>
+  <!-- On foot (E3): the edge of the helmet visor around the view, first person -->
+  <div class="visor" aria-hidden="true"></div>
+  <!-- 3D not available (G1.2b, #286): no WebGL or the context was lost. Links to go on instead of a black page; texts in src/texts.js, logic in ../shared/render/lost-notice.js -->
+  <div class="glost" id="glost" role="alertdialog" aria-modal="true" aria-label="Vista 3D no disponible" aria-describedby="glost-text" hidden>
+    <div class="glost__box">
+      <p id="glost-text"></p>
+      <ul>
+        <li><a href="../home/" id="glost-home"></a></li>
+        <li><a href="../web/" id="glost-planner"></a></li>
+      </ul>
+      <button class="topbar-btn glost__reload" id="glost-reload" type="button"></button>
+    </div>
+  </div>
+  <!-- Labels of the Sun and the Earth in the sky of the mission viewer, placed over the canvas -->
+  <span class="sky-label sky-label--sun" id="label-sun" aria-hidden="true" hidden></span>
+  <span class="sky-label sky-label--earth" id="label-earth" aria-hidden="true" hidden></span>
+  <!-- Right edge: go down on foot and back up (E3.1), zoom, and the jump button on touch screens (E3.5) -->
+  <div class="side">
+    <button type="button" class="foot-btn" id="foot-btn" hidden></button>
+    <!-- Into virtual reality (WebXR, #396): only with a headset -->
+    <button type="button" class="foot-btn xr-btn" id="xr-btn" aria-pressed="false" hidden></button>
+    <!-- The ground on foot (E3): the illustrative fine texture -->
+    <button type="button" class="ground-btn" id="micro-btn" aria-pressed="true" hidden></button>
+    <div class="zoom" id="zoom" role="group" hidden>
+      <button type="button" class="zoom__btn" id="zoom-in"><span aria-hidden="true">+</span></button>
+      <button type="button" class="zoom__btn" id="zoom-out"><span aria-hidden="true">−</span></button>
+    </div>
+    <button type="button" class="zoom__btn jump-btn" id="jump-btn" hidden><span aria-hidden="true">⤒</span></button>
+    <!-- The watch on the left wrist, on foot (R) -->
+    <button type="button" class="zoom__btn watch-btn" id="watch-btn" aria-pressed="false" hidden><span aria-hidden="true">⌚</span></button>
+    <!-- The flag on foot (E3.6): pick it up when you are near, plant it at your feet (F) -->
+    <button type="button" class="ground-btn foot-flag-btn" id="foot-flag" hidden></button>
+    <!-- Third person, on foot (V) -->
+    <button type="button" class="zoom__btn view-btn" id="view-btn" aria-pressed="false" hidden><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="6.5" r="2.5"/><path d="M8 21v-6l-2-1 1.5-4.5h9L18 14l-2 1v6"/></svg></button>
+    <!-- Your gestures through the camera, on foot: arms, fingers, head and eyes, and the watch -->
+    <button type="button" class="zoom__btn gesture-btn" id="gesture-btn" aria-pressed="false" hidden><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13.5" r="3.5"/></svg></button>
+  </div>
+  <!-- The mirror of the camera, with the points it follows -->
+  <section class="gesture-panel" id="gesture-panel" aria-labelledby="gesture-title" hidden>
+    <h2 class="gesture-panel__title" id="gesture-title"></h2>
+    <canvas id="gesture-canvas" width="320" height="240" aria-hidden="true"></canvas>
+    <p class="gesture-panel__status mono" id="gesture-status" role="status" aria-live="polite"></p>
+    <p class="gesture-panel__privacy" id="gesture-privacy"></p>
+    <div class="gesture-panel__row">
+      <button type="button" class="gesture-panel__recal" id="gesture-recal"></button>
+      <label class="gesture-panel__check"><input type="checkbox" id="gesture-skeleton" checked> <span id="gesture-skeleton-label"></span></label>
+    </div>
+  </section>
+  <!-- Touch joystick on foot (E3.5): fed to the same input as WASD -->
+  <div class="joy" id="joy" hidden><span class="joy__knob" id="joy-knob"></span></div>
+  <!-- Region change (E7.2, #497): fade veil and progress bar -->
+  <div class="region-veil" id="region-veil" aria-hidden="true"></div>
+  <div class="region-progress mono" id="region-progress" hidden>
+    <span id="region-progress-text" role="status"></span>
+    <div class="region-progress__track" id="region-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="region-progress__fill" id="region-progress-fill"></span></div>
+    <button type="button" class="region-progress__cancel" id="region-cancel" aria-describedby="region-progress-text"></button>
+  </div>
+  <header class="topbar">
+    <!-- Back and the region selector on the left, out of the middle of the view -->
+    <div class="topbar__nav">
+    <a class="back" href="../home/"><span aria-hidden="true">←</span> <span id="back-label"></span></a>
+    </div>
+    <div class="topbar__actions">
+    <!-- Back to the initial pose of the drone (E2.3, #154): exploration only, shown once the scene is up -->
+    <button class="topbar-btn" id="reset-view" type="button" hidden><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a5 5 0 1 0 1.5-3.6"/><path d="M3 2.5v3h3"/></svg><span id="reset-view-label"></span></button>
+    <button class="topbar-btn" id="hands-btn" type="button" aria-pressed="false" hidden><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 8V3.5a1 1 0 0 1 2 0V7m0-.5v-4a1 1 0 0 1 2 0v4m0-3a1 1 0 0 1 2 0V8m0-1.5a1 1 0 0 1 2 0V10a4.5 4.5 0 0 1-4.5 4.5c-1.9 0-2.9-.8-3.9-2.4L2.4 9.4a1 1 0 0 1 1.7-1L5.5 10"/></svg><span data-hand-label></span></button>
+    <!-- Options drawer (E8.2, #498): language, region, quality and layers. Texts filled by src/options-ui.js -->
+    <button class="topbar-btn" id="options-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="options"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M2 4.5h7M12 4.5h2M2 11.5h2M7 11.5h7"/><circle cx="10.5" cy="4.5" r="1.5"/><circle cx="5.5" cy="11.5" r="1.5"/></svg><span id="options-btn-label"></span></button>
+    <button class="topbar-btn visit-btn" id="visit-btn" type="button" aria-controls="visit" hidden><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14V2.5"/><path d="M3 3h8.5l-1.8 2.6L11.5 8H3"/></svg><span id="visit-label"></span></button>
+    <button class="topbar-btn tutorial-btn" id="tutorial-btn" type="button"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6.25"/><path d="M10.7 5.3 9.2 9.2 5.3 10.7 6.8 6.8z"/></svg><span id="tutorial-label"></span></button>
+    </div>
+  </header>
+  <dialog class="options" id="options" aria-labelledby="options-title" tabindex="-1">
+    <div class="options__head">
+      <h2 id="options-title"></h2>
+      <button type="button" class="options__close" id="options-close"></button>
+    </div>
+    <section class="options__group" id="options-lang-group" aria-labelledby="options-lang-title">
+      <h3 id="options-lang-title"></h3>
+      <div id="options-lang"></div>
+    </section>
+    <section class="options__group" id="options-region-group" aria-labelledby="options-region-title">
+      <h3 id="options-region-title"></h3>
+      <div class="region-picker mono" id="region-picker" hidden>
+        <label class="sr-only" for="region-select" id="region-select-label"></label>
+        <select id="region-select"></select>
+        <button type="button" class="region-go" id="region-go" disabled></button>
+        <span class="region-approx" id="region-approx" hidden></span>
+      </div>
+    </section>
+    <fieldset class="options__group" id="options-quality-group">
+      <legend id="options-quality-title"></legend>
+      <div id="options-quality"></div>
+      <p class="options__note" id="options-quality-note"></p>
+      <button type="button" class="topbar-btn options__apply" id="options-quality-apply"></button>
+    </fieldset>
+    <fieldset class="options__group" id="options-layers-group">
+      <legend id="options-layers-title"></legend>
+      <div id="options-layers"></div>
+    </fieldset>
+  </dialog>
+  <main class="stage">
+    <!-- Compass on foot (E3.4): up is where you look; N the local north, the Sun and the Earth -->
+    <div class="compass" id="compass" role="img" hidden>
+      <div class="compass__dial" aria-hidden="true">
+        <span class="compass__pointer"></span>
+        <span class="compass__mark compass__mark--north" id="compass-north"></span>
+        <span class="compass__mark compass__mark--earth" id="compass-earth"></span>
+        <span class="compass__mark compass__mark--sun" id="compass-sun"></span>
+      </div>
+      <span class="compass__heading mono" id="compass-heading" aria-hidden="true"></span>
+    </div>
+    <h1 id="title"></h1>
+    <p class="notice notice-error mono" id="scene-error" role="status" hidden></p>
+  </main>
+  <!-- Where the relief comes from and how to move the camera: in the bottom right corner, out of the middle of the view -->
+  <aside class="corner-info">
+    <p class="notice mono" id="notice"></p>
+    <p class="notice notice-warn mono" id="live-note" role="status" hidden></p>
+    <p class="notice corner-help mono" id="controls-help" hidden></p>
+    <p class="notice corner-help mono" id="foot-help" hidden></p>
+  </aside>
+  <!-- Guided visit (E6.1): exploration only. Drawn by src/visit-ui.js from the state of src/core/visit.js -->
+  <section class="visit" id="visit" hidden>
+    <div class="visit__head">
+      <div class="visit__heading">
+        <p class="visit__count mono" id="visit-count"></p>
+        <h2 class="visit__title" id="visit-title" tabindex="-1"></h2>
+      </div>
+      <button class="visit__ctl" id="visit-fold" type="button" aria-expanded="true" aria-controls="visit-body"></button>
+      <button class="visit__ctl" id="visit-exit" type="button"></button>
+    </div>
+    <div class="visit__body" id="visit-body">
+      <div class="visit__levels" id="visit-levels" role="group"></div>
+      <p class="visit__question" id="visit-question"></p>
+      <p class="visit__bet" id="visit-bet-label"></p>
+      <div class="visit__options" id="visit-options" role="group" aria-labelledby="visit-bet-label"></div>
+      <div class="visit__actions">
+        <button class="visit__primary" id="visit-reveal" type="button" hidden></button>
+        <button class="visit__secondary" id="visit-skip" type="button"></button>
+      </div>
+      <p class="visit__note" id="visit-note" hidden></p>
+      <div class="visit__result" id="visit-result" tabindex="-1" hidden>
+        <p class="visit__verdict" id="visit-verdict"></p>
+        <p class="visit__explain" id="visit-explain"></p>
+        <button class="visit__secondary" id="visit-to-best" type="button" hidden></button>
+      </div>
+      <div class="visit__nav">
+        <button class="visit__ctl" id="visit-prev" type="button"></button>
+        <div class="visit__dots" id="visit-dots"></div>
+        <button class="visit__ctl" id="visit-next" type="button"></button>
+      </div>
+    </div>
+  </section>
+  <p class="sr-only" id="visit-status" role="status" aria-live="polite"></p>
+  <div class="hud">
+  <!-- Mission viewer (V1, #79): state from the windows of the verdict, and the verdict at the end -->
+  <section class="mission-panel" id="mission-panel" aria-labelledby="mission-panel-label" hidden>
+    <h2 class="sr-only" id="mission-panel-label"></h2>
+    <div class="mission-state mono">
+      <span class="chip" id="state-sun" data-on="false"></span>
+      <span class="chip" id="state-earth" data-on="false"></span>
+    </div>
+    <div class="battery" id="battery" hidden>
+      <span class="battery__label" id="battery-label"></span>
+      <span class="battery__bar" aria-hidden="true"><span class="battery__fill" id="battery-fill"></span></span>
+      <span class="battery__value mono" id="battery-value"></span>
+    </div>
+    <p class="mission-note" id="battery-note" hidden></p>
+    <div class="jumps" id="jumps">
+      <button class="jump" id="jump-shadow" type="button" hidden></button>
+      <button class="jump" id="jump-earth" type="button" hidden></button>
+    </div>
+    <p class="mission-note" id="mission-note" hidden></p>
+    <p class="mission-note" id="mission-rule"></p>
+    <div class="mission-verdict" id="mission-verdict" hidden>
+      <span class="verdict-pill" id="verdict-title"></span>
+      <span class="verdict-reason" id="verdict-reason"></span>
+    </div>
+  </section>
+  <!-- Light and Earth at the flag (E1, #121): exploration only. Filled by src/sky-panel.js -->
+  <section class="sky-panel" id="sky-panel" aria-labelledby="sky-panel-title" hidden>
+    <h2 class="sky-panel__head">
+      <button class="sky-panel__toggle" id="sky-panel-toggle" type="button" aria-expanded="true" aria-controls="sky-panel-body">
+        <span id="sky-panel-title"></span>
+        <span class="sky-panel__dots" aria-hidden="true"><i class="dot dot--sun" id="sky-dot-sun"></i><i class="dot dot--earth" id="sky-dot-earth"></i></span>
+        <svg class="sky-panel__chevron" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>
+      </button>
+    </h2>
+    <div class="sky-panel__body" id="sky-panel-body">
+      <figure class="ring" id="horizon-ring">
+        <svg class="ring__svg" id="ring-svg" viewBox="0 0 200 200" role="img"></svg>
+        <figcaption class="ring__legend" id="ring-legend"></figcaption>
+      </figure>
+      <p class="sky-panel__note" id="ring-note" hidden></p>
+      <div class="sky-panel__side">
+        <ul class="sky-states" id="sky-states">
+          <li class="sky-state sky-state--sun" id="sun-state" data-state="hidden"><span class="sky-state__icon" aria-hidden="true"></span><span class="sky-state__name" id="sun-state-text"></span><span class="sky-state__when mono" id="sun-countdown"></span></li>
+          <li class="sky-state sky-state--earth" id="earth-state" data-state="hidden"><span class="sky-state__icon" aria-hidden="true"></span><span class="sky-state__name" id="earth-state-text"></span><span class="sky-state__when mono" id="earth-countdown"></span></li>
+        </ul>
+        <div class="period" id="period-bars">
+          <h3 class="period__title"><span id="period-title"></span> <span class="period__range mono" id="period-range"></span></h3>
+          <div class="meter meter--sun"><span class="meter__label" id="bar-sun-label"></span><span class="meter__value mono" id="bar-sun-value"></span><span class="meter__track" aria-hidden="true"><span class="meter__fill" id="bar-sun-fill"></span></span></div>
+          <div class="meter meter--earth"><span class="meter__label" id="bar-earth-label"></span><span class="meter__value mono" id="bar-earth-value"></span><span class="meter__track" aria-hidden="true"><span class="meter__fill" id="bar-earth-fill"></span></span></div>
+          <dl class="streaks">
+            <div><dt id="night-label"></dt><dd class="mono" id="night-value"></dd></div>
+            <div><dt id="outage-label"></dt><dd class="mono" id="outage-value"></dd></div>
+          </dl>
+        </div>
+        <!-- Where the flag is, and the way to move it with the keyboard (E2.2) -->
+        <div class="flag-pos" id="flag-pos-box">
+          <p class="flag-pos__coords mono" id="flag-pos"></p>
+          <button class="flag-pos__move" id="flag-move" type="button" hidden></button>
+          <button class="flag-pos__move" id="flag-best" type="button" hidden></button>
+          <p class="sky-panel__note" id="flag-best-note" hidden></p>
+          <a class="flag-pos__move flag-pos__link" id="flag-plan" hidden></a>
+          <p class="sky-panel__note" id="flag-note" hidden></p>
+        </div>
+      </div>
+      <p class="sky-panel__note" id="sky-note" hidden></p>
+    </div>
+  </section>
+  <section class="timeline" id="timeline" aria-labelledby="timeline-label">
+    <h2 class="sr-only" id="timeline-label"></h2>
+    <button class="play" id="play-btn" type="button"></button>
+    <span class="range-wrap"><input type="range" id="time-range" min="0" max="60" step="any" value="0"><span class="range-mark" id="empty-mark" hidden></span></span>
+    <button class="speed mono" id="speed-btn" type="button"><span class="sr-only" id="speed-prefix"></span><span id="speed-text"></span></button>
+    <label class="start" id="start-field"><span class="start-text mono" id="start-text"></span><span class="sr-only" id="start-label"></span><input type="date" id="start-date" class="mono"></label><button type="button" class="region-go" id="start-go" hidden></button>
+  </section>
+  <section class="readout mono" id="readout">
+    <span id="sun-readout"></span>
+    <span id="date-readout"></span>
+    <span id="pos-readout" hidden></span>
+  </section>
+  <p class="sr-only" id="time-status" role="status" aria-live="polite"></p>
+  <p class="sr-only" id="foot-status" role="status" aria-live="polite"></p>
+  <p class="sr-only" id="flag-status" role="status" aria-live="polite"></p>
+  </div>
+
+  <!-- three.js 0.160, as in the prototype; the scene is drawn in js/scene.js -->
+  <script type="importmap">
+  {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+  </script>
+  <script type="module" src="src/main.js"></script>
+  <script type="module" src="../shared/version/badge.js"></script>
+</body>
+</html>

@@ -1,0 +1,358 @@
+{
+  "scenario": "polo-sur-10-puntos",
+  "resultHash": "0c6e62b3c9c86891",
+  "scenarioHash": "6d228eac59096784",
+  "generatedWith": {
+    "node": "26.13.0",
+    "astronomyEngine": "2.1.19"
+  },
+  "best": {
+    "lat": -82.8387,
+    "lon": -5.7143,
+    "score": 61.216,
+    "breakdown": {
+      "energy": 16.63,
+      "comm": 25,
+      "both": 14.69,
+      "night": 4.9
+    },
+    "feasible": true,
+    "violations": [],
+    "worstDate": "2027-02-07",
+    "metrics": {
+      "energy": 0.4752,
+      "sunFraction": 0.4896,
+      "earthFraction": 1,
+      "bothFraction": 0.4896,
+      "longestNightH": 172,
+      "longestNoEarthH": 0,
+      "longestBothH": 165
+    },
+    "perDate": [
+      {
+        "date": "2027-01-10",
+        "periodH": 337,
+        "score": 72.627,
+        "feasible": true,
+        "violations": [],
+        "energy": 0.6283,
+        "sunFraction": 0.6409,
+        "earthFraction": 1,
+        "bothFraction": 0.6409,
+        "longestNightH": 121,
+        "longestNoEarthH": 0,
+        "longestBothH": 216
+      },
+      {
+        "date": "2027-01-24",
+        "periodH": 337,
+        "score": 61.286,
+        "feasible": true,
+        "violations": [],
+        "energy": 0.4772,
+        "sunFraction": 0.4896,
+        "earthFraction": 1,
+        "bothFraction": 0.4896,
+        "longestNightH": 172,
+        "longestNoEarthH": 0,
+        "longestBothH": 165
+      },
+      {
+        "date": "2027-02-07",
+        "periodH": 337,
+        "score": 61.216,
+        "feasible": true,
+        "violations": [],
+        "energy": 0.4752,
+        "sunFraction": 0.4896,
+        "earthFraction": 1,
+        "bothFraction": 0.4896,
+        "longestNightH": 172,
+        "longestNoEarthH": 0,
+        "longestBothH": 165
+      }
+    ],
+    "name": "Mejor eval región ampliada",
+    "iteration": 0
+  },
+  "top": [
+    {
+      "lat": -82.8387,
+      "lon": -5.7143,
+      "score": 61.216,
+      "breakdown": {
+        "energy": 16.63,
+        "comm": 25,
+        "both": 14.69,
+        "night": 4.9
+      },
+      "feasible": true,
+      "violations": [],
+      "worstDate": "2027-02-07",
+      "metrics": {
+        "energy": 0.4752,
+        "sunFraction": 0.4896,
+        "earthFraction": 1,
+        "bothFraction": 0.4896,
+        "longestNightH": 172,
+        "longestNoEarthH": 0,
+        "longestBothH": 165
+      },
+      "name": "Mejor eval región ampliada",
+      "iteration": 0
+    },
+    {
+      "lat": -80.13,
+      "lon": 1.44,
+      "score": 57.822,
+      "breakdown": {
+        "energy": 15.14,
+        "comm": 25,
+        "both": 13.26,
+        "night": 4.42
+      },
+      "feasible": true,
+      "violations": [],
+      "worstDate": "2027-01-24",
+      "metrics": {
+        "energy": 0.4325,
+        "sunFraction": 0.4421,
+        "earthFraction": 1,
+        "bothFraction": 0.4421,
+        "longestNightH": 188,
+        "longestNoEarthH": 0,
+        "longestBothH": 149
+      },
+      "name": "IM-1 Odysseus",
+      "siteId": "im1",
+      "iteration": 0
+    },
+    {
+      "lat": -84,
+      "lon": -3.1609,
+      "score": 52.504,
+      "breakdown": {
+        "energy": 16.27,
+        "comm": 20.48,
+        "both": 10.95,
+        "night": 4.81
+      },
+      "feasible": true,
+      "violations": [],
+      "worstDate": "2027-01-24",
+      "metrics": {
+        "energy": 0.4649,
+        "sunFraction": 0.4807,
+        "earthFraction": 0.819,
+        "bothFraction": 0.365,
+        "longestNightH": 175,
+        "longestNoEarthH": 61,
+        "longestBothH": 123
+      },
+      "name": "Mejor eval región -84",
+      "iteration": 0
+    },
+    {
+      "lat": -89.44027,
+      "lon": -137.12649,
+      "score": 45.931,
+      "breakdown": {
+        "energy": 34.79,
+        "comm": 0.52,
+        "both": 0.62,
+        "night": 10
+      },
+      "feasible": false,
+      "violations": [
+        "earthFraction=0.021 (>= 0.3) [2027-01-24]",
+        "energy=0.247 (>= 0.4) [2027-02-07]",
+        "longestNightH=208 (<= 200) [2027-02-07]"
+      ],
+      "worstDate": "2027-01-24",
+      "metrics": {
+        "energy": 0.9939,
+        "sunFraction": 1,
+        "earthFraction": 0.0208,
+        "bothFraction": 0.0208,
+        "longestNightH": 0,
+        "longestNoEarthH": 330,
+        "longestBothH": 7
+      },
+      "name": "Cresta de conexión de Shackleton",
+      "siteId": "shackleton-rim",
+      "iteration": 0
+    },
+    {
+      "lat": -90,
+      "lon": 0,
+      "score": 45.62,
+      "breakdown": {
+        "energy": 32.85,
+        "comm": 1.26,
+        "both": 1.51,
+        "night": 10
+      },
+      "feasible": false,
+      "violations": [
+        "earthFraction=0.05 (>= 0.3) [2027-01-24]",
+        "energy=0.314 (>= 0.4) [2027-02-07]"
+      ],
+      "worstDate": "2027-01-24",
+      "metrics": {
+        "energy": 0.9385,
+        "sunFraction": 1,
+        "earthFraction": 0.0504,
+        "bothFraction": 0.0504,
+        "longestNightH": 0,
+        "longestNoEarthH": 320,
+        "longestBothH": 13
+      },
+      "name": "Polo sur exacto",
+      "iteration": 0
+    },
+    {
+      "lat": -69.3741,
+      "lon": 32.32,
+      "score": 43.758,
+      "breakdown": {
+        "energy": 8.67,
+        "comm": 25,
+        "both": 7.57,
+        "night": 2.52
+      },
+      "feasible": false,
+      "violations": [
+        "energy=0.248 (>= 0.4) [2027-01-24]",
+        "longestNightH=252 (<= 200) [2027-01-24]"
+      ],
+      "worstDate": "2027-01-24",
+      "metrics": {
+        "energy": 0.2477,
+        "sunFraction": 0.2522,
+        "earthFraction": 1,
+        "bothFraction": 0.2522,
+        "longestNightH": 252,
+        "longestNoEarthH": 0,
+        "longestBothH": 85
+      },
+      "name": "Chandrayaan-3",
+      "siteId": "chandrayaan3",
+      "iteration": 0
+    },
+    {
+      "lat": -89,
+      "lon": -138.46,
+      "score": 43.492,
+      "breakdown": {
+        "energy": 33.33,
+        "comm": 0.08,
+        "both": 0.09,
+        "night": 10
+      },
+      "feasible": false,
+      "violations": [
+        "earthFraction=0.003 (>= 0.3) [2027-01-24]",
+        "energy=0.249 (>= 0.4) [2027-02-07]",
+        "longestNightH=226 (<= 200) [2027-02-07]"
+      ],
+      "worstDate": "2027-01-24",
+      "metrics": {
+        "energy": 0.9522,
+        "sunFraction": 1,
+        "earthFraction": 0.003,
+        "bothFraction": 0.003,
+        "longestNightH": 0,
+        "longestNoEarthH": 336,
+        "longestBothH": 1
+      },
+      "name": "Junto a Shackleton (búsqueda)",
+      "iteration": 0
+    },
+    {
+      "lat": -84.7906,
+      "lon": 29.1957,
+      "score": 34.679,
+      "breakdown": {
+        "energy": 9.86,
+        "comm": 14.17,
+        "both": 7.66,
+        "night": 3
+      },
+      "feasible": false,
+      "violations": [
+        "energy=0.282 (>= 0.4) [2027-01-24]",
+        "longestNightH=236 (<= 200) [2027-01-24]"
+      ],
+      "worstDate": "2027-01-24",
+      "metrics": {
+        "energy": 0.2816,
+        "sunFraction": 0.2997,
+        "earthFraction": 0.5668,
+        "bothFraction": 0.2552,
+        "longestNightH": 236,
+        "longestNoEarthH": 146,
+        "longestBothH": 86
+      },
+      "name": "IM-2 Athena (alunizaje real)",
+      "siteId": "im2-alunizaje",
+      "iteration": 0
+    },
+    {
+      "lat": -79.6631,
+      "lon": 59.6751,
+      "score": 32.477,
+      "breakdown": {
+        "energy": 3.32,
+        "comm": 25,
+        "both": 3.12,
+        "night": 1.04
+      },
+      "feasible": false,
+      "violations": [
+        "energy=0.095 (>= 0.4) [2027-01-24]",
+        "longestNightH=302 (<= 200) [2027-01-24]"
+      ],
+      "worstDate": "2027-01-24",
+      "metrics": {
+        "energy": 0.0949,
+        "sunFraction": 0.1039,
+        "earthFraction": 1,
+        "bothFraction": 0.1039,
+        "longestNightH": 302,
+        "longestNoEarthH": 0,
+        "longestBothH": 35
+      },
+      "name": "Mejor eval media de fechas",
+      "iteration": 0
+    },
+    {
+      "lat": -88.7527,
+      "lon": 4.9681,
+      "score": 27.945,
+      "breakdown": {
+        "energy": 16.57,
+        "comm": 4.08,
+        "both": 1.87,
+        "night": 5.43
+      },
+      "feasible": false,
+      "violations": [
+        "earthFraction=0.163 (>= 0.3) [2027-01-24]"
+      ],
+      "worstDate": "2027-01-24",
+      "metrics": {
+        "energy": 0.4733,
+        "sunFraction": 0.543,
+        "earthFraction": 0.1632,
+        "bothFraction": 0.0623,
+        "longestNightH": 154,
+        "longestNoEarthH": 282,
+        "longestBothH": 21
+      },
+      "name": "Mejor búsqueda dic-2026",
+      "iteration": 0
+    }
+  ],
+  "totalEvaluated": 10,
+  "iterations": 1
+}

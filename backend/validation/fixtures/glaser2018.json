@@ -1,0 +1,15 @@
+{
+ "description": "Gläser et al. 2018, «Illumination conditions at the lunar poles: Implications for future exploration», Planetary and Space Science 162, 170–178. Tabla 1 (observador a 0 m) y tabla 2 (a 2 m) del polo sur, con el DEM LOLA de 20 m/px, del 2017-01-01 al 2037-01-01 con paso de 1 h. Transcritas a mano. vis: % del tiempo con alguna parte del disco solar visible; avg: iluminación media (% medio del disco visible); shadowH: sombra continua más larga (h). Longitudes este en ±180 (la tabla da 0–360).",
+ "source": "https://ntrs.nasa.gov/api/citations/20170007365/downloads/20170007365.pdf",
+ "period": ["2017-01-01T00:00:00Z", "2037-01-01T00:00:00Z"],
+ "columns": ["id", "table", "lat", "lon", "heightM", "vis", "avg", "shadowH"],
+ "points": [
+  ["C1", 2, -89.4398, -137.17, 2, 92.1, 88.0, 112],
+  ["C2", 2, -89.3130, -114.02, 2, 82.0, 78.1, 165],
+  ["S1", 2, -89.6866, -162.81, 2, 89.4, 85.5, 66],
+  ["S2", 2, -89.7815, -155.30, 2, 89.8, 82.1, 65],
+  ["C1", 1, -89.4505, -137.16, 0, 81.3, 76.0, 268],
+  ["C2", 1, -89.3157, -114.06, 0, 80.6, 75.6, 166],
+  ["S", 1, -89.7849, -156.03, 0, 85.5, 81.0, 221]
+ ]
+}

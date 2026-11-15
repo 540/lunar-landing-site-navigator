@@ -1,0 +1,454 @@
+/* Tour screen. Variables taken from the :root of docs/mirador-polo-sur/index.html */
+:root {
+  color-scheme: dark;
+  --bg: #000000; --glass: rgba(12,15,19,.78); --line: rgba(160,175,190,.18);
+  /* Borders of controls (E8.3, #499): opaque, 3:1 against the glass over black and over bright relief (a11y.test.js) */
+  --control-line: #8a95a1;
+  --fg: #eceef0; --muted: #9aa3ac;
+  --sun: var(--color-map-sun); --earth: var(--color-map-earth); /* tokens.css (#334) */
+  --f-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; background: var(--bg); color: var(--fg); overflow: hidden; }
+body { font-family: var(--f-body); font-size: 14px; line-height: 1.5; }
+/* One focus style for every control (E8.3, #499): a light ring with a dark halo, visible over the black scene and over the glass panels */
+:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; box-shadow: 0 0 0 4px #000; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+#gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.topbar { position: absolute; top: 0; left: 0; right: 0; padding: 16px 20px; z-index: 1; }
+.back { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; color: var(--muted); text-decoration: none; font-family: var(--f-display); font-weight: 500; }
+.back:hover { color: var(--fg); }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.topbar__actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+/* ES / EN switch (shared/i18n/page.js) */
+.lang-toggle { display: inline-flex; gap: 4px; }
+.lang-toggle .topbar-btn { padding: 0 10px; }
+.topbar-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 12px; border: 1px solid var(--control-line); border-radius: 999px; background: var(--glass); color: var(--muted); font: 500 12px/1 var(--f-body); cursor: pointer; }
+.topbar-btn:hover { color: var(--fg); }
+.topbar-btn[aria-pressed="true"] { color: var(--fg); border-color: var(--hand, currentColor); }
+/* Hand control: its preview goes under the top bar */
+:root { --hands-top: 68px; }
+/* Salute with the hand (salute.js): the burst over everything, taking no clicks, and the badge that answers it */
+.salute-burst { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 2147482990; pointer-events: none; }
+.salute-badge { position: fixed; left: 50%; top: 22%; z-index: 2147482991; display: flex; align-items: center; gap: 12px; max-width: calc(100vw - 32px); padding: 10px 20px 10px 10px; border: 1px solid rgba(243,168,58,.55); border-radius: 999px; background: var(--glass); backdrop-filter: blur(12px); box-shadow: 0 10px 40px rgba(0,0,0,.55), 0 0 30px rgba(243,168,58,.25); color: var(--fg); font-family: var(--f-display); font-size: clamp(15px, 2.2vw, 20px); font-weight: 600; pointer-events: none; transform: translateX(-50%); animation: salute-badge 3.2s ease both; }
+.salute-badge img { flex: none; width: 48px; height: 48px; }
+@keyframes salute-badge {
+  0% { opacity: 0; transform: translateX(-50%) scale(.6); }
+  10% { opacity: 1; transform: translateX(-50%) scale(1.06); }
+  16%, 80% { opacity: 1; transform: translateX(-50%) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-12px) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) { .salute-badge { animation: none; } }
+.topbar-btn[hidden] { display: none; }
+.topbar-btn svg { color: var(--sun); }
+.tutorial-btn svg { color: var(--earth); }
+/* Up to 720 px the three buttons and «Volver» do not fit in one row with the selector: the buttons keep only their icon
+   (the label stays for screen readers) and «Volver» stays on one line. */
+@media (max-width: 720px) {
+  .topbar-btn { justify-content: center; min-width: 44px; min-height: 44px; padding: 0; }
+  .topbar-btn > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .back { white-space: nowrap; }
+}
+.stage { position: absolute; inset: 72px 0 auto; display: flex; flex-direction: column; align-items: center; gap: 16px; pointer-events: none; text-align: center; padding: 0 20px; }
+h1 { margin: 0; font-family: var(--f-display); font-weight: 600; font-size: clamp(32px, 6vw, 64px); letter-spacing: -.01em; }
+.notice { margin: 0; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--glass); color: var(--sun); font-size: 12px; }
+.notice-error { color: var(--fg); }
+.notice-warn { border-color: var(--sun); }
+.notice[hidden] { display: none; }
+/* Note of sources (E9.4, #47): the notice is a button when the relief is LOLA */
+.notice:has(.notice__btn) { padding: 0; }
+.notice__btn { font: inherit; color: inherit; background: none; border: 0; padding: 6px 12px; min-height: 36px; border-radius: inherit; cursor: pointer; pointer-events: auto; }
+.notice__more { text-decoration: underline; }
+.data-note { margin: auto; width: 440px; max-width: calc(100vw - 24px); max-height: calc(100vh - 24px); overflow-y: auto; display: grid; gap: 10px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--glass); backdrop-filter: blur(10px); color: var(--fg); font-size: 13px; line-height: 1.45; text-align: left; pointer-events: auto; }
+.data-note:not([open]) { display: none; }
+.data-note::backdrop { background: rgba(0, 0, 0, .5); }
+.data-note h2 { margin: 0; font-family: var(--f-display); font-size: 1.1rem; font-weight: 600; }
+.data-note h3 { margin: 0 0 4px; color: var(--sun); font-family: var(--f-mono); font-size: 11px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; }
+.data-note ul { margin: 0; padding-left: 18px; }
+.data-note__body { display: grid; gap: 12px; }
+.data-note__close { justify-self: end; min-height: 36px; padding: 0 14px; border: 1px solid var(--control-line); border-radius: 999px; background: var(--fg); color: var(--bg); font: 600 12px/1 var(--f-body); cursor: pointer; }
+.region-picker { display: flex; flex-wrap: wrap; justify-content: flex-start; align-items: center; gap: 8px; pointer-events: auto; }
+/* The top bar: back and the region selector on the left, the buttons on the right */
+.topbar__nav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+/* The notice of the relief and the help of the controls, in the bottom right corner, over the timeline's row */
+.corner-info { position: absolute; right: 20px; bottom: 20px; z-index: 1; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; max-width: 260px; pointer-events: none; }
+.corner-info .notice { text-align: right; }
+.corner-help { border-radius: 12px; color: var(--muted); font-size: 11px; line-height: 1.6; white-space: pre-line; }
+/* Without room beside the timeline (720 px), the corner goes up, over the timeline and the readout */
+@media (max-width: 1260px) { .corner-info { bottom: 132px; } }
+/* On a phone the top bar has no room: the selector goes under the title, on one line, and the corner over the timeline,
+   which takes two rows. The help of the mouse and the keyboard does not apply there. */
+@media (max-width: 640px) {
+  .region-picker { position: absolute; top: 124px; left: 20px; right: 20px; flex-wrap: nowrap; justify-content: center; }
+  .region-picker select { flex: 1; min-width: 0; }
+  .corner-info { bottom: 232px; }
+  .corner-help { display: none; }
+}
+.region-picker select { min-height: 36px; max-width: 100%; padding: 0 12px; border: 1px solid var(--control-line); border-radius: 999px; background: var(--glass); color: var(--fg); font: inherit; font-size: 12px; cursor: pointer; }
+.region-go { min-height: 36px; padding: 0 14px; border: 1px solid var(--control-line); border-radius: 999px; background: var(--glass); color: var(--fg); font: inherit; font-size: 12px; cursor: pointer; }
+.region-go:disabled { opacity: .5; cursor: default; }
+.region-approx { padding: 6px 12px; border: 1px solid var(--sun); border-radius: 999px; background: var(--glass); color: var(--sun); font-size: 12px; }
+[hidden] { display: none !important; }
+.hud { position: absolute; left: 20px; right: 20px; bottom: 20px; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; pointer-events: none; }
+.hud > * { pointer-events: auto; }
+/* The HUD never climbs over the top bar (76 px): on a short screen, such as a phone on its side, the mission panel scrolls
+   inside instead of covering «Volver». */
+.hud { max-height: calc(100vh - 96px); max-height: calc(100dvh - 96px); }
+.hud > .timeline, .hud > .readout { flex: none; }
+.mission-panel { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+/* Between 641 and 1260 px the corner with «Fuentes» (260 px wide) is raised to the height of the panel: the panel leaves it room. */
+@media (min-width: 641px) and (max-width: 1260px) { .hud > .mission-panel { max-width: min(560px, calc(100% - 272px)); } }
+.readout { position: relative; display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--glass); color: var(--fg); font-size: 13px; }
+#date-readout { color: var(--muted); }
+
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.timeline { position: relative; align-self: center; z-index: 1; width: min(720px, 100%); display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 6px 14px 6px 6px; border: 1px solid var(--line); border-radius: 999px; background: var(--glass); backdrop-filter: blur(8px); }
+.play { flex: none; width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--sun); color: #000; font-size: 16px; cursor: pointer; }
+#time-range { width: 100%; min-width: 0; min-height: 44px; accent-color: var(--sun); }
+.range-wrap { position: relative; flex: 1; min-width: 0; display: flex; }
+.speed { flex: none; min-height: 44px; padding: 0 12px; border: 1px solid var(--control-line); border-radius: 999px; background: none; color: var(--muted); font-size: 12px; cursor: pointer; }
+.speed:hover { color: var(--fg); }
+.start { display: flex; align-items: center; gap: 8px; }
+.start-text { color: var(--muted); font-size: 12px; }
+.start input { min-height: 44px; padding: 0 8px; border: 1px solid var(--control-line); border-radius: 8px; background: transparent; color: var(--fg); font-size: 12px; color-scheme: dark; }
+@media (max-width: 640px) { .timeline { border-radius: 20px; } .range-wrap { flex-basis: 100%; order: 3; } }
+
+/* Mission viewer (V1, #79) */
+:root { --ok: var(--color-map-ok); --warn: var(--color-map-warn); --bad: var(--color-map-bad); } /* tokens.css (#341) */
+.mission-panel { display: grid; gap: 8px; max-width: min(560px, 100%); padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--glass); backdrop-filter: blur(8px); }
+.mission-state { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; font-size: 12px; color: var(--muted); }
+.chip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+#state-sun[data-on="true"] { color: var(--sun); border-color: var(--sun); }
+#state-earth[data-on="true"] { color: var(--earth); border-color: var(--earth); }
+.mission-note { margin: 0; font-size: 12px; color: var(--muted); }
+.mission-verdict { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; font-size: 13px; }
+.verdict-pill { padding: 2px 10px; border-radius: 999px; font-family: var(--f-display); font-weight: 600; color: #000; background: var(--muted); }
+.verdict-pill[data-code="viable"] { background: var(--ok); }
+.verdict-pill[data-code="marginal"] { background: var(--warn); }
+.verdict-pill[data-code="not_viable"] { background: var(--bad); }
+body.is-mission h1 { font-size: clamp(24px, 4vw, 40px); }
+
+/* Labels of the Sun and the Earth (V1.3): a chip with its own background, so they read on the black sky and on lit
+   relief. Always dark, like the rest of the page (color-scheme: dark): the Sun and Earth borders need it (#332). */
+:root { --label-bg: rgba(12,15,19,.82); --label-fg: #eceef0; }
+.sky-label { position: absolute; z-index: 1; transform: translate(-50%, calc(-100% - 18px)); padding: 2px 8px; border-radius: 999px; border: 1px solid; background: var(--label-bg); color: var(--label-fg); font: 600 12px/1.4 var(--f-body); white-space: nowrap; pointer-events: none; }
+.sky-label--sun { border-color: var(--sun); }
+.sky-label--earth { border-color: var(--earth); }
+.sky-label[data-seen="false"] { opacity: .7; border-style: dashed; }
+.sky-label[data-edge] { transform: translate(-50%, -50%); }
+
+/* Battery (V1.4): it drains in the shadow and fills with the Sun; the mark on the slider is where it runs out. */
+.battery { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; font-size: 12px; }
+.battery__label { color: var(--muted); }
+.battery__bar { height: 8px; border-radius: 999px; background: rgba(160,175,190,.18); overflow: hidden; }
+.battery__fill { display: block; height: 100%; width: 100%; border-radius: inherit; background: var(--ok); transition: width .1s linear; }
+.battery[data-level="low"] .battery__fill { background: var(--warn); }
+.battery[data-level="empty"] .battery__fill { background: var(--bad); }
+.battery[data-level="empty"] .battery__value { color: var(--bad); }
+.range-mark { position: absolute; top: 8px; bottom: 8px; width: 3px; margin-left: -1.5px; border-radius: 2px; background: var(--bad); pointer-events: none; }
+
+/* Jumps to the moments that decide the mission (V1.5) */
+.jumps { display: flex; flex-wrap: wrap; gap: 8px; }
+.jumps:not(:has(.jump:not([hidden]))) { display: none; }
+.jump { min-height: 36px; padding: 0 12px; border: 1px solid var(--control-line); border-radius: 999px; background: none; color: var(--fg); font: 500 12px/1 var(--f-body); cursor: pointer; }
+.jump:hover { border-color: var(--fg); }
+#jump-shadow { border-color: var(--sun); }
+#jump-earth { border-color: var(--earth); }
+
+/* Right edge, over the scene: «Bajar a pie» / «Subir al dron», the zoom (setupZoom in zoom.js) and, on foot with touch, the jump. */
+.side { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); z-index: 2; display: grid; justify-items: end; gap: 8px; }
+.zoom { display: grid; gap: 8px; }
+.zoom[hidden] { display: none; }
+.zoom__btn { width: 44px; height: 44px; display: grid; place-items: center; padding: 0; border: 1px solid var(--control-line); border-radius: 50%; background: var(--glass); backdrop-filter: blur(8px); color: var(--fg); font-size: 22px; line-height: 1; cursor: pointer; }
+.zoom__btn:hover { border-color: var(--fg); }
+
+/* On foot (E3, #181) */
+.foot-btn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid var(--sun); border-radius: 999px; background: var(--glass); backdrop-filter: blur(8px); color: var(--fg); font: 600 13px/1 var(--f-body); cursor: pointer; }
+.foot-btn:hover { background: rgba(243,168,58,.18); }
+.xr-btn { border-color: var(--earth); }
+.xr-btn:hover { background: rgba(90,162,242,.18); }
+.xr-btn:disabled { opacity: .6; cursor: progress; }
+/* The log of the PS VR connection: over the left of the view, readable, to copy or screenshot */
+.psvr-log { position: absolute; left: max(20px, env(safe-area-inset-left, 0px)); top: 80px; z-index: 5; width: min(560px, calc(100vw - 40px)); max-height: 60vh; display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--earth); border-radius: 14px; background: var(--glass); backdrop-filter: blur(8px); color: var(--fg); }
+.psvr-log__title { margin: 0; font: 600 13px/1.2 var(--f-body); }
+.psvr-log__text { margin: 0; overflow: auto; white-space: pre-wrap; word-break: break-word; font-size: 11px; line-height: 1.45; user-select: text; }
+/* In the PS VR (#396) the page is the headset's screen: only the 3D, no controls over it. */
+body.is-psvr > *:not(#gl) { display: none !important; }
+body.is-foot h1 { display: none; }
+body.is-foot #controls-help { display: none; }
+#pos-readout { color: var(--muted); }
+
+/* Compass: a dial whose top is where you look. Each mark turns to its bearing and back, so its letter stays upright. */
+.compass { --r: 30px; display: grid; justify-items: center; gap: 4px; }
+.compass__dial { position: relative; width: 76px; height: 76px; border: 1px solid var(--line); border-radius: 50%; background: var(--glass); backdrop-filter: blur(8px); }
+.compass__pointer { position: absolute; left: 50%; top: 3px; width: 0; height: 0; margin-left: -5px; border: 5px solid transparent; border-top: 0; border-bottom: 8px solid var(--fg); }
+.compass__mark { position: absolute; left: 50%; top: 50%; display: grid; place-items: center; transform: rotate(var(--a, 0deg)) translateY(calc(-1 * var(--r))) rotate(calc(-1 * var(--a, 0deg))); }
+.compass__mark--north { width: 16px; height: 16px; margin: -8px 0 0 -8px; color: var(--fg); font: 600 11px/1 var(--f-mono); }
+.compass__mark--sun, .compass__mark--earth { width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; border: 2px solid; }
+.compass__mark--sun { background: var(--sun); border-color: var(--sun); }
+.compass__mark--earth { background: var(--earth); border-color: var(--earth); }
+.compass__mark[data-up="false"] { background: transparent; }
+.compass__heading { padding: 2px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--glass); color: var(--fg); font-size: 12px; }
+
+/* Touch joystick (E3.5): left edge, above the timeline. Big enough for a thumb (44 px and more). */
+.joy { position: absolute; left: max(20px, env(safe-area-inset-left, 0px)); top: 42%; z-index: 2; width: 112px; height: 112px; border-radius: 50%; border: 1px solid var(--line); background: rgba(12,15,19,.45); backdrop-filter: blur(6px); touch-action: none; }
+.joy__knob { position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; margin: -24px 0 0 -24px; border-radius: 50%; background: var(--fg); opacity: .85; pointer-events: none; }
+.jump-btn { font-size: 20px; border-color: var(--sun); }
+.gesture-btn[aria-pressed="true"], .view-btn[aria-pressed="true"] { border-color: var(--sun); color: var(--sun); }
+/* The mirror of the camera on foot: above the readout, on the left, never over the centre of the view. */
+.gesture-panel { position: absolute; left: max(20px, env(safe-area-inset-left, 0px)); bottom: 96px; z-index: 2; width: 248px; padding: 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--glass); backdrop-filter: blur(8px); color: var(--fg); }
+.gesture-panel__title { margin: 0 0 6px; font: 600 13px/1.2 var(--f-body); }
+.gesture-panel canvas { display: block; width: 100%; height: auto; border-radius: 8px; background: #07090b; }
+.gesture-panel__status { margin: 8px 0 4px; font-size: 12px; line-height: 1.35; }
+.gesture-panel__privacy { margin: 0 0 8px; color: var(--muted); font-size: 11px; line-height: 1.35; }
+.gesture-panel__recal { min-height: 32px; padding: 0 12px; border: 1px solid var(--control-line); border-radius: 999px; background: transparent; color: var(--fg); font: 600 12px/1 var(--f-body); cursor: pointer; }
+.gesture-panel__row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.gesture-panel__check { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; }
+.gesture-panel__check input { accent-color: var(--sun); }
+@media (max-width: 560px) { .gesture-panel { width: 168px; bottom: auto; top: 140px; } .gesture-panel__privacy { display: none; } }
+
+/* Helmet visor on foot: the view is framed by the edge of the visor, darker and a little gold at the rim, as through the
+   gold-coated visor of an EVA helmet. It never takes clicks. */
+.visor { display: none; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 72% 78% at 50% 48%, transparent 62%, rgba(40,28,8,.35) 80%, rgba(8,6,2,.92) 100%),
+    linear-gradient(180deg, rgba(243,168,58,.06), transparent 30%, transparent 75%, rgba(243,168,58,.05)); }
+body.is-foot .visor { display: block; }
+/* On foot with a touch screen the thumbs need room: only the compass, the joystick, the side buttons, the timeline and the
+   readout. The help is in the tutorial; the region and the sources are back on the drone. */
+body.is-foot .region-picker { display: none; }
+@media (pointer: coarse) { body.is-foot #notice, body.is-foot #foot-help { display: none; } }
+
+/* The watch on the wrist (E3): its button, pressed while the arm is up */
+.watch-btn { font-size: 20px; }
+.watch-btn[aria-pressed="true"] { border-color: var(--sun); background: rgba(243,168,58,.18); }
+
+/* The flag on foot (E3.6): the action to pick it up or plant it, next to the watch */
+.foot-flag-btn { border-color: var(--sun); color: var(--fg); }
+
+/* The ground on foot (E3): «Textura fina», pressed while on */
+.ground-btn { display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border: 1px solid var(--control-line); border-radius: 999px; background: var(--glass); backdrop-filter: blur(8px); color: var(--muted); font: 500 12px/1 var(--f-body); cursor: pointer; }
+.ground-btn:hover { color: var(--fg); }
+.ground-btn[aria-pressed="true"] { color: var(--fg); border-color: var(--earth); background: rgba(90,162,242,.16); }
+/* 3D not available (G1.2b, #286): over everything, with links to go on and a reload button, as in the home page */
+.glost { position: absolute; inset: 0; z-index: 50; display: grid; place-items: center; padding: 24px; background: var(--bg); }
+.glost__box { max-width: 420px; display: flex; flex-direction: column; align-items: flex-start; gap: 14px; padding: 22px 24px; border: 1px solid var(--line); border-radius: 14px; background: var(--glass); }
+.glost p { margin: 0; font-size: 15px; }
+.glost ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.glost a { display: inline-flex; align-items: center; min-height: 44px; color: var(--fg); font-weight: 600; }
+.glost__reload { min-height: 44px; color: var(--fg); }
+
+/* Light and Earth at the flag (E1, #121): horizon ring, states with countdown and bars of the period. Exploration only. */
+:root {
+  --ring-sky: #070c14; --ring-sky-top: #12203a; --ground: #34312d; --ground-line: #b9b2a6;
+  --sun-dim: rgba(243,168,58,.28); --earth-dim: rgba(90,162,242,.28);
+}
+.sky-panel { width: min(468px, 100%); max-height: calc(100vh - 240px); overflow-y: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--glass); backdrop-filter: blur(10px); }
+.sky-panel__head { margin: 0; font: inherit; }
+.sky-panel__toggle { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 0 14px; border: 0; background: none; color: var(--muted); font: 500 11px/1 var(--f-body); letter-spacing: .08em; text-transform: uppercase; text-align: left; cursor: pointer; border-radius: 14px; }
+.sky-panel__toggle:hover { color: var(--fg); }
+.sky-panel__toggle > span:first-child { flex: 1; }
+.sky-panel__chevron { flex: none; transition: transform .2s ease; }
+.sky-panel[data-collapsed="true"] .sky-panel__chevron { transform: rotate(-90deg); }
+.sky-panel__dots { display: inline-flex; gap: 6px; }
+.sky-panel[data-empty="true"] .sky-panel__dots { display: none; }
+.dot { display: block; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid; }
+.dot--sun { border-color: var(--sun); }
+.dot--earth { border-color: var(--earth); }
+.dot--sun[data-state="visible"] { background: var(--sun); box-shadow: 0 0 8px var(--sun); }
+.dot--sun[data-state="partial"] { background: linear-gradient(to top, var(--sun) 50%, transparent 50%); }
+.dot--earth[data-state="visible"] { background: var(--earth); }
+.dot[data-state="hidden"] { border-style: dashed; opacity: .7; }
+
+.sky-panel__body { display: grid; grid-template-columns: 184px minmax(0, 1fr); align-items: start; gap: 4px 16px; padding: 0 14px 14px; }
+.sky-panel__note { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: 12px; }
+
+/* The ring: an SVG in its own coordinates (viewBox 200 × 200, core/horizon-ring.js) */
+.ring { margin: 0; display: grid; gap: 6px; }
+.ring__svg { display: block; width: 100%; height: auto; overflow: visible; }
+.ring__ground { fill: var(--ground); }
+.ring__sky { stroke: none; }
+.ring__profile { fill: none; stroke: var(--ground-line); stroke-width: 1; stroke-linejoin: round; opacity: .9; }
+.ring__guide { fill: none; stroke: rgba(200,215,235,.14); stroke-width: .7; stroke-dasharray: 1.5 3; }
+.ring__guide--zero { stroke: rgba(200,215,235,.32); stroke-dasharray: 4 3; }
+.ring__tick { fill: rgba(200,215,235,.55); font: 500 6.5px var(--f-mono); }
+.ring__cardinal { fill: var(--fg); font: 600 9px var(--f-display); opacity: .85; }
+.ring__wedge { fill: rgba(236,238,240,.07); stroke: rgba(236,238,240,.22); stroke-width: .6; }
+.ring__trail { fill: none; stroke-width: 2.4; stroke-linecap: round; }
+.ring__trail--sun { stroke: var(--sun); }
+.ring__trail--earth { stroke: var(--earth); }
+.ring__trail.is-hidden { stroke-width: 1.6; }
+.ring__trail--sun.is-hidden { stroke: var(--sun-dim); }
+.ring__trail--earth.is-hidden { stroke: var(--earth-dim); }
+.ring__flag line { stroke: var(--fg); stroke-width: 1.2; }
+.ring__flag path { fill: var(--sun); }
+.ring__body--earth { fill: var(--earth); stroke: #dbe9fb; stroke-width: 1; transition: opacity .2s; }
+.ring__body--earth[data-state="hidden"] { fill: var(--ring-sky); stroke: var(--earth); stroke-dasharray: 2 2; }
+.ring__disc { fill: var(--sun); stroke: #fff4dc; stroke-width: 1.2; }
+.ring__body--sun[data-state="partial"] .ring__glow { opacity: .5; }
+.ring__body--sun[data-state="hidden"] .ring__glow { opacity: 0; }
+.ring__body--sun[data-state="hidden"] .ring__disc { fill: var(--ring-sky); stroke: var(--sun); stroke-dasharray: 2 2; }
+.ring__legend { display: flex; flex-wrap: wrap; gap: 2px 10px; color: var(--muted); font-size: 10.5px; line-height: 1.3; }
+.ring__key { display: inline-flex; align-items: center; gap: 5px; }
+.ring__key::before { content: ""; width: 12px; height: 7px; border-radius: 999px; }
+.ring__key--ground::before { background: var(--ground); border: 1px solid var(--ground-line); }
+.ring__key--trail::before { height: 4px; border-radius: 0; background: radial-gradient(circle, var(--sun) 1.5px, transparent 1.8px) 0 0 / 4px 4px repeat-x; }
+.ring__key--view::before { height: 10px; border-radius: 0; background: rgba(236,238,240,.35); clip-path: polygon(0 0, 100% 0, 50% 100%); }
+
+/* States with their countdown */
+.sky-panel__side { display: grid; gap: 14px; min-width: 0; padding-top: 4px; }
+.sky-states { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.sky-state { display: grid; grid-template-columns: 14px minmax(0, 1fr); align-items: center; gap: 1px 10px; }
+.sky-state__icon { grid-row: span 2; width: 14px; height: 14px; border-radius: 50%; border: 2px solid; }
+.sky-state--sun .sky-state__icon { border-color: var(--sun); }
+.sky-state--earth .sky-state__icon { border-color: var(--earth); }
+.sky-state--sun[data-state="visible"] .sky-state__icon { background: var(--sun); box-shadow: 0 0 10px rgba(243,168,58,.7); }
+.sky-state--sun[data-state="partial"] .sky-state__icon { background: linear-gradient(to top, var(--sun) 50%, transparent 50%); }
+.sky-state--earth[data-state="visible"] .sky-state__icon { background: var(--earth); box-shadow: 0 0 10px rgba(90,162,242,.6); }
+.sky-state[data-state="hidden"] .sky-state__icon { border-style: dashed; }
+.sky-state__name { font: 600 15px/1.25 var(--f-display); color: var(--fg); }
+.sky-state[data-state="hidden"] .sky-state__name { color: var(--muted); }
+.sky-state__when { color: var(--muted); font-size: 11.5px; }
+
+/* Bars of the period */
+.period { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+.period__title { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 8px; margin: 0; color: var(--muted); font: 500 10.5px/1.2 var(--f-body); letter-spacing: .08em; text-transform: uppercase; }
+.period__range { letter-spacing: 0; text-transform: none; white-space: nowrap; }
+.meter { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; align-items: baseline; font-size: 12px; }
+.meter__label { color: var(--fg); }
+.meter__value { color: var(--fg); font-weight: 500; }
+.meter__track { grid-column: 1 / -1; height: 6px; border-radius: 999px; background: rgba(160,175,190,.16); overflow: hidden; }
+.meter__fill { display: block; height: 100%; width: 0; border-radius: inherit; transition: width .35s ease; }
+.meter--sun .meter__fill { background: linear-gradient(90deg, #c97a1c, var(--sun)); }
+.meter--earth .meter__fill { background: linear-gradient(90deg, #2f6fc0, var(--earth)); }
+.flag-pos { display: grid; gap: 6px; padding-top: 10px; border-top: 1px solid var(--line); }
+.flag-pos__coords { margin: 0; color: var(--muted); font-size: 12px; }
+.flag-pos__move { justify-self: start; padding: 5px 10px; border: 1px solid var(--control-line); border-radius: 8px; background: transparent; color: var(--fg); font: inherit; font-size: 12px; cursor: pointer; }
+.flag-pos__move[aria-busy="true"] { cursor: progress; opacity: .7; }
+.flag-pos__link { text-decoration: none; }
+.flag-pos__move:hover { background: rgba(160,175,190,.14); }
+canvas[data-flag-draggable="true"] { cursor: pointer; }
+.streaks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 2px 0 0; }
+.streaks div { display: grid; gap: 1px; align-content: end; }
+.streaks dt { color: var(--muted); font-size: 10.5px; }
+.streaks dd { margin: 0; color: var(--fg); font-size: 13px; }
+
+@media (max-width: 520px) {
+  .sky-panel__body { grid-template-columns: 124px minmax(0, 1fr); gap: 4px 12px; padding: 0 12px 12px; }
+  .ring__legend, .ring__tick { display: none; }
+  .ring__cardinal { font-size: 13px; }
+  .sky-state__name { font-size: 13.5px; }
+  .sky-panel__side { gap: 10px; }
+  .period { padding-top: 10px; }
+}
+/* On a phone the open panel takes the width of the screen: the column of buttons on the right (on foot, zoom) steps aside
+   until it is folded (pinching still zooms). On foot, the watch (R, ⌚) says the same and the thumbs need the room. */
+@media (max-width: 640px) {
+  body:has(#sky-panel:not([hidden])[data-collapsed="false"]) .side { display: none; }
+  body.is-foot #sky-panel { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .meter__fill, .sky-panel__chevron { transition: none; } }
+
+/* Options drawer (E8.2, #498): a non-modal <dialog> on the right, full width on a phone */
+.options { position: fixed; top: 68px; right: 20px; left: auto; bottom: auto; margin: 0; z-index: 3; width: 320px; max-width: calc(100vw - 24px); max-height: calc(100vh - 88px); overflow-y: auto; display: grid; gap: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--glass); backdrop-filter: blur(10px); color: var(--fg); font-size: 13px; line-height: 1.45; pointer-events: auto; }
+.options:not([open]) { display: none; }
+.options:focus { outline: none; }
+.options__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.options__head h2 { margin: 0; font-family: var(--f-display); font-size: 1.1rem; font-weight: 600; }
+.options__close { min-height: 36px; padding: 0 14px; border: 1px solid var(--control-line); border-radius: 999px; background: var(--glass); color: var(--fg); font: 500 12px/1 var(--f-body); cursor: pointer; }
+.options__group { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.options__group > h3, .options__group > legend { padding: 0; margin: 0 0 2px; color: var(--sun); font-family: var(--f-mono); font-size: 11px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; }
+.options__choice { display: flex; align-items: center; gap: 10px; min-height: 36px; cursor: pointer; }
+.options__choice input { width: 18px; height: 18px; accent-color: var(--sun); }
+.options__note { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+.options__apply { margin-top: 8px; }
+.options__apply:disabled { opacity: .5; cursor: default; }
+.options .region-picker { position: static; flex-wrap: wrap; }
+.options .region-picker select { flex: 1; min-width: 0; }
+.options .region-approx { flex-basis: 100%; }
+.options .lang-toggle .topbar-btn { min-width: 44px; justify-content: center; }
+body.is-foot .options .region-picker { display: flex; }
+.layer-off-panel .sky-panel, .layer-off-labels .sky-label { display: none !important; }
+@media (max-width: 640px) {
+  .options { top: 0; right: 0; left: 0; width: auto; max-width: none; max-height: 100vh; border-radius: 0 0 14px 14px; }
+  .options__choice { min-height: 44px; }
+  .options__close { min-height: 44px; }
+  body.layer-off-panel:has(#sky-panel:not([hidden])[data-collapsed="false"]) .side { display: grid; }
+}
+/* Region change (E7.2, #497): the veil of the fade and the progress bar */
+.region-veil { position: fixed; inset: 0; z-index: 30; background: #000; opacity: 0; pointer-events: none; transition: opacity .3s ease; }
+.region-veil.is-on { opacity: 1; pointer-events: auto; }
+.region-progress { position: fixed; left: 50%; bottom: 96px; z-index: 31; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; width: min(360px, calc(100vw - 40px)); padding: 12px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--glass); color: var(--fg); font-size: 12px; text-align: center; }
+.region-progress[hidden] { display: none; }
+.region-progress__track { height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.region-progress__cancel { align-self: center; padding: 6px 14px; border: 1px solid var(--control-line); border-radius: 999px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.region-progress__fill { display: block; height: 100%; width: 0; background: var(--sun); }
+
+/* Guided visit (E6.1): a card on the right on a desktop, away from the sky panel (left) and the buttons on the right edge;
+   on a phone, a sheet at the bottom that folds down to its title bar. */
+.visit-btn svg { color: var(--sun); }
+.visit { position: absolute; z-index: 4; top: 84px; right: 190px; width: min(360px, calc(100vw - 210px)); max-height: calc(100vh - 220px); max-height: calc(100dvh - 220px); display: flex; flex-direction: column; border: 1px solid var(--sun); border-radius: 14px; background: var(--glass); backdrop-filter: blur(10px); color: var(--fg); font-size: 13px; line-height: 1.45; }
+.visit__head { display: flex; align-items: center; gap: 6px; padding: 8px 8px 8px 14px; }
+.visit__heading { flex: 1; min-width: 0; }
+.visit__count { margin: 0; color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.visit__title { margin: 0; font: 600 16px/1.25 var(--f-display); }
+.visit__body { display: grid; gap: 10px; padding: 0 14px 12px; overflow-y: auto; overscroll-behavior: contain; }
+.visit__levels { display: flex; gap: 4px; }
+.visit__level, .visit__ctl, .visit__option, .visit__primary, .visit__secondary { min-height: 44px; border: 1px solid var(--control-line); border-radius: 999px; background: transparent; color: var(--muted); font: 500 12px/1.2 var(--f-body); cursor: pointer; }
+.visit__level { flex: 1; padding: 0 6px; }
+.visit__level[aria-pressed="true"] { color: var(--fg); border-color: var(--sun); }
+.visit__ctl { padding: 0 12px; }
+.visit__ctl:hover, .visit__level:hover, .visit__secondary:hover { color: var(--fg); }
+.visit__ctl[aria-disabled="true"], .visit__option[aria-disabled="true"], .visit__primary[aria-disabled="true"], .visit__secondary[aria-disabled="true"] { opacity: .5; cursor: default; }
+.visit__question { margin: 0; font-size: 14px; }
+.visit__bet { margin: 0; color: var(--muted); font-size: 12px; }
+.visit__options { display: grid; gap: 6px; }
+.visit__option { padding: 0 14px; color: var(--fg); text-align: left; }
+.visit__option[aria-pressed="true"] { border-color: var(--sun); background: rgba(243,168,58,.16); }
+.visit__option[data-result="correct"]::after { content: " ✓"; }
+.visit__option[data-result="wrong"]::after { content: " ✗"; }
+.visit__option[data-result="correct"] { border-color: var(--ok); }
+.visit__option[data-result="wrong"] { border-color: var(--bad); }
+.visit__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.visit__primary { padding: 0 16px; border-color: var(--sun); background: var(--sun); color: #000; font-weight: 600; }
+.visit__secondary { padding: 0 14px; }
+.visit__note { margin: 0; color: var(--sun); font-size: 12px; }
+.visit__result { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; }
+.visit__verdict { margin: 0; font-weight: 600; }
+.visit__result[data-kind="correct"] .visit__verdict { color: var(--ok); }
+.visit__result[data-kind="wrong"] .visit__verdict { color: var(--bad); }
+.visit__explain { margin: 0; }
+.visit__nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.visit__dots { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; }
+.visit__dot { position: relative; width: 24px; height: 44px; padding: 0; border: 0; background: none; cursor: pointer; }
+.visit__dot::before { content: ""; position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--control-line); }
+.visit__dot[aria-current="step"]::before { background: var(--sun); }
+@media (max-width: 640px) {
+  .visit { top: auto; bottom: 8px; left: 8px; right: 8px; width: auto; max-height: 62vh; max-height: 62dvh; }
+  .visit__head { padding: 4px 4px 4px 12px; }
+  .visit__body { gap: 8px; padding-bottom: 8px; }
+}
+/* With the button of the visit the top bar has five buttons: on a phone «Volver» keeps only its arrow (the label stays for screen readers) so they fit on one row. */
+@media (max-width: 480px) {
+  .back { min-width: 44px; justify-content: center; padding: 0; }
+  .back > span:not([aria-hidden]) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .topbar { gap: 4px; padding-left: 12px; padding-right: 12px; }
+  .topbar__actions { gap: 4px; }
+}
+
+/* Touch target of at least 44 × 44 px on touch screens (E8.3, #499) */
+@media (pointer: coarse) {
+  button, .back, select, .region-picker select, input[type="date"], .options__choice, .flag-pos__move, .notice__btn, .data-note__close { min-height: 44px; }
+  .topbar-btn, .region-go, .options__close, .jump, .ground-btn, .gesture-panel__recal, .region-progress__cancel { min-height: 44px; min-width: 44px; }
+  .visit__dot { min-width: 44px; }
+  .options__choice input { min-width: 24px; min-height: 24px; }
+}
+/* 375 px wide: no horizontal scroll, nothing outside the screen */
+@media (max-width: 400px) {
+  .topbar { flex-wrap: wrap; row-gap: 4px; }
+  .topbar__actions { flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
+  .region-progress, .gesture-panel, .visit { max-width: calc(100vw - 16px); }
+}

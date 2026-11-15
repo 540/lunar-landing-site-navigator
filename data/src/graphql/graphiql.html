@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GraphQL · Lunar Landing Site Navigator</title>
+  <!-- GraphiQL 3.9.0 and React 18.3.1 from unpkg, exact versions with Subresource Integrity -->
+  <link rel="stylesheet" href="https://unpkg.com/graphiql@3.9.0/graphiql.min.css" integrity="sha384-QMux00XgRtwRLSYIY3kw2rj1ovk5AuuliAchk+HSQbqdbGFnz9GYuqIlOqxhwCE2" crossorigin="anonymous">
+  <style>
+    html, body { margin: 0; height: 100%; }
+    #graphiql { height: 100vh; }
+    #loading { font: 16px/1.5 system-ui, sans-serif; padding: 24px; color: #333; }
+  </style>
+</head>
+<body>
+  <div id="graphiql"><p id="loading">Cargando el explorador de GraphQL… Si no aparece, comprueba que el navegador puede cargar unpkg.com. El esquema está en <a href="/graphql/schema.graphql">/graphql/schema.graphql</a>.</p></div>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/graphiql@3.9.0/graphiql.min.js" integrity="sha384-8NGfVj4CVlqHajlZj+bPJT4thxPMHMJYn7DWK2CvtopLd02E7qsPHazniBYvVjOO" crossorigin="anonymous"></script>
+  <script>
+    // Example tabs (data/src/graphql/examples.ts), injected by the server.
+    const EXAMPLES = /*EXAMPLES*/[];
+    const fetcher = GraphiQL.createFetcher({ url: location.pathname });
+    const tabs = EXAMPLES.map((e) => ({ query: e.query, variables: e.variables ? JSON.stringify(e.variables, null, 2) : undefined }));
+    ReactDOM.createRoot(document.getElementById('graphiql')).render(
+      React.createElement(GraphiQL, { fetcher, defaultTabs: tabs, defaultEditorToolsVisibility: true, isHeadersEditorEnabled: false }),
+    );
+  </script>
+</body>
+</html>
